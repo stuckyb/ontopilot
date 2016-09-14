@@ -1,8 +1,14 @@
-# Plant Phenology Ontology
+# Ontobuilder: A User-friendly Ontology Development and Build System
 
-If you are interested in exploring the Plant Phenology Ontology (PPO), our most recent build is available [here](https://raw.githubusercontent.com/PlantPhenoOntology/PPO/master/ontology/ppo.owl).  Note that the PPO is under active development and not yet stable enough for routine use.
+Ontobuilder is a system for managing the development of ontologies.  It began as the development/build system for the [Plant Phenology Ontology (PPO)](https://github.com/PlantPhenoOntology/PPO).  Because its use has expanded beyond the PPO, ontobuilder is now maintained as a separate project.
 
-If you are interested in PPO development, extensive documentation covering the PPO build system and development process is available on the project wiki.  This documentation includes:
+The key idea behind ontobuilder is the use of simple, familiar, tabular data formats, such as CSV files, to manage the specification and development of an ontology.  Ontology components are described as rows in tabular data files, and these files then become the "source code" for "compiling" the ontology.  This has multiple benefits, including:
+
+1. Familiar spreadsheet software, such as LibreOffice Calc and Excel, become tools for writing ontologies.
+2. Ontology development is easily modularized by organizing terms into multiple source files.
+3. Anyone with basic spreadsheet skills can contribute to ontology development without needing to invest a great deal of time learning specialized ontology editing tools or ontology implementation languages.  This makes it much easier for domain experts to directly participate in the process of creating an ontology.
+
+For detailed information about using ontobuilder for ontology development, please see the user documentation:
 
 * [Building the PPO](../../wiki/Building-the-PPO): How to buld the import modules and compile the PPO.
 * [Managing imports](../../wiki/Managing-imports): How to edit existing import modules and create new ones.
