@@ -26,6 +26,11 @@ class ImportModuleBuilder:
         self.progbar = None
         self.sourceOntologyIRI = ''
 
+        # Define the strings that indicate TRUE in the CSV files.  Note that
+        # variants of these strings with different casing will also be
+        # recognized.
+        self.true_strs = ['t', 'true', 'y', 'yes']
+
     def _updateDownloadProgress(self, blocks_transferred, blocksize, filesize):
         """
         Instantiates and updates a console-based progress bar to indicate
@@ -90,7 +95,7 @@ class ImportModuleBuilder:
             reader = csv.DictReader(filein)
         
             for row in reader:
-                if row['seed_subclasses'].strip().lower() in true_strs:
+                if row['seed_subclasses'].strip().lower() in self.true_strs:
                     termIDs_to_expand.append(row['ID'])
                 else:
                     termIDs.append(row['ID'])
@@ -128,12 +133,6 @@ class ImportModuleBuilder:
             raise RuntimeError('No terms to import were found in the terms file.')
 
 
-# This is used to define unique values of the ontology ID, the default xmlns
-# attribute, and the xml:base attribute for the generated OWL file.  If these
-# are not set, Protege does not seem to be able to deal with the imports, at
-# least not reliably.
-IRI_BASE = "https://raw.githubusercontent.com/PlantPhenoOntology/PPO/master/import_modules/"
-
 argp = ArgumentParser(description='Processes a single CSV file of \
 terms/entities to extract from a source ontology.  The results are written to \
 an output file in OWL format.')
@@ -141,11 +140,15 @@ argp.add_argument('-i', '--importsfile', type=str, required=True, help='A CSV \
 file containing the set of ontologies to import.')
 argp.add_argument('-s', '--outputsuffix', type=str, required=True, help='A \
 suffix to use for naming the import module OWL files.')
+argp.add_argument('-b', '--baseIRI', type=str, required=True, help='The base \
+IRI to use for generating IRIs for OWL module files.')
 args = argp.parse_args()
 
-# Define the strings that indicate TRUE in the CSV files.  Note that variants
-# of these strings with different casing will also be recognized.
-true_strs = ['t', 'true', 'y', 'yes']
+# This is used to define unique values of the ontology ID, the default xmlns
+# attribute, and the xml:base attribute for the generated OWL file.  If these
+# are not set, Protege does not seem to be able to deal with the imports, at
+# least not reliably.
+IRI_BASE = args.baseIRI
 
 # Verify that the imports file exists.
 if not(os.path.isfile(args.importsfile)):
