@@ -52,8 +52,26 @@ class ImportModuleBuilder:
         containing a set of terms to import.  The import module will be saved
         as an OWL file with the name specified by outputfile.
         """
-        # Verify that the source ontology file exists; if not, download it.
+        # Verify that the terms file exists.
+        if not(os.path.isfile(termsfile_path)):
+            raise RuntimeError('Could not find the terms CSV file "'
+                    + termsfile_path + '".')
+
+        # Extract the name of the source ontology file from the IRI.
         ontfile = os.path.basename(ontologyIRI)
+
+        # Generate the file name and IRI for the ouput ontology OWL file.
+        outputfile = os.path.splitext(ontfile)[0] + outputsuffix
+        ont_IRI = IRI_BASE + outputfile
+
+        # If the output file already exists and the terms file was not
+        # modified/created more recently, there is nothing to do.
+        if os.path.isfile(outputfile):
+            if os.path.getmtime(outputfile) > os.path.getmtime(termsfile_path):
+                print 'The module ' + outputfile + ' is already up-to-date.'
+                return
+        
+        # Verify that the source ontology file exists; if not, download it.
         if not(os.path.isfile(ontfile)):
             opener = URLOpenerWithErrorHandling()
             try:
@@ -62,11 +80,6 @@ class ImportModuleBuilder:
             except HTTPError as err:
                 raise RuntimeError('Unable to download the external ontology at "'
                         + ontologyIRI + '": ' + str(err))
-    
-        # Verify that the terms file exists.
-        if not(os.path.isfile(termsfile_path)):
-            raise RuntimeError('Could not find the terms CSV file "'
-                    + termsfile_path + '".')
     
         # Build two lists of the IDs of all terms to import: one for terms that define
         # the full seed set, and one for terms whose subclasses will also be pulled
@@ -85,10 +98,6 @@ class ImportModuleBuilder:
         # Use OWLTools to generate temporary import modules for each list of terms, and
         # keep a list of the generated temporary import modules.
         temp_modules = []
-        
-        # Generate the file name and IRI for the ouput ontology OWL file.
-        outputfile = os.path.splitext(ontfile)[0] + outputsuffix
-        ont_IRI = IRI_BASE + outputfile
         
         # Terms for which we don't explicitly add subclasses to the seed set.
         if len(termIDs) > 0:
