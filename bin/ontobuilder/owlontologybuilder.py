@@ -24,6 +24,34 @@ from com.google.common.base import Optional
 # The base IRI for all new classes.
 OBO_BASE_IRI = 'http://purl.obolibrary.org/obo/'
 
+def termIRIToOboID(termIRI):
+    """
+    Converts an IRI for an ontology term into an OB ID; that is, a string
+    of the form "PO:0000003".
+
+      termIRI: The IRI of the ontology term.  Can be either an IRI object
+               or a string.
+    """
+    if isinstance(termIRI, IRI):
+        termIRIstr = termIRI.toString()
+    else:
+        termIRIstr = termIRI
+
+    IRIpath = urlparse.urlsplit(termIRIstr).path
+    rawID = os.path.split(IRIpath)[1]
+
+    return rawID.replace('_', ':')
+
+def oboIDToIRI(oboID):
+    """
+    Converts an OBO ID string (i.e., a string of the form "PO:0000003") to
+    an IRI.
+    """
+    oboID = oboID.strip()
+    tIRI = IRI.create(OBO_BASE_IRI + oboID.replace(':', '_'))
+
+    return tIRI
+
 
 class _OntologyClass:
     """
@@ -34,7 +62,7 @@ class _OntologyClass:
     interface.
     """
     # The IRI for the property for definition annotations.
-    DEFINITION_IRI = IRI.create(OBO_BASE_IRI + 'IAO_0000115')
+    DEFINITION_IRI = oboIDToIRI('IAO:0000115')
 
     def __init__(self, classIRI, classobj, ontology):
         """
@@ -241,9 +269,7 @@ class OWLOntologyBuilder:
         class will be expanded to include the terms' OBO IDs.
         """
         # Create the new class.
-        newclass = self.ontology.createNewClass(
-                IRI.create(OBO_BASE_IRI + classdesc['ID'].replace(':', '_'))
-        )
+        newclass = self.ontology.createNewClass(oboIDToIRI(classdesc['ID']))
         
         # Make sure we have a label and add it to the new class.
         labeltext = classdesc['Label'].strip()
@@ -299,14 +325,14 @@ class OWLOntologyBuilder:
                 tdID = tdata.split('(')[1]
                 if tdID.find(')') > -1:
                     tdID = tdID.rstrip(')')
-                    tdIRI = IRI.create(OBO_BASE_IRI + tdID.replace(':', '_'))
+                    tdIRI = oboIDToIRI(tdID)
                 else:
                     raise RuntimeError('Missing closing parenthesis in parent class specification: '
                             + tdata + '".')
         else:
             # We only have an ID.
             labelIRI = None
-            tdIRI = IRI.create(OBO_BASE_IRI + tdata.replace(':', '_'))
+            tdIRI = oboIDToIRI(tdata)
     
         if labelIRI != None:
             if tdIRI != None:
@@ -319,17 +345,6 @@ class OWLOntologyBuilder:
                 return labelIRI
         else:
             return tdIRI
-    
-    def _termIRIToOboID(self, termIRI):
-        """
-        Converts an IRI for an ontology term into an OB ID; that is, a string
-        of the form "PO:0000003".
-        """
-        termIRIstr = termIRI.toString()
-        IRIpath = urlparse.urlsplit(termIRIstr).path
-        rawID = os.path.split(IRIpath)[1]
-
-        return rawID.replace('_', ':')
     
     def _expandDefinition(self, deftext):
         """
@@ -349,7 +364,7 @@ class OWLOntologyBuilder:
                 # Get the class IRI associated with this label.
                 labelIRI = self.ontology.labelToIRI(label)
 
-                labelID = self._termIRIToOboID(labelIRI)
+                labelID = termIRIToOboID(labelIRI)
                 newdef += label + ' (' + labelID + ')'
             else:
                 newdef += defpart
