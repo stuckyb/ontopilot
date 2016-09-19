@@ -27,6 +27,7 @@ for jlibpath in jlibpaths:
 
 # Add classes of contained modules to the package's top-level scope.
 from labelmap import LabelMap
+from ontology import Ontology
 from owlontologybuilder import OWLOntologyBuilder
 from importmodulebuilder import ImportModuleBuilder
 
