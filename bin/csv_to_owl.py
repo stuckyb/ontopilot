@@ -55,8 +55,6 @@ for termsfile in args.termsfiles:
                     print
                     exit()
 
-#ontbuilder.mparser.dispose()
-
 # Set the ontology ID, if a new ID was provided.
 newid = args.id.strip()
 if newid != '':

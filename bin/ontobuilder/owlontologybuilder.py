@@ -135,6 +135,9 @@ class Ontology:
         self.df = OWLManager.getOWLDataFactory()
         self.mparser = ManchesterSyntaxTool(self.ontology)
 
+    def __del__(self):
+        self.mparser.dispose()
+
     def getOWLOntology(self):
         """
         Returns the OWL API ontology object contained by this Ontology object.
