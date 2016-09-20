@@ -14,12 +14,21 @@ class LabelMap:
     associated term IRIs.
     """
     def __init__(self, ontology):
-        self.lmap = self._makeMap(ontology)
+        # Don't initialize the label map until a lookup or update is requested.
+        # This allows Ontology objects to be used with OWL ontologies that have
+        # ambiguous labels, as long as the labels are not needed.
+        self.lmap = None
 
     def lookupIRI(self, label):
+        if self.lmap == None:
+            self.lmap = self._makeMap(ontology)
+
         return self.lmap[label]
 
     def add(self, label, termIRI):
+        if self.lmap == None:
+            self.lmap = self._makeMap(ontology)
+
         if label not in self.lmap:
             self.lmap[label] = termIRI
         else:
