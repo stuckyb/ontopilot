@@ -6,10 +6,12 @@
 #
 # The directory "../../javalib" contains all of the java libraries on which the
 # OWL API depends.  The easiest way to get all of these library jar files is to
-# extract them from the OWL API distribution jar file.  Unzip the jar file,
-# then merge everything in the "lib" directory of the jar file into the
-# "javalib" directory of the PPO source tree.  Finally, make sure that the OWL
-# API main jar file is also in the "javalib" folder.
+# extract them from the OWL API distribution jar file (get the OSGI version).
+# Unzip the jar file, then merge everything in the "lib" directory of the jar
+# file into the "javalib" directory of the PPO source tree.  This will get
+# almost everything you need except for a few additional libraries; get these
+# the existing "javalib" directory.  Finally, make sure that the OWL API main
+# jar file is also in the "javalib" folder.
 #
 
 import os, glob, sys
