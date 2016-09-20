@@ -18,16 +18,17 @@ class LabelMap:
         # This allows Ontology objects to be used with OWL ontologies that have
         # ambiguous labels, as long as the labels are not needed.
         self.lmap = None
+        self.ontology = ontology
 
     def lookupIRI(self, label):
         if self.lmap == None:
-            self.lmap = self._makeMap(ontology)
+            self.lmap = self._makeMap(self.ontology)
 
         return self.lmap[label]
 
     def add(self, label, termIRI):
         if self.lmap == None:
-            self.lmap = self._makeMap(ontology)
+            self.lmap = self._makeMap(self.ontology)
 
         if label not in self.lmap:
             self.lmap[label] = termIRI
