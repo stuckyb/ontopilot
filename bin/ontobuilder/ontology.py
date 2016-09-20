@@ -15,11 +15,14 @@ from labelmap import LabelMap
 from java.io import File, FileOutputStream
 from org.semanticweb.owlapi.apibinding import OWLManager
 from org.semanticweb.owlapi.model import IRI, AddAxiom, OWLOntologyID
-from org.semanticweb.owlapi.model import SetOntologyID, AxiomType
+from org.semanticweb.owlapi.model import SetOntologyID, AxiomType, OWLOntology
+from org.semanticweb.owlapi.model import AddOntologyAnnotation
 from org.obolibrary.macro import ManchesterSyntaxTool
 from org.semanticweb.owlapi.manchestersyntax.renderer import ParserException
 from org.semanticweb.owlapi.formats import RDFXMLDocumentFormat
 from org.semanticweb import HermiT
+from uk.ac.manchester.cs.owlapi.modularity import SyntacticLocalityModuleExtractor
+from uk.ac.manchester.cs.owlapi.modularity import ModuleType
 from com.google.common.base import Optional
 
 
@@ -147,15 +150,26 @@ class Ontology:
     Provides a high-level interface to the OWL API's ontology object system.
     Conceptually, instances of this class represent a single OWL ontology.
     """
-    def __init__(self, ontology_path):
+    # The IRI for the "dc:source" annotation property.
+    SOURCE_IRI = IRI.create('http://purl.org/dc/elements/1.1/source')
+
+    def __init__(self, ontology_source):
         """
-        Initialize this Ontology instance.  The argument "ontology_path" should
-        be a path to an OWL ontology file on the local file system.
+        Initialize this Ontology instance.  The argument "ontology_source"
+        should either be a path to an OWL ontology file on the local file
+        system or an instance of an OWL API OWLOntology object.
         """
-        # Load the ontology.
-        self.ontman = OWLManager.createOWLOntologyManager()
-        ontfile = File(ontology_path)
-        self.ontology = self.ontman.loadOntologyFromOntologyDocument(ontfile)
+        if isinstance(ontology_source, basestring): 
+            # Load the ontology from the source file.
+            self.ontman = OWLManager.createOWLOntologyManager()
+            ontfile = File(ontology_source)
+            self.ontology = self.ontman.loadOntologyFromOntologyDocument(ontfile)
+        elif isinstance(ontology_source, OWLOntology):
+            self.ontology = ontology_source
+            self.ontman = self.ontology.getOWLOntologyManager()
+        else:
+            raise RuntimeError('Unrecognized type for initializing an Ontology object: '
+                + str(ontology_source))
 
         self.labelmap = LabelMap(self.ontology)
 
@@ -186,11 +200,17 @@ class Ontology:
 
     def getEntityByOboID(self, oboID):
         """
-        Searches for an entity in the ontology using an OBO ID string.
+        Searches for an entity in the ontology using an OBO ID string.  The
+        entity is assumed to be either a class, object property, data property,
+        or annotation property.
         """
         eIRI = oboIDToIRI(oboID)
 
         entity = self.getExistingClass(eIRI)
+        if entity == None:
+            entity = self.getExistingProperty(eIRI)
+
+        return entity
 
     def getExistingClass(self, classIRI):
         """
@@ -210,12 +230,32 @@ class Ontology:
 
         return None
 
-    def getHermitReasoner(self):
+    def getExistingProperty(self, propIRI):
         """
-        Returns an instance of a HermiT reasoner for this ontology.
+        Searches for an existing property in the ontology.  If the property is
+        declared either directly in the ontology or is declared in its
+        transitive imports closure, an OWL API object representing the property
+        is returned.  Otherwise, None is returned.  Object properties, data
+        properties, and annotation properties are all considered; ontology
+        properties are not.
+
+          propIRI: An IRI object.
         """
-        return HermiT.Reasoner(self.getOWLOntolog())
-    
+        obj_prop = self.df.getOWLObjectProperty(propIRI)
+        annot_prop = self.df.getOWLAnnotationProperty(propIRI)
+        data_prop = self.df.getOWLDataProperty(propIRI)
+
+        ontset = self.ontology.getImportsClosure()
+        for ont in ontset:
+            if ont.getDeclarationAxioms(obj_prop).size() > 0:
+                return classobj
+            elif ont.getDeclarationAxioms(annot_prop).size() > 0:
+                return classobj
+            elif ont.getDeclarationAxioms(data_prop).size() > 0:
+                return classobj
+
+        return None
+
     def createNewClass(self, class_iri):
         """
         Creates a new OWL class, adds it to the ontology, and returns an
@@ -267,6 +307,16 @@ class Ontology:
         newoid = OWLOntologyID(Optional.fromNullable(ont_iri), Optional.absent())
         self.ontman.applyChange(SetOntologyID(self.ontology, newoid))
 
+    def setOntologySource(self, sourceIRI):
+        """
+        Sets the value of the "dc:source" annotation property for this ontology.
+        """
+        sourceprop = self.df.getOWLAnnotationProperty(self.SOURCE_IRI)
+        s_annot = self.df.getOWLAnnotation(sourceprop, sourceIRI)
+        self.ontman.applyChange(
+            AddOntologyAnnotation(self.getOWLOntology(), s_annot)
+        )
+
     def saveOntology(self, filepath):
         """
         Saves the ontology to a file.
@@ -275,4 +325,36 @@ class Ontology:
         foutputstream = FileOutputStream(File(filepath))
         self.ontman.saveOntology(self.ontology, oformat, foutputstream)
         foutputstream.close()
+
+    def getHermitReasoner(self):
+        """
+        Returns an instance of a HermiT reasoner for this ontology.
+        """
+        return HermiT.Reasoner(self.getOWLOntolog())
+    
+    def extractModule(self, signature, modIRI):
+        """
+        Extracts a module that is a subset of the entities in this ontology.
+        The result is returned as an Ontology object.
+
+          signature: A Java Set of all entities to include in the module.
+          modIRI: The IRI (as a Java IRI object) of the ontology module.
+        """
+        slme = SyntacticLocalityModuleExtractor(
+            self.ontman, self.getOWLOntology(), ModuleType.STAR
+        )
+        modont = Ontology(slme.extractAsOntology(signature, modIRI))
+
+        # Add an annotation for the source of the module.
+        sourceIRI = None
+        ontid = self.getOWLOntology().getOntologyID()
+        if ontid.getVersionIRI().isPresent():
+            sourceIRI = ontid.getVersionIRI().get()
+        elif ontid.getOntologyIRI().isPresent():
+            sourceIRI = ontid.getOntologyIRI().get()
+
+        if sourceIRI != None:
+            modont.setOntologySource(sourceIRI)
+
+        return modont
 
