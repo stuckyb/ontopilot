@@ -248,11 +248,11 @@ class Ontology:
         ontset = self.ontology.getImportsClosure()
         for ont in ontset:
             if ont.getDeclarationAxioms(obj_prop).size() > 0:
-                return classobj
+                return obj_prop
             elif ont.getDeclarationAxioms(annot_prop).size() > 0:
-                return classobj
+                return annot_prop
             elif ont.getDeclarationAxioms(data_prop).size() > 0:
-                return classobj
+                return data_prop
 
         return None
 
@@ -330,7 +330,9 @@ class Ontology:
         """
         Returns an instance of a HermiT reasoner for this ontology.
         """
-        return HermiT.Reasoner(self.getOWLOntolog())
+        rfact = HermiT.ReasonerFactory()
+
+        return rfact.createReasoner(self.getOWLOntology())
     
     def extractModule(self, signature, modIRI):
         """

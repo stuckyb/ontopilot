@@ -15,7 +15,9 @@ from ontology import Ontology, oboIDToIRI
 
 # Java imports.
 from java.util import HashSet
-from org.semanticweb.owlapi.model import IRI
+from org.semanticweb.owlapi.model import IRI, OWLClassExpression
+from org.semanticweb.owlapi.model import OWLObjectPropertyExpression
+from org.semanticweb.owlapi.model import OWLObjectProperty
 
 
 class URLOpenerWithErrorHandling(FancyURLopener):
@@ -120,12 +122,29 @@ class ImportModuleBuilder:
                     raise RuntimeError(row['ID'] + ' could not be found in the source ontology')
 
                 signature.add(owlent)
+
                 if row['seed_subclasses'].strip().lower() in self.true_strs:
                     if reasoner == None:
                         reasoner = sourceont.getHermitReasoner()
 
+                    # Get the entity's subclasses or subproperties.
+                    if isinstance(owlent, OWLClassExpression):
+                        signature.addAll(reasoner.getSubClasses(owlent, False).getFlattened())
+                    elif isinstance(owlent, OWLObjectPropertyExpression):
+                        propset = reasoner.getSubObjectProperties(owlent, False).getFlattened()
+                        # Note that getSubObjectProperties() can return both
+                        # named properties and ObjectInverseOf (i.e., unnamed)
+                        # properties, so we need to check the type of each
+                        # property before adding it to the module signature.
+                        for prop in propset:
+                            if isinstance(prop, OWLObjectProperty):
+                                signature.add(prop)
+
         if signature.size() == 0:
             raise RuntimeError('No terms to import were found in the terms file.')
+        
+        if reasoner != None:
+            reasoner.dispose()
 
         module = sourceont.extractModule(signature, ont_IRI)
 
