@@ -19,6 +19,7 @@ from org.semanticweb.owlapi.model import SetOntologyID, AxiomType
 from org.obolibrary.macro import ManchesterSyntaxTool
 from org.semanticweb.owlapi.manchestersyntax.renderer import ParserException
 from org.semanticweb.owlapi.formats import RDFXMLDocumentFormat
+from org.semanticweb import HermiT
 from com.google.common.base import Optional
 
 
@@ -113,12 +114,10 @@ class _OntologyClass:
  
         # Get the OWLClass object of the parent class, making sure that it is
         # actually defined.
-        parentclass = self.df.getOWLClass(parentIRI)
-        # The method below of checking for class declaration does not work for
-        # classes from imports.  TODO: Find another way to do this.
-        #if (base_ontology.getDeclarationAxioms(parentclass).size() == 0):
-        #    raise RuntimeError('The parent class for ' + classdesc['ID'] + ' (row '
-        #            + str(rowcnt) + ') could not be found.')
+        parentclass = self.ontology.getExistingClass(parentIRI)
+        if parentclass == None:
+            raise RuntimeError('The designated superclass, ' + str(parent_iri)
+                    + ', could not be found in the source ontology.')
         
         # Add the subclass axiom to the ontology.
         newaxiom = self.df.getOWLSubClassOfAxiom(self.owlclass, parentclass)
@@ -184,6 +183,38 @@ class Ontology:
                 + '", could not be matched to a term IRI.')
 
         return cIRI
+
+    def getEntityByOboID(self, oboID):
+        """
+        Searches for an entity in the ontology using an OBO ID string.
+        """
+        eIRI = oboIDToIRI(oboID)
+
+        entity = self.getExistingClass(eIRI)
+
+    def getExistingClass(self, classIRI):
+        """
+        Searches for an existing class in the ontology.  If the class is
+        declared either directly in the ontology or is declared in its
+        transitive imports closure, an OWL API object representing the class is
+        returned.  Otherwise, None is returned.
+
+          classIRI: An IRI object.
+        """
+        classobj = self.df.getOWLClass(classIRI)
+
+        ontset = self.ontology.getImportsClosure()
+        for ont in ontset:
+            if ont.getDeclarationAxioms(classobj).size() > 0:
+                return classobj
+
+        return None
+
+    def getHermitReasoner(self):
+        """
+        Returns an instance of a HermiT reasoner for this ontology.
+        """
+        return HermiT.Reasoner(self.getOWLOntolog())
     
     def createNewClass(self, class_iri):
         """
