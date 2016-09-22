@@ -97,6 +97,10 @@ class _OntologyClass:
         self.owlclass = classobj
         
     def addDefinition(self, deftxt):
+        """
+        Adds a definition annotation to this class (i.e., adds an annotation
+        for "definition", IAO:0000115).
+        """
         deftxt = deftxt.strip()
 
         defannot = self.df.getOWLAnnotation(
@@ -108,6 +112,9 @@ class _OntologyClass:
         self.ontology.addClassAxiom(annotaxiom)
 
     def addLabel(self, labeltxt):
+        """
+        Adds an rdfs:label for this class.
+        """
         labeltxt = labeltxt.strip()
 
         labelannot = self.df.getOWLAnnotation(
@@ -189,6 +196,10 @@ class Ontology:
         self.mparser = ManchesterSyntaxTool(self.ontology)
 
     def __del__(self):
+        """
+        A class "destructor" that disposes the Manchester Syntax parser when
+        this Ontology instance is no longer needed.
+        """
         self.mparser.dispose()
 
     def getOWLOntology(self):
