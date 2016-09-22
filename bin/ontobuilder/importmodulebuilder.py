@@ -65,7 +65,34 @@ class ImportModuleBuilder:
             if blocks_transferred == self.progbar.maxval:
                 self.progbar.finish()
                 print
+
+    def _getOutputFileName(self, ontologyIRI, outputsuffix):
+        """
+        Constructs the file name for the output import module file.
+        """
+        # Extract the name of the source ontology file from the IRI.
+        ontfile = os.path.basename(ontologyIRI)
+
+        # Generate the file name for the ouput ontology OWL file.
+        outputfile = os.path.splitext(ontfile)[0] + outputsuffix
+
+        return outputfile
+
+    def isBuildNeeded(self, ontologyIRI, termsfile_path, outputsuffix):
+        """
+        Tests whether an import module actually needs to be built.  If the file
+        located at termsfile_path has 
+        """
+        outputfile = self._getOutputFileName(ontologyIRI, outputsuffix)
     
+        # If the output file already exists and the terms file was not
+        # modified/created more recently, there is nothing to do.
+        if os.path.isfile(outputfile):
+            if os.path.getmtime(outputfile) > os.path.getmtime(termsfile_path):
+                return False
+
+        return True
+        
     def buildModule(self, ontologyIRI, termsfile_path, outputsuffix):
         """
         Builds an import module from a single external ontology and a CSV file
@@ -87,16 +114,9 @@ class ImportModuleBuilder:
         ontfile = os.path.basename(ontologyIRI)
 
         # Generate the file name and IRI for the ouput ontology OWL file.
-        outputfile = os.path.splitext(ontfile)[0] + outputsuffix
+        outputfile = self._getOutputFileName(ontologyIRI, outputsuffix)
         ont_IRI = IRI.create(self.base_IRI + outputfile)
 
-        # If the output file already exists and the terms file was not
-        # modified/created more recently, there is nothing to do.
-        if os.path.isfile(outputfile):
-            if os.path.getmtime(outputfile) > os.path.getmtime(termsfile_path):
-                print 'The module ' + outputfile + ' is already up-to-date.'
-                return
-        
         # Verify that the source ontology file exists; if not, download it.
         if not(os.path.isfile(ontfile)):
             opener = URLOpenerWithErrorHandling()

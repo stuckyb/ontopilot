@@ -40,5 +40,11 @@ with open(args.importsfile) as ifilein:
             termsdir = os.path.dirname(os.path.abspath(args.importsfile))
             termsfile_path = os.path.join(termsdir, termsfile_path)
 
-        mbuilder.buildModule(row['IRI'], termsfile_path, args.outputsuffix)
+        if mbuilder.isBuildNeeded(row['IRI'], termsfile_path, args.outputsuffix):
+            print ('Building the ' + row['name'] + ' (' + row['IRI']
+                    + ') import module.')
+            mbuilder.buildModule(row['IRI'], termsfile_path, args.outputsuffix)
+        else:
+            print ('The ' + row['name'] + ' (' + row['IRI']
+                    + ') import module is already up-to-date.')
 
