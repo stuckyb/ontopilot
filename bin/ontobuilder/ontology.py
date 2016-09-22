@@ -29,6 +29,20 @@ from com.google.common.base import Optional
 # The base IRI for all new classes.
 OBO_BASE_IRI = 'http://purl.obolibrary.org/obo/'
 
+
+def getIRI(irival):
+    """
+    Accepts either an IRI string or an OWL API IRI object, and returns an OWL
+    API IRI object.  If irival is a string, a new IRI object is created.
+    If irival is an IRI object, it is returned unaltered.
+    """
+    if isinstance(irival, basestring):
+        IRIobj = IRI.create(irival)
+    else:
+        IRIobj = irival
+
+    return IRIobj
+
 def termIRIToOboID(termIRI):
     """
     Converts an IRI for an ontology term into an OB ID; that is, a string
@@ -110,11 +124,8 @@ class _OntologyClass:
           parent_iri: The IRI of the parent class.  Can be either a string or
                       an IRI object.
         """
-        if isinstance(parent_iri, basestring):
-            parentIRI = IRI.create(parent_iri)
-        else:
-            parentIRI = parent_iri
- 
+        parentIRI = getIRI(parent_iri)
+
         # Get the OWLClass object of the parent class, making sure that it is
         # actually defined.
         parentclass = self.ontology.getExistingClass(parentIRI)
@@ -151,7 +162,7 @@ class Ontology:
     Conceptually, instances of this class represent a single OWL ontology.
     """
     # The IRI for the "dc:source" annotation property.
-    SOURCE_IRI = IRI.create('http://purl.org/dc/elements/1.1/source')
+    SOURCE_PROP_IRI = IRI.create('http://purl.org/dc/elements/1.1/source')
 
     def __init__(self, ontology_source):
         """
@@ -212,15 +223,18 @@ class Ontology:
 
         return entity
 
-    def getExistingClass(self, classIRI):
+    def getExistingClass(self, class_iri):
         """
         Searches for an existing class in the ontology.  If the class is
         declared either directly in the ontology or is declared in its
         transitive imports closure, an OWL API object representing the class is
         returned.  Otherwise, None is returned.
 
-          classIRI: An IRI object.
+          class_iri: The IRI of the class to search for.  Can be either an IRI
+                     object or a string.
         """
+        classIRI = getIRI(class_iri)
+
         classobj = self.df.getOWLClass(classIRI)
 
         ontset = self.ontology.getImportsClosure()
@@ -230,7 +244,7 @@ class Ontology:
 
         return None
 
-    def getExistingProperty(self, propIRI):
+    def getExistingProperty(self, prop_iri):
         """
         Searches for an existing property in the ontology.  If the property is
         declared either directly in the ontology or is declared in its
@@ -239,8 +253,11 @@ class Ontology:
         properties, and annotation properties are all considered; ontology
         properties are not.
 
-          propIRI: An IRI object.
+          prop_iri: The IRI of the property to search for.  Can be either an
+                    IRI object or a string.
         """
+        propIRI = getIRI(prop_iri)
+
         obj_prop = self.df.getOWLObjectProperty(propIRI)
         annot_prop = self.df.getOWLAnnotationProperty(propIRI)
         data_prop = self.df.getOWLDataProperty(propIRI)
@@ -264,10 +281,7 @@ class Ontology:
           class_iri: The IRI to use for the new class.  Can be either a string
                      or an IRI object.
         """
-        if isinstance(class_iri, basestring):
-            classIRI = IRI.create(class_iri)
-        else:
-            classIRI = class_iri
+        classIRI = getIRI(class_iri)
 
         # Get the class object.
         owlclass = self.df.getOWLClass(classIRI)
@@ -298,20 +312,29 @@ class Ontology:
 
         self.ontman.applyChange(AddAxiom(self.ontology, owl_axiom))
 
-    def setOntologyID(self, iri_str):
+    def setOntologyID(self, ont_iri):
         """
         Sets the ID for the ontology (i.e., the value of the "rdf:about"
-        attribute).  The argument iri_str should be an IRI string.
+        attribute).
+        
+          ont_iri: The IRI (i.e., ID) of the ontology.  Can be either an IRI
+                   object or a string.
         """
-        ont_iri = IRI.create(iri_str)
-        newoid = OWLOntologyID(Optional.fromNullable(ont_iri), Optional.absent())
+        ontIRI = getIRI(ont_iri)
+
+        newoid = OWLOntologyID(Optional.fromNullable(ontIRI), Optional.absent())
         self.ontman.applyChange(SetOntologyID(self.ontology, newoid))
 
-    def setOntologySource(self, sourceIRI):
+    def setOntologySource(self, source_iri):
         """
         Sets the value of the "dc:source" annotation property for this ontology.
+
+          source_iri: The IRI of the source ontology.  Can be either an IRI
+                      object or a string.
         """
-        sourceprop = self.df.getOWLAnnotationProperty(self.SOURCE_IRI)
+        sourceIRI = getIRI(source_iri)
+
+        sourceprop = self.df.getOWLAnnotationProperty(self.SOURCE_PROP_IRI)
         s_annot = self.df.getOWLAnnotation(sourceprop, sourceIRI)
         self.ontman.applyChange(
             AddOntologyAnnotation(self.getOWLOntology(), s_annot)
@@ -334,14 +357,17 @@ class Ontology:
 
         return rfact.createReasoner(self.getOWLOntology())
     
-    def extractModule(self, signature, modIRI):
+    def extractModule(self, signature, mod_iri):
         """
         Extracts a module that is a subset of the entities in this ontology.
         The result is returned as an Ontology object.
 
           signature: A Java Set of all entities to include in the module.
-          modIRI: The IRI (as a Java IRI object) of the ontology module.
+          mod_iri: The IRI of the ontology module.  Can be either an IRI object
+                   or a string.
         """
+        modIRI = getIRI(mod_iri)
+
         slme = SyntacticLocalityModuleExtractor(
             self.ontman, self.getOWLOntology(), ModuleType.STAR
         )
