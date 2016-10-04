@@ -39,6 +39,18 @@ for termsfile in args.termsfiles:
 
 ontbuilder = OWLOntologyBuilder(args.base_ontology)
 
+# Preprocess all new term IDs and labels so that forward references to
+# undefined terms can succeed.
+for termsfile in args.termsfiles:
+    with open(termsfile) as fin:
+        reader = csv.DictReader(fin)
+        for csvrow in reader:
+            if not(csvrow['Ignore'].strip().upper().startswith('Y')):
+                idstr = csvrow['ID'].strip()
+                labelstr = csvrow['Label'].strip()
+                if (idstr != '') and (labelstr != ''):
+                    ontbuilder.getOntology().preloadLabelIdPair(labelstr, idstr)
+
 # Process each source CSV file.
 for termsfile in args.termsfiles:
     with open(termsfile) as fin:

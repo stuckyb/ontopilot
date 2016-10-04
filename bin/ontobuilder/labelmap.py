@@ -27,6 +27,12 @@ class LabelMap:
         return self.lmap[label]
 
     def add(self, label, termIRI):
+        """
+        Adds an IRI/label pair to this LabelMap.
+
+        label: A string containing the label text.
+        termIRI: An OWl API IRI object.
+        """
         if self.lmap == None:
             self.lmap = self._makeMap(self.ontology)
 

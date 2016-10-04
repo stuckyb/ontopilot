@@ -432,6 +432,22 @@ class Ontology:
 
         return _OntologyDataProperty(propIRI, owldprop, self)
 
+    def preloadLabelIdPair(self, label_str, ent_id):
+        """
+        Preloads an entity's label and IRI into the label lookup table.  This
+        allows label mappings to be specified prior to entity definition, which
+        is necessary to support forward references to labels in term
+        definitions.
+
+        label_str: A string containing the label text.
+        ent_id: The identifier of the entity.  Can be either an OWL API IRI
+            object or a string containing: a prefix IRI (i.e., a curie, such as
+            "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of the form
+            "PO:0000003").
+        """
+        entIRI = self.expandIdentifier(ent_id)
+        self.labelmap.add(label_str, entIRI)
+
     def addTermAxiom(self, owl_axiom):
         """
         Adds a new term axiom to this ontology.  In this context, "term axiom"

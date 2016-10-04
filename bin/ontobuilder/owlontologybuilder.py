@@ -114,6 +114,9 @@ class OWLOntologyBuilder:
         tdata = id_desc.strip()
         if tdata == '':
             return None
+
+        labelIRI = None
+        tdIRI = None
     
         # Check if we have a term label.
         if tdata.startswith("'"):
@@ -136,7 +139,6 @@ class OWLOntologyBuilder:
                             + tdata + '".')
         else:
             # We only have an ID.
-            labelIRI = None
             tdIRI = self.ontology.expandIdentifier(tdata)
     
         if labelIRI != None:
