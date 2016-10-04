@@ -6,9 +6,11 @@
 
 # Python imports.
 import re
-from ontology import Ontology, termIRIToOboID, oboIDToIRI
+from obohelper import termIRIToOboID, oboIDToIRI, isOboID
+from ontology import Ontology
 
 # Java imports.
+from org.semanticweb.owlapi.model import IRI
 
 
 class OWLOntologyBuilder:
@@ -52,10 +54,10 @@ class OWLOntologyBuilder:
 
             newclass.addDefinition(textdef)
         
-        # Get the OWLClass object of the parent class, making sure that it is
-        # actually defined.
-        parentIRI = self._getParentIRIFromDesc(classdesc)
-        newclass.addSuperclass(parentIRI)
+        # Get the IRI object of the parent class and add it as a parent.
+        parentIRI = self._getIRIFromDesc(classdesc['Parent'])
+        if parentIRI != None:
+            newclass.addSuperclass(parentIRI)
     
         # Add the formal definition (specified as a class expression in
         # Manchester Syntax), if we have one.
@@ -63,20 +65,57 @@ class OWLOntologyBuilder:
         if formaldef != '':
             newclass.addClassExpression(formaldef)
  
-    def _getParentIRIFromDesc(self, classdesc):
+    def addDataProperty(self, propdesc, expanddef=True):
         """
-        Parses a superclass (parent) IRI from a class description dictionary.
-        The parent class information should have the key "Parent class".
-        Either a class label, ID, or both can be provided.  The general format
-        is: "'class label' (CLASS_ID)".  For example:
-        "'whole plant' (PO:0000003)".  If both a label and ID are provided,
-        this method will verify that they correspond.
+        Adds a new data property to the ontology, based on a property
+        description provided as the dictionary propdesc (i.e., the single
+        explicit argument).  If expanddef is True, then term labels in the text
+        definition for the new property will be expanded to include the terms'
+        OBO IDs.
         """
-        tdata = classdesc['Parent class'].strip()
+        # Create the new data property.
+        newprop = self.ontology.createNewDataProperty(oboIDToIRI(propdesc['ID']))
+        
+        # Make sure we have a label and add it to the new class.
+        labeltext = propdesc['Label'].strip()
+        if labeltext == '':
+            raise RuntimeError('No label was provided for ' + propdesc['ID']
+                    + '.')
+        newprop.addLabel(labeltext)
+        
+        # Add the text definition to the class, if we have one.
+        textdef = propdesc['Text definition'].strip()
+        if textdef != '':
+            if expanddef:
+                textdef = self._expandDefinition(textdef)
+
+            newprop.addDefinition(textdef)
+        
+        # Get the IRI object of the parent property and add it as a parent.
+        parentIRI = self._getIRIFromDesc(propdesc['Parent'])
+        if parentIRI != None:
+            newprop.addSuperproperty(parentIRI)
+
+        # Add the domain, if we have one.
+        domainIRI = self._getIRIFromDesc(propdesc['Domain'])
+        if domainIRI != None:
+            newprop.setDomain(domainIRI)
+ 
+    def _getIRIFromDesc(self, id_desc):
+        """
+        Parses an identifier field from a term description dictionary and
+        returns the matching IRI.  The identifier description, id_desc, can be
+        a term label, OBO ID, prefix IRI, or full IRI.  The general format is:
+        "'term label' (TERM_ID)", or "'term label'", or "TERM_ID".
+        For example: "'whole plant' (PO:0000003)", "'whole plant'", or
+        "PO:0000003".  If both a label and ID are provided, this method will
+        verify that they correspond.  Returns an OWL API IRI object.
+        """
+        tdata = id_desc.strip()
         if tdata == '':
-            raise RuntimeError('No parent class was provided.')
+            return None
     
-        # Check if we have a class label.
+        # Check if we have a term label.
         if tdata.startswith("'"):
             if tdata.find("'") == tdata.rfind("'"):
                 raise RuntimeError('Missing closing quote in parent class specification: '
@@ -91,14 +130,14 @@ class OWLOntologyBuilder:
                 tdID = tdata.split('(')[1]
                 if tdID.find(')') > -1:
                     tdID = tdID.rstrip(')')
-                    tdIRI = oboIDToIRI(tdID)
+                    tdIRI = self.ontology.expandIdentifier(tdID)
                 else:
                     raise RuntimeError('Missing closing parenthesis in parent class specification: '
                             + tdata + '".')
         else:
             # We only have an ID.
             labelIRI = None
-            tdIRI = oboIDToIRI(tdata)
+            tdIRI = self.ontology.expandIdentifier(tdata)
     
         if labelIRI != None:
             if tdIRI != None:

@@ -3,6 +3,7 @@
 # Python imports.
 import csv
 import os
+import sys
 from argparse import ArgumentParser
 from ontobuilder import OWLOntologyBuilder
 
@@ -47,13 +48,21 @@ for termsfile in args.termsfiles:
             rowcnt += 1
             if not(csvrow['Ignore'].strip().upper().startswith('Y')):
                 try:
-                    ontbuilder.addClass(csvrow, not(args.no_def_expand))
+                    if csvrow['Type'].lower() == 'class':
+                        ontbuilder.addClass(csvrow, not(args.no_def_expand))
+                    elif csvrow['Type'].lower() == 'objectproperty':
+                        exit('Not yet supported.')
+                    elif csvrow['Type'].lower() == 'dataproperty':
+                        ontbuilder.addDataProperty(csvrow, not(args.no_def_expand))
+                    else:
+                        raise RuntimeError('The entity type "' + csvrow['Type']
+                                + '" is not supported.')
                 except RuntimeError as err:
-                    print('\nError encountered in class description in row '
+                    print('\nError encountered in term description in row '
                             + str(rowcnt) + ' of "' + termsfile + '":')
                     print err
                     print
-                    exit()
+                    sys.exit(1)
 
 # Set the ontology ID, if a new ID was provided.
 newid = args.id.strip()

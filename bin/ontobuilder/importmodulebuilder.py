@@ -137,7 +137,7 @@ class ImportModuleBuilder:
             # signature set for module extraction, and add the descendents of
             # each term, if desired.
             for row in reader:
-                owlent = sourceont.getEntityByOboID(row['ID'])
+                owlent = sourceont.getEntityByID(row['ID'])
                 if owlent == None:
                     raise RuntimeError(row['ID'] + ' could not be found in the source ontology')
 
