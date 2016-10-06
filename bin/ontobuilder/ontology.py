@@ -20,23 +20,19 @@ from org.semanticweb.owlapi.model import IRI, AddAxiom, OWLOntologyID
 from org.semanticweb.owlapi.model import SetOntologyID, AxiomType, OWLOntology
 from org.semanticweb.owlapi.model import AddOntologyAnnotation
 from org.semanticweb.owlapi.model import OWLRuntimeException
-from org.obolibrary.macro import ManchesterSyntaxTool
-from org.semanticweb.owlapi.manchestersyntax.renderer import ParserException
 from org.semanticweb.owlapi.formats import RDFXMLDocumentFormat
 from org.semanticweb import HermiT
 from uk.ac.manchester.cs.owlapi.modularity import SyntacticLocalityModuleExtractor
 from uk.ac.manchester.cs.owlapi.modularity import ModuleType
+from org.semanticweb.owlapi.manchestersyntax.parser import ManchesterOWLSyntaxParserImpl
+from org.semanticweb.owlapi import OWLAPIConfigProvider
+from org.semanticweb.owlapi.manchestersyntax.renderer import ParserException
 from org.semanticweb.owlapi.util import SimpleIRIShortFormProvider
 from org.semanticweb.owlapi.util import ShortFormProvider
 from org.semanticweb.owlapi.util import BidirectionalShortFormProviderAdapter
 from org.semanticweb.owlapi.expression import OWLEntityChecker
 from org.semanticweb.owlapi.expression import ShortFormEntityChecker
 from com.google.common.base import Optional
-
-
-from org.semanticweb.owlapi.manchestersyntax.parser import ManchesterOWLSyntaxParserImpl
-from org.semanticweb.owlapi import OWLAPIConfigProvider
-
 
 
 class _OntologyClass:
@@ -121,7 +117,7 @@ class _OntologyClass:
         formaldef = manchester_exp
 
         # A very annoying detail of the OWL API is that, when parsing class
-        # expressions in Manchester Syntax, rdf:labels and full IRIs are
+        # expressions in Manchester Syntax, rdfs:labels and full IRIs are
         # properly handled for all OWL entities *except* data properties.  This
         # means that if a class expression references a data property by its
         # label or full IRI, the OWL API parser will fail.  The OWL API's
@@ -137,7 +133,8 @@ class _OntologyClass:
         # expression to the parser.  The second is to write a custom
         # implementation of the OWLEntityChecker interface and hand this to an
         # instance of ManchesterOWLSyntaxParserImpl as a replacement for the
-        # OWL API's AdvancedEntityChecker.
+        # OWL API's AdvancedEntityChecker.  I took the latter approach here,
+        # which seemed like the cleanest solution.
         if formaldef != '':
             try:
                 #self.ontology.mparser = ManchesterSyntaxTool(self.ontology.ontology)
@@ -157,6 +154,10 @@ class _OntologyClass:
 
 
 class _BasicShortFormProvider(ShortFormProvider):
+    """
+    This class is required by MoreAdvancedEntityChecker to build a functioning
+    ShortFormEntityChecker.
+    """
     def __init__(self):
         self.iri_sfp = SimpleIRIShortFormProvider()
 
@@ -164,10 +165,24 @@ class _BasicShortFormProvider(ShortFormProvider):
         pass
 
     def getShortForm(self, owl_entity):
+        """
+        Given an OWL API entity object, returns the "short form" version of the
+        entity's IRI.
+        """
         return self.iri_sfp.getShortForm(owl_entity.getIRI())
 
 
 class MoreAdvancedEntityChecker(OWLEntityChecker):
+    """
+    This is a replacement for AdvancedEntityChecker that is part of the
+    Manchester Syntax parser of the OWL API.  This implementation correctly
+    handles data property names, unlike the OWL API version.  For each get___()
+    function, the general strategy is to first attempt looking up the entity
+    name using the OWL API's ShortFormEntityChecker, which can resolve
+    "simpleIRI" names as defined in the MS grammar (these are basically short-
+    form IRIs without a prefix).  If this lookup fails, then name resolution
+    falls to the lookup services of the Ontology class.
+    """
     def __init__(self, ontology):
         self.ontology = ontology
         
@@ -182,12 +197,19 @@ class MoreAdvancedEntityChecker(OWLEntityChecker):
             )
         )
 
-    def _resolveIRI(self, name):
+    def _resolveName(self, name):
+        """
+        Attempts to resolve an entity name in a Manchester Syntax statement to
+        a valid IRI.
+        """
         if (name[0] == "'") and (name[-1] == "'"):
+            # Handle rdfs:labels.
             return self.ontology.labelToIRI(name[1:-1])
         elif (name[0] == '<') and (name[-1] == '>'):
+            # Handle full IRIs.
             return IRI.create(name[1:-1])
         else:
+            # Handle everything else (prefix IRIs, OBO IDs).
             return self.ontology.expandIdentifier(name)
 
     def getOWLAnnotationProperty(self, name):
@@ -196,7 +218,7 @@ class MoreAdvancedEntityChecker(OWLEntityChecker):
     def getOWLClass(self, name):
         classobj = self.sf_checker.getOWLClass(name)
         if classobj == None:
-            termIRI = self._resolveIRI(name)
+            termIRI = self._resolveName(name)
             classobj = self.ontology.getExistingClass(termIRI)
 
         return classobj
@@ -207,7 +229,7 @@ class MoreAdvancedEntityChecker(OWLEntityChecker):
     def getOWLDataProperty(self, name):
         propobj = self.sf_checker.getOWLDataProperty(name)
         if propobj == None:
-            termIRI = self._resolveIRI(name)
+            termIRI = self._resolveName(name)
             propobj = self.ontology.getExistingDataProperty(termIRI)
 
         return propobj
@@ -342,9 +364,9 @@ class Ontology:
 
         self.labelmap = LabelMap(self.ontology)
 
-        # Create an OWL data factory and Manchester Syntax parser.
+        # Create an OWL data factory, which is required for creating new OWL
+        # entities and looking up existing entities.
         self.df = OWLManager.getOWLDataFactory()
-        self.mparser = ManchesterSyntaxTool(self.ontology)
 
     def __del__(self):
         """
