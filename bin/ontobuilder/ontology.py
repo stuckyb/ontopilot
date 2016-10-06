@@ -14,6 +14,7 @@ from obohelper import isOboID, oboIDToIRI
 
 # Java imports.
 from java.io import File, FileOutputStream
+from java.util import HashSet
 from org.semanticweb.owlapi.apibinding import OWLManager
 from org.semanticweb.owlapi.model import IRI, AddAxiom, OWLOntologyID
 from org.semanticweb.owlapi.model import SetOntologyID, AxiomType, OWLOntology
@@ -25,7 +26,17 @@ from org.semanticweb.owlapi.formats import RDFXMLDocumentFormat
 from org.semanticweb import HermiT
 from uk.ac.manchester.cs.owlapi.modularity import SyntacticLocalityModuleExtractor
 from uk.ac.manchester.cs.owlapi.modularity import ModuleType
+from org.semanticweb.owlapi.util import SimpleIRIShortFormProvider
+from org.semanticweb.owlapi.util import ShortFormProvider
+from org.semanticweb.owlapi.util import BidirectionalShortFormProviderAdapter
+from org.semanticweb.owlapi.expression import OWLEntityChecker
+from org.semanticweb.owlapi.expression import ShortFormEntityChecker
 from com.google.common.base import Optional
+
+
+from org.semanticweb.owlapi.manchestersyntax.parser import ManchesterOWLSyntaxParserImpl
+from org.semanticweb.owlapi import OWLAPIConfigProvider
+
 
 
 class _OntologyClass:
@@ -107,19 +118,106 @@ class _OntologyClass:
         Adds a class expression as either an equivalency axiom or a subclass
         axiom.  The class expression should be written in Manchester Syntax.
         """
-        # Add the formal definition (specified as a class expression in
-        # Manchester Syntax), if we have one.
         formaldef = manchester_exp
+
+        # A very annoying detail of the OWL API is that, when parsing class
+        # expressions in Manchester Syntax, rdf:labels and full IRIs are
+        # properly handled for all OWL entities *except* data properties.  This
+        # means that if a class expression references a data property by its
+        # label or full IRI, the OWL API parser will fail.  The OWL API's
+        # Manchester Syntax parser, using the default AdvancedEntityChecker,
+        # will only accept "short form" names for data properties.  I have
+        # carefully examined the OWL API source code to confirm that this is
+        # what happens.  This is true in both the version 4 code and the most
+        # recent (as of Oct. 5, 2016) version 5 code.
+        #
+        # There are at least two ways to deal with this.  The first is to
+        # preprocess all MS class expressions by replacing data property
+        # references with their "short form" equivalents, then passing the
+        # expression to the parser.  The second is to write a custom
+        # implementation of the OWLEntityChecker interface and hand this to an
+        # instance of ManchesterOWLSyntaxParserImpl as a replacement for the
+        # OWL API's AdvancedEntityChecker.
         if formaldef != '':
             try:
-                cexp = self.ontology.mparser.parseManchesterExpression(formaldef)
+                #self.ontology.mparser = ManchesterSyntaxTool(self.ontology.ontology)
+                #cexp = self.ontology.mparser.parseManchesterExpression(formaldef)
+                parser = ManchesterOWLSyntaxParserImpl(OWLAPIConfigProvider(), self.ontology.df);
+                parser.setStringToParse(manchester_exp);
+                parser.setOWLEntityChecker(MoreAdvancedEntityChecker(self.ontology));
+                cexp = parser.parseClassExpression()
             except ParserException as err:
+                print err
                 raise RuntimeError('Error parsing "' + err.getCurrentToken()
                         + '" at line ' + str(err.getLineNumber()) + ', column '
                         + str(err.getColumnNumber())
                         + ' of the formal term definition (Manchester Syntax expected).')
             ecaxiom = self.df.getOWLEquivalentClassesAxiom(cexp, self.owlclass)
             self.ontology.addTermAxiom(ecaxiom)
+
+
+class _BasicShortFormProvider(ShortFormProvider):
+    def __init__(self):
+        self.iri_sfp = SimpleIRIShortFormProvider()
+
+    def dispose():
+        pass
+
+    def getShortForm(self, owl_entity):
+        return self.iri_sfp.getShortForm(owl_entity.getIRI())
+
+
+class MoreAdvancedEntityChecker(OWLEntityChecker):
+    def __init__(self, ontology):
+        self.ontology = ontology
+        
+        # Create a ShortFormEntityChecker.  This allows looking up "local" IRI
+        # names to retrieve the corresponding OWL entity.  These IRIs are the
+        # "simpleIRI" production of the Manchester Syntax grammar.
+        ontset = HashSet(1)
+        ontset.add(self.ontology.getOWLOntology())
+        self.sf_checker = ShortFormEntityChecker(
+            BidirectionalShortFormProviderAdapter(
+                self.ontology.ontman, ontset, _BasicShortFormProvider()
+            )
+        )
+
+    def _resolveIRI(self, name):
+        if (name[0] == "'") and (name[-1] == "'"):
+            return self.ontology.labelToIRI(name[1:-1])
+        elif (name[0] == '<') and (name[-1] == '>'):
+            return IRI.create(name[1:-1])
+        else:
+            return self.ontology.expandIdentifier(name)
+
+    def getOWLAnnotationProperty(self, name):
+        print 'getOWLAnnotationProperty:', name
+
+    def getOWLClass(self, name):
+        classobj = self.sf_checker.getOWLClass(name)
+        if classobj == None:
+            termIRI = self._resolveIRI(name)
+            classobj = self.ontology.getExistingClass(termIRI)
+
+        return classobj
+
+    def getOWLObjectProperty(self, name):
+        print 'getOWLObjectProperty:', name
+
+    def getOWLDataProperty(self, name):
+        propobj = self.sf_checker.getOWLDataProperty(name)
+        if propobj == None:
+            termIRI = self._resolveIRI(name)
+            propobj = self.ontology.getExistingDataProperty(termIRI)
+
+        return propobj
+
+    def getOWLDatatype(self, name):
+        print 'getOWLDatatype:', name
+
+    def getOWLIndividual(self, name):
+        print 'getOWLIndividual:', name
+
 
 class _OntologyDataProperty:
     """
@@ -359,6 +457,29 @@ class Ontology:
         for ont in ontset:
             if ont.getDeclarationAxioms(classobj).size() > 0:
                 return classobj
+
+        return None
+
+    def getExistingDataProperty(self, prop_id):
+        """
+        Searches for an existing data property in the ontology.  If the
+        property is declared either directly in the ontology or is declared in
+        its transitive imports closure, an OWL API object representing the
+        property is returned.  Otherwise, None is returned.
+
+        prop_id: The identifier of the property to search for.  Can be either
+            an OWL API IRI object or a string containing: a prefix IRI (i.e., a
+            curie, such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a
+            string of the form "PO:0000003").
+        """
+        propIRI = self.expandIdentifier(prop_id)
+
+        propobj = self.df.getOWLDataProperty(propIRI)
+
+        ontset = self.ontology.getImportsClosure()
+        for ont in ontset:
+            if ont.getDeclarationAxioms(propobj).size() > 0:
+                return propobj
 
         return None
 
