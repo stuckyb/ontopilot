@@ -4,9 +4,13 @@
 import csv
 import os
 import sys
+import logging
 from argparse import ArgumentParser
 from ontobuilder import OWLOntologyBuilder
 
+
+# Set the format for logging output.
+logging.basicConfig(format='%(levelname)s: %(message)s')
 
 # Define and process the command-line arguments.
 argp = ArgumentParser(description='Compiles an OWL ontology from a base \

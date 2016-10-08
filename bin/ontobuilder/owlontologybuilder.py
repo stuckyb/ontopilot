@@ -6,6 +6,7 @@
 
 # Python imports.
 import re
+import logging
 from obohelper import termIRIToOboID, oboIDToIRI
 from ontology import Ontology
 
@@ -14,10 +15,13 @@ from ontology import Ontology
 
 class OWLOntologyBuilder:
     """
-    Builds an OWL ontology using Python dictionaries that describe new classes
-    to add to an existing "base" ontology.  Typically, the new class
-    descriptions will correspond with rows in an input CSV file.
+    Builds an OWL ontology using Python dictionaries that describe new entities
+    to add to an existing "base" ontology.  Typically, the new entity
+    description dictionaries will correspond with rows in an input CSV file.
     """
+    # Required fields (i.e., keys) for all entity descriptions.
+    REQUIRED_FIELDS = ('Type', 'ID')
+
     def __init__(self, base_ont_path):
         # Load the base ontology.
         self.ontology = Ontology(base_ont_path)
@@ -28,6 +32,28 @@ class OWLOntologyBuilder:
         """
         return self.ontology
 
+    def _getDescField(self, desc, key):
+        """
+        Retrieves the value of a field from an entity description dictionary,
+        with all beginning and ending white space removed.  If the field (i.e.,
+        key) does not exist in the dictionary and the field is required, an
+        exception is thrown.  If the key does not exist and the field is
+        optional, a warning is issued and an empty string is returned.
+        """
+        if key in desc:
+            return desc[key].strip()
+        else:
+            if key in self.REQUIRED_FIELDS:
+                raise RuntimeError(
+                    'The required field "' + key + '" is missing in the entity description.'
+                )
+            else:
+                logging.warning(
+                    'The field "' + key + '" was missing in the description of the entity "'
+                    + self._getDescField(desc, 'ID') + '".'
+                )
+                return ''
+
     def addClass(self, classdesc, expanddef=True):
         """
         Adds a new class to the ontology, based on a class description provided
@@ -36,31 +62,33 @@ class OWLOntologyBuilder:
         class will be expanded to include the terms' OBO IDs.
         """
         # Create the new class.
-        newclass = self.ontology.createNewClass(oboIDToIRI(classdesc['ID']))
+        newclass = self.ontology.createNewClass(
+            oboIDToIRI(self._getDescField(classdesc, 'ID'))
+        )
         
         # Make sure we have a label and add it to the new class.
-        labeltext = classdesc['Label'].strip()
-        if labeltext == '':
-            raise RuntimeError('No label was provided for ' + classdesc['ID']
-                    + '.')
-        newclass.addLabel(labeltext)
-        
+        labeltext = self._getDescField(classdesc, 'Label')
+        if labeltext != '':
+            newclass.addLabel(labeltext)
+
         # Add the text definition to the class, if we have one.
-        textdef = classdesc['Text definition'].strip()
+        textdef = self._getDescField(classdesc, 'Text definition')
         if textdef != '':
             if expanddef:
                 textdef = self._expandDefinition(textdef)
 
             newclass.addDefinition(textdef)
-        
+
         # Get the IRI object of the parent class and add it as a parent.
-        parentIRI = self._getIRIFromDesc(classdesc['Parent'])
+        parentIRI = self._getIRIFromDesc(
+            self._getDescField(classdesc, 'Parent')
+        )
         if parentIRI != None:
             newclass.addSuperclass(parentIRI)
     
         # Add the formal definition (specified as a class expression in
         # Manchester Syntax), if we have one.
-        formaldef = classdesc['Formal definition'].strip()
+        formaldef = self._getDescField(classdesc, 'Formal definition')
         if formaldef != '':
             newclass.addClassExpression(formaldef)
  
@@ -72,18 +100,20 @@ class OWLOntologyBuilder:
         definition for the new property will be expanded to include the terms'
         OBO IDs.
         """
+        self._checkRequiredFields(classdesc)
+
         # Create the new data property.
-        newprop = self.ontology.createNewDataProperty(oboIDToIRI(propdesc['ID']))
+        newprop = self.ontology.createNewDataProperty(
+            oboIDToIRI(self._getDescField(classdesc, 'ID'))
+        )
         
         # Make sure we have a label and add it to the new class.
-        labeltext = propdesc['Label'].strip()
-        if labeltext == '':
-            raise RuntimeError('No label was provided for ' + propdesc['ID']
-                    + '.')
-        newprop.addLabel(labeltext)
+        labeltext = self._getDescField(classdesc, 'Label')
+        if labeltext != '':
+            newprop.addLabel(labeltext)
         
         # Add the text definition to the class, if we have one.
-        textdef = propdesc['Text definition'].strip()
+        textdef = self._getDescField(classdesc, 'Text definition')
         if textdef != '':
             if expanddef:
                 textdef = self._expandDefinition(textdef)
@@ -91,12 +121,16 @@ class OWLOntologyBuilder:
             newprop.addDefinition(textdef)
         
         # Get the IRI object of the parent property and add it as a parent.
-        parentIRI = self._getIRIFromDesc(propdesc['Parent'])
+        parentIRI = self._getIRIFromDesc(
+            self._getDescField(classdesc, 'Parent')
+        )
         if parentIRI != None:
             newprop.addSuperproperty(parentIRI)
 
         # Add the domain, if we have one.
-        domainIRI = self._getIRIFromDesc(propdesc['Domain'])
+        domainIRI = self._getIRIFromDesc(
+            self._getDescField(classdesc, 'Domain')
+        )
         if domainIRI != None:
             newprop.setDomain(domainIRI)
  
