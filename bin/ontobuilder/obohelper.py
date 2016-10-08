@@ -5,6 +5,8 @@
 
 # Python imports.
 import re
+import os
+import urlparse
 
 # Java imports.
 from org.semanticweb.owlapi.model import IRI
