@@ -6,11 +6,10 @@
 
 # Python imports.
 import re
-from obohelper import termIRIToOboID, oboIDToIRI, isOboID
+from obohelper import termIRIToOboID, oboIDToIRI
 from ontology import Ontology
 
 # Java imports.
-from org.semanticweb.owlapi.model import IRI
 
 
 class OWLOntologyBuilder:

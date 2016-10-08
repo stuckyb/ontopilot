@@ -5,13 +5,12 @@
 
 # Python imports.
 import csv
-import subprocess
 import os
 from urllib import FancyURLopener
 from urllib2 import HTTPError
 from progressbar import ProgressBar, Percentage, Bar, ETA
 import math
-from ontology import Ontology, oboIDToIRI
+from ontology import Ontology
 
 # Java imports.
 from java.util import HashSet
