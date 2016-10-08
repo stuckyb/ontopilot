@@ -410,6 +410,52 @@ class Ontology:
 
         return None
 
+    def getExistingAnnotationProperty(self, prop_id):
+        """
+        Searches for an existing annotation property in the ontology.  If the
+        property is declared either directly in the ontology or is declared in
+        its transitive imports closure, an OWL API object representing the
+        property is returned.  Otherwise, None is returned.
+
+        prop_id: The identifier of the property to search for.  Can be either
+            an OWL API IRI object or a string containing: a prefix IRI (i.e., a
+            curie, such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a
+            string of the form "PO:0000003").
+        """
+        propIRI = self.expandIdentifier(prop_id)
+
+        propobj = self.df.getOWLAnnotationProperty(propIRI)
+
+        ontset = self.ontology.getImportsClosure()
+        for ont in ontset:
+            if ont.getDeclarationAxioms(propobj).size() > 0:
+                return propobj
+
+        return None
+
+    def getExistingIndividual(self, indv_id):
+        """
+        Searches for an existing individual in the ontology.  If the individual
+        is declared either directly in the ontology or is declared in its
+        transitive imports closure, an OWL API object representing the
+        individual is returned.  Otherwise, None is returned.
+
+        prop_id: The identifier of the individual to search for.  Can be either
+            an OWL API IRI object or a string containing: a prefix IRI (i.e., a
+            curie, such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a
+            string of the form "PO:0000003").
+        """
+        indvIRI = self.expandIdentifier(indv_id)
+
+        indvobj = self.df.getOWLNamedIndividual(indvIRI)
+
+        ontset = self.ontology.getImportsClosure()
+        for ont in ontset:
+            if ont.getDeclarationAxioms(indvobj).size() > 0:
+                return indvobj
+
+        return None
+
     def getExistingProperty(self, prop_id):
         """
         Searches for an existing property in the ontology.  If the property is

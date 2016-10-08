@@ -5,22 +5,24 @@
 #
 # A very annoying detail of the OWL API is that, when parsing class expressions
 # in Manchester Syntax, rdfs:labels and full IRIs are properly handled for all
-# OWL entities *except* data properties.  This means that if a class expression
-# references a data property by its label or full IRI, the OWL API parser will
-# fail.  The OWL API's Manchester Syntax parser, using the default
-# AdvancedEntityChecker, will only accept "short form" names for data
-# properties.  I have carefully examined the OWL API source code to confirm
-# this behavior.  This is true in both the version 4 code and the most recent
-# (as of Oct. 5, 2016) version 5 code.
+# OWL entities *except for* data properties and annotation properties.  This
+# means that if a class expression references a data property or annotation
+# property by its label or full IRI, the OWL API parser will fail.  The OWL
+# API's Manchester Syntax parser, using the default AdvancedEntityChecker, will
+# only accept "short form" names for data properties and annotation properties.
+# I have carefully examined the OWL API source code to confirm this behavior.
+# This is true in both the version 4 code and the most recent (as of Oct. 5,
+# 2016) version 5 code.
 #
 # There are at least two ways to deal with this.  The first is to preprocess
-# all MS class expressions by replacing data property references with their
-# "short form" equivalents, then passing the expression to the parser.  The
-# second is to write a custom implementation of the OWLEntityChecker interface
-# and hand this to an instance of ManchesterOWLSyntaxParserImpl as a
-# replacement for the OWL API's AdvancedEntityChecker.  I took the latter
-# approach here, which seemed like the cleanest solution.
-
+# all MS class expressions by replacing data property and annotation property
+# references with their "short form" equivalents, then passing the expression
+# to the parser.  The second is to write a custom implementation of the
+# OWLEntityChecker interface and hand this to an instance of
+# ManchesterOWLSyntaxParserImpl as a replacement for the OWL API's
+# AdvancedEntityChecker.  I took the latter approach here, which seemed like
+# the cleanest solution.
+#
 
 # Python imports.
 
@@ -97,9 +99,6 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
             # Handle everything else (prefix IRIs, OBO IDs).
             return self.ontology.expandIdentifier(name)
 
-    def getOWLAnnotationProperty(self, name):
-        print 'getOWLAnnotationProperty:', name
-
     def getOWLClass(self, name):
         classobj = self.sf_checker.getOWLClass(name)
         if classobj == None:
@@ -124,11 +123,24 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
 
         return propobj
 
+    def getOWLAnnotationProperty(self, name):
+        propobj = self.sf_checker.getOWLAnnotationProperty(name)
+        if propobj == None:
+            termIRI = self._resolveName(name)
+            propobj = self.ontology.getExistingAnnotationProperty(termIRI)
+
+        return propobj
+
     def getOWLDatatype(self, name):
-        print 'getOWLDatatype:', name
+        return self.sf_checker.getOWLDatatype(name)
 
     def getOWLIndividual(self, name):
-        print 'getOWLIndividual:', name
+        indvobj = self.sf_checker.getOWLIndividual(name)
+        if indvobj == None:
+            indvIRI = self._resolveName(name)
+            indvobj = self.ontology.getExistingIndividual(indvIRI)
+
+        return indvobj
 
 
 class ManchesterSyntaxParserHelper:
