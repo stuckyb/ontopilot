@@ -217,6 +217,30 @@ class _OntologyDataProperty:
         daxiom = self.df.getOWLDataPropertyDomainAxiom(self.propobj, classobj)
         self.ontology.addTermAxiom(daxiom)
 
+    def setRange(self, datarange_exp):
+        """
+        Sets the range for this data property.
+
+        datarange_exp: A text string containing a valid Manchester Syntax
+            "dataRange" production.
+        """
+        if datarange_exp != '':
+            try:
+                parser = ManchesterSyntaxParserHelper(self.ontology)
+
+                # Parse the expression to get an OWLDataRange object.
+                datarange = parser.parseDataRange(datarange_exp);
+            except ParserException as err:
+                print err
+                raise RuntimeError('Error parsing "' + err.getCurrentToken()
+                        + '" at line ' + str(err.getLineNumber()) + ', column '
+                        + str(err.getColumnNumber())
+                        + ' of the data property range (Manchester Syntax expected).')
+
+            # Add the range declaration axiom.
+            raxiom = self.df.getOWLDataPropertyRangeAxiom(self.propobj, datarange)
+            self.ontology.addTermAxiom(raxiom)
+
 
 class Ontology:
     """

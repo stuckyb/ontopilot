@@ -100,20 +100,18 @@ class OWLOntologyBuilder:
         definition for the new property will be expanded to include the terms'
         OBO IDs.
         """
-        self._checkRequiredFields(classdesc)
-
         # Create the new data property.
         newprop = self.ontology.createNewDataProperty(
-            oboIDToIRI(self._getDescField(classdesc, 'ID'))
+            oboIDToIRI(self._getDescField(propdesc, 'ID'))
         )
         
         # Make sure we have a label and add it to the new class.
-        labeltext = self._getDescField(classdesc, 'Label')
+        labeltext = self._getDescField(propdesc, 'Label')
         if labeltext != '':
             newprop.addLabel(labeltext)
         
         # Add the text definition to the class, if we have one.
-        textdef = self._getDescField(classdesc, 'Text definition')
+        textdef = self._getDescField(propdesc, 'Text definition')
         if textdef != '':
             if expanddef:
                 textdef = self._expandDefinition(textdef)
@@ -122,17 +120,23 @@ class OWLOntologyBuilder:
         
         # Get the IRI object of the parent property and add it as a parent.
         parentIRI = self._getIRIFromDesc(
-            self._getDescField(classdesc, 'Parent')
+            self._getDescField(propdesc, 'Parent')
         )
         if parentIRI != None:
             newprop.addSuperproperty(parentIRI)
 
         # Add the domain, if we have one.
         domainIRI = self._getIRIFromDesc(
-            self._getDescField(classdesc, 'Domain')
+            self._getDescField(propdesc, 'Domain')
         )
         if domainIRI != None:
             newprop.setDomain(domainIRI)
+
+        # Add the range, if we have one.
+        range_exp = self._getDescField(propdesc, 'Range')
+        if range_exp != '':
+            newprop.setRange(range_exp)
+
  
     def _getIRIFromDesc(self, id_desc):
         """

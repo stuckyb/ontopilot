@@ -155,7 +155,19 @@ class ManchesterSyntaxParserHelper:
         )
         self.parser.setOWLEntityChecker(_MoreAdvancedEntityChecker(self.ontology))
 
+    
+    def parseDataRange(self, datarange_ms_exp):
+        """
+        Parses the "dataRange" production of Manchester Syntax.
+        """
+        self.parser.setStringToParse(datarange_ms_exp);
+
+        return self.parser.parseDataRange()
+
     def parseClassExpression(self, manchester_exp):
+        """
+        Parses the "description" production of Manchester Syntax.
+        """
         self.parser.setStringToParse(manchester_exp);
 
         return self.parser.parseClassExpression()
