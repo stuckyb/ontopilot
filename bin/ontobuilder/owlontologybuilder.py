@@ -137,7 +137,19 @@ class OWLOntologyBuilder:
         if range_exp != '':
             newprop.setRange(range_exp)
 
- 
+        # Add the characteristics, if provided.  The only supported
+        # characteristic for data properties is "functional".
+        chars_str = self._getDescField(propdesc, 'Characteristics')
+        if chars_str != '':
+            if chars_str.lower() == 'functional':
+                newprop.makeFunctional()
+            else:
+                raise RuntimeError(
+                    'Unrecognized characteristic(s) for a data property: "'
+                    + chars_str + 
+                    '".  For data properties, "functional" is the only supported characteristic.'
+                )
+
     def _getIRIFromDesc(self, id_desc):
         """
         Parses an identifier field from a term description dictionary and

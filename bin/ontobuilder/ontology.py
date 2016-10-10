@@ -241,6 +241,13 @@ class _OntologyDataProperty:
             raxiom = self.df.getOWLDataPropertyRangeAxiom(self.propobj, datarange)
             self.ontology.addTermAxiom(raxiom)
 
+    def makeFunctional(self):
+        """
+        Makes this data property a functional property.
+        """
+        faxiom = self.df.getOWLFunctionalDataPropertyAxiom(self.propobj)
+        self.ontology.addTermAxiom(faxiom)
+
 
 class Ontology:
     """
