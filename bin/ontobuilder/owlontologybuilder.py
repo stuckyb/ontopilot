@@ -150,6 +150,66 @@ class OWLOntologyBuilder:
                     '".  For data properties, "functional" is the only supported characteristic.'
                 )
 
+    def addObjectProperty(self, propdesc, expanddef=True):
+        """
+        Adds a new object property to the ontology, based on a property
+        description provided as the dictionary propdesc (i.e., the single
+        explicit argument).  If expanddef is True, then term labels in the text
+        definition for the new property will be expanded to include the terms'
+        OBO IDs.
+        """
+        # Create the new object property.
+        newprop = self.ontology.createNewObjectProperty(
+            oboIDToIRI(self._getDescField(propdesc, 'ID'))
+        )
+        
+        # Make sure we have a label and add it to the new class.
+        labeltext = self._getDescField(propdesc, 'Label')
+        if labeltext != '':
+            newprop.addLabel(labeltext)
+        
+        # Add the text definition to the class, if we have one.
+        textdef = self._getDescField(propdesc, 'Text definition')
+        if textdef != '':
+            if expanddef:
+                textdef = self._expandDefinition(textdef)
+
+            newprop.addDefinition(textdef)
+        
+        # Get the IRI object of the parent property and add it as a parent.
+        parentIRI = self._getIRIFromDesc(
+            self._getDescField(propdesc, 'Parent')
+        )
+        if parentIRI != None:
+            newprop.addSuperproperty(parentIRI)
+
+        # Add the domain, if we have one.
+        domainIRI = self._getIRIFromDesc(
+            self._getDescField(propdesc, 'Domain')
+        )
+        if domainIRI != None:
+            newprop.setDomain(domainIRI)
+
+        # Add the range, if we have one.
+        rangeIRI = self._getIRIFromDesc(
+            self._getDescField(propdesc, 'Range')
+        )
+        if rangeIRI != None:
+            newprop.setRange(rangeIRI)
+
+        # Add the characteristics, if provided.  The only supported
+        # characteristic for data properties is "functional".
+        chars_str = self._getDescField(propdesc, 'Characteristics')
+        if chars_str != '':
+            self._processObjPropCharacteristics(newprop, chars_str)
+
+    def _processObjPropCharacteristics(self, propobj, chars_str):
+        """
+        Sets the characteristics of an object property according to a string
+        containing a comma-separated list of property characteristics.
+        """
+        print chars_str.split(',')
+
     def _getIRIFromDesc(self, id_desc):
         """
         Parses an identifier field from a term description dictionary and

@@ -66,10 +66,10 @@ for termsfile in args.termsfiles:
                 try:
                     if csvrow['Type'].lower() == 'class':
                         ontbuilder.addClass(csvrow, not(args.no_def_expand))
-                    elif csvrow['Type'].lower() == 'objectproperty':
-                        exit('Not yet supported.')
                     elif csvrow['Type'].lower() == 'dataproperty':
                         ontbuilder.addDataProperty(csvrow, not(args.no_def_expand))
+                    elif csvrow['Type'].lower() == 'objectproperty':
+                        ontbuilder.addObjectProperty(csvrow, not(args.no_def_expand))
                     else:
                         raise RuntimeError('The entity type "' + csvrow['Type']
                                 + '" is not supported.')
