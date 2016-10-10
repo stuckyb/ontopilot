@@ -197,6 +197,13 @@ class OWLOntologyBuilder:
         if rangeIRI != None:
             newprop.setRange(rangeIRI)
 
+        # Add the inverse axiom, if we have an inverse property.
+        inverseIRI = self._getIRIFromDesc(
+            self._getDescField(propdesc, 'Inverse')
+        )
+        if inverseIRI != None:
+            newprop.setInverse(inverseIRI)
+
         # Add the characteristics, if provided.  The only supported
         # characteristic for data properties is "functional".
         chars_str = self._getDescField(propdesc, 'Characteristics')

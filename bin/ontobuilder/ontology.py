@@ -363,6 +363,26 @@ class _OntologyObjectProperty:
         raxiom = self.df.getOWLObjectPropertyRangeAxiom(self.propobj, classobj)
         self.ontology.addTermAxiom(raxiom)
 
+    def setInverse(self, inverse_id):
+        """
+        Sets the inverse of this property.
+
+        inverse_id: The identifier of a data property.  Can be either an OWL
+            API IRI object or a string containing: a prefix IRI (i.e., a curie,
+            such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
+            the form "PO:0000003").
+        """
+        inverseIRI = self.ontology.expandIdentifier(inverse_id)
+
+        # Get the inverse property object.  We do not require that the property
+        # is already declared, because an inverse axiom might have to be
+        # defined before both properties in the axiom have been defined.
+        inv_propobj = self.df.getOWLObjectProperty(inverseIRI)
+
+        # Add the "inverse of" axiom.
+        iaxiom = self.df.getOWLInverseObjectPropertiesAxiom(self.propobj, inv_propobj)
+        self.ontology.addTermAxiom(iaxiom)
+
     def makeFunctional(self):
         """
         Makes this property a functional property.
