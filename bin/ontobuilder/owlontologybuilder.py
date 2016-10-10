@@ -208,7 +208,29 @@ class OWLOntologyBuilder:
         Sets the characteristics of an object property according to a string
         containing a comma-separated list of property characteristics.
         """
-        print chars_str.split(',')
+        for char_str in chars_str.split(','):
+            char_str = char_str.strip().lower()
+
+            if char_str == 'functional':
+                propobj.makeFunctional()
+            elif char_str == 'inverse functional':
+                propobj.makeInverseFunctional()
+            elif char_str == 'reflexive':
+                propobj.makeReflexive()
+            elif char_str == 'irreflexive':
+                propobj.makeIrreflexive()
+            elif char_str == 'symmetric':
+                propobj.makeSymmetric()
+            elif char_str == 'asymmetric':
+                propobj.makeAsymmetric()
+            elif char_str == 'transitive':
+                propobj.makeTransitive()
+            else:
+                raise RuntimeError(
+                    'Unrecognized characteristic for an object property: "'
+                    + char_str + 
+                    '".  Supported characteristics for object properties are "functional", "inverse functional", "reflexive", "irreflexive", "symmetric", "asymmetric", and "transitive".'
+                )
 
     def _getIRIFromDesc(self, id_desc):
         """
