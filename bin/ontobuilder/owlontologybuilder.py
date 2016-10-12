@@ -137,6 +137,13 @@ class OWLOntologyBuilder:
         if range_exp != '':
             newprop.setRange(range_exp)
 
+        # Add the disjoint with axiom, if we have a disjoint property.
+        disjIRI = self._getIRIFromDesc(
+            self._getDescField(propdesc, 'Disjoint with')
+        )
+        if disjIRI != None:
+            newprop.setDisjointWith(disjIRI)
+
         # Add the characteristics, if provided.  The only supported
         # characteristic for data properties is "functional".
         chars_str = self._getDescField(propdesc, 'Characteristics')
@@ -203,6 +210,13 @@ class OWLOntologyBuilder:
         )
         if inverseIRI != None:
             newprop.setInverse(inverseIRI)
+
+        # Add the disjoint with axiom, if we have a disjoint property.
+        disjIRI = self._getIRIFromDesc(
+            self._getDescField(propdesc, 'Disjoint with')
+        )
+        if disjIRI != None:
+            newprop.setDisjointWith(disjIRI)
 
         # Add the characteristics, if provided.  The only supported
         # characteristic for data properties is "functional".

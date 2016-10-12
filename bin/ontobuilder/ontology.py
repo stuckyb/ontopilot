@@ -241,6 +241,26 @@ class _OntologyDataProperty:
             raxiom = self.df.getOWLDataPropertyRangeAxiom(self.propobj, datarange)
             self.ontology.addTermAxiom(raxiom)
 
+    def setDisjointWith(self, prop_id):
+        """
+        Sets this property as disjoint with another property.
+
+        prop_id: The identifier of a data property.  Can be either an OWL API
+            IRI object or a string containing: a prefix IRI (i.e., a curie,
+            such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
+            the form "PO:0000003").
+        """
+        propIRI = self.ontology.expandIdentifier(prop_id)
+
+        # Get the property object.  We do not require that the property is
+        # already declared, because a "disjoint with" axiom might have to be
+        # defined before both properties in the axiom have been defined.
+        dpropobj = self.df.getOWLDataProperty(propIRI)
+
+        # Add the "disjoint with" axiom.
+        daxiom = self.df.getOWLDisjointDataPropertiesAxiom(self.propobj, dpropobj)
+        self.ontology.addTermAxiom(daxiom)
+
     def makeFunctional(self):
         """
         Makes this data property a functional property.
@@ -367,7 +387,7 @@ class _OntologyObjectProperty:
         """
         Sets the inverse of this property.
 
-        inverse_id: The identifier of a data property.  Can be either an OWL
+        inverse_id: The identifier of an object property.  Can be either an OWL
             API IRI object or a string containing: a prefix IRI (i.e., a curie,
             such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
             the form "PO:0000003").
@@ -382,6 +402,26 @@ class _OntologyObjectProperty:
         # Add the "inverse of" axiom.
         iaxiom = self.df.getOWLInverseObjectPropertiesAxiom(self.propobj, inv_propobj)
         self.ontology.addTermAxiom(iaxiom)
+
+    def setDisjointWith(self, prop_id):
+        """
+        Sets this property as disjoint with another property.
+
+        prop_id: The identifier of an object property.  Can be either an OWL
+            API IRI object or a string containing: a prefix IRI (i.e., a curie,
+            such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
+            the form "PO:0000003").
+        """
+        propIRI = self.ontology.expandIdentifier(prop_id)
+
+        # Get the property object.  We do not require that the property is
+        # already declared, because a "disjoint with" axiom might have to be
+        # defined before both properties in the axiom have been defined.
+        dpropobj = self.df.getOWLObjectProperty(propIRI)
+
+        # Add the "disjoint with" axiom.
+        daxiom = self.df.getOWLDisjointObjectPropertiesAxiom(self.propobj, dpropobj)
+        self.ontology.addTermAxiom(daxiom)
 
     def makeFunctional(self):
         """
