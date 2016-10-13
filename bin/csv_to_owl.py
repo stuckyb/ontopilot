@@ -63,13 +63,19 @@ for termsfile in args.termsfiles:
         for csvrow in reader:
             rowcnt += 1
             if not(csvrow['Ignore'].strip().upper().startswith('Y')):
+                typestr = csvrow['Type'].strip().lower()
+
                 try:
-                    if csvrow['Type'].lower() == 'class':
+                    if typestr == 'class':
                         ontbuilder.addClass(csvrow, not(args.no_def_expand))
-                    elif csvrow['Type'].lower() == 'dataproperty':
+                    elif typestr == 'dataproperty':
                         ontbuilder.addDataProperty(csvrow, not(args.no_def_expand))
-                    elif csvrow['Type'].lower() == 'objectproperty':
+                    elif typestr == 'objectproperty':
                         ontbuilder.addObjectProperty(csvrow, not(args.no_def_expand))
+                    elif typestr == '':
+                        raise RuntimeError(
+                            'The entity type (e.g., "class", "data property") was not specified.'
+                        )
                     else:
                         raise RuntimeError('The entity type "' + csvrow['Type']
                                 + '" is not supported.')
