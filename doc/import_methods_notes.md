@@ -40,7 +40,7 @@ The extract methods STAR, TOP, and BOT each require a minimum of one term from t
 The following example extracts the "flower" class (PO_0009046) from the PO.
 
 ```
-$ robot extract --method STAR --input po.owl --term http://purl.obolibrary.org/obo/PO_000904 --output test.owl
+$ robot extract --method STAR --input po.owl --term http://purl.obolibrary.org/obo/PO_0009046 --output test.owl
 ```
 
 To specify multiple terms, repeat `--term` as many times as needed.
@@ -96,10 +96,10 @@ $ owltools po.owl --extract-module -m STAR http://purl.obolibrary.org/obo/PO_000
 produces the same module as this ROBOT command:
 
 ```
-$ robot extract --method STAR --input po.owl --term-file terms.txt --output test.owl
+$ robot extract --method STAR --input po.owl --term http://purl.obolibrary.org/obo/PO_0009046 --output test.owl
 ```
 
-OWLTools is more flexible than ROBOT, though.  For one thing, you can specify terms using only their ID or their label:
+OWLTools is more flexible than ROBOT, though.  For one thing, you can specify terms using only their OBO ID or their label:
 
 ```
 $ owltools po.owl --extract-module -m STAR PO:0009046 -o output.owl
