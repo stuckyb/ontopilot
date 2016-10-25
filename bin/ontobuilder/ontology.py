@@ -551,7 +551,7 @@ class Ontology:
             except OWLRuntimeException:
                 fullIRI = IRI.create(iri)
         elif isinstance(iri, IRI):
-            fullIRI = IRI
+            fullIRI = iri
         else:
             raise RuntimeError('Unsupported type for conversion to IRI.')
 
@@ -888,8 +888,8 @@ class Ontology:
         The result is returned as an Ontology object.
 
         signature: A Java Set of all entities to include in the module.
-        mod_iri: The IRI of the ontology module.  Can be either an IRI object
-            or a string.
+        mod_iri: The IRI for the extracted ontology module.  Can be either an
+            IRI object or a string.
         """
         modIRI = self.expandIRI(mod_iri)
 
