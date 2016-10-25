@@ -48,12 +48,22 @@ ontbuilder = OWLOntologyBuilder(args.base_ontology)
 for termsfile in args.termsfiles:
     with open(termsfile) as fin:
         reader = csv.DictReader(fin)
+        rowcnt = 1
         for csvrow in reader:
+            rowcnt += 1
             if not(csvrow['Ignore'].strip().upper().startswith('Y')):
                 idstr = csvrow['ID'].strip()
                 labelstr = csvrow['Label'].strip()
-                if (idstr != '') and (labelstr != ''):
-                    ontbuilder.getOntology().preloadLabelIdPair(labelstr, idstr)
+                try:
+                    if (idstr != '') and (labelstr != ''):
+                        print labelstr, idstr
+                        ontbuilder.getOntology().preloadLabelIdPair(labelstr, idstr)
+                except RuntimeError as err:
+                    print('\nError encountered while processing term label in row '
+                            + str(rowcnt) + ' of "' + termsfile + '":')
+                    print err
+                    print
+                    sys.exit(1)
 
 # Process each source CSV file.
 for termsfile in args.termsfiles:

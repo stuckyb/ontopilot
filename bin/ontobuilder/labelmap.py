@@ -42,7 +42,9 @@ class LabelMap:
             if not(self.lmap[label].equals(termIRI)):
                 raise RuntimeError(
                     'The label "' + label +
-                    '" is used for more than one IRI in the ontology.'
+                    '" is already in use in the ontology <'
+                    + str(self.ontology.getOntologyID().getOntologyIRI().get())
+                    + '>, including its imports closure.'
                 )
 
     def _makeMap(self, ontology):
@@ -67,7 +69,9 @@ class LabelMap:
                         if not(labelmap[literalval].equals(asubject)):
                             raise RuntimeError(
                                 'The label "' + literalval +
-                                '" is used for more than one IRI in the source ontology.'
+                                '" is used for more than one IRI in the source ontology <'
+                                + str(ontology.getOntologyID().getOntologyIRI().get())
+                                + '>, including its imports closure.'
                             )
     
         return labelmap
