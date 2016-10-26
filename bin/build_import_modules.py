@@ -2,9 +2,13 @@
 
 import csv
 import os
+import logging
 from argparse import ArgumentParser
 from ontobuilder import ImportModuleBuilder
 
+
+# Set the format for logging output.
+logging.basicConfig(format='\n%(levelname)s: %(message)s\n')
 
 argp = ArgumentParser(description='Processes a single CSV file of \
 terms/entities to extract from a source ontology.  The results are written to \
