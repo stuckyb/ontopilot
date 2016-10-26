@@ -12,6 +12,7 @@ from obohelper import isOboID, oboIDToIRI
 from mshelper import ManchesterSyntaxParserHelper
 
 # Java imports.
+from java.util import HashSet
 from java.io import File, FileOutputStream
 from org.semanticweb.owlapi.apibinding import OWLManager
 from org.semanticweb.owlapi.model import IRI, AddAxiom, OWLOntologyID
@@ -581,7 +582,8 @@ class Ontology:
         """
         Searches for an entity in the ontology using an identifier.  The entity
         is assumed to be either a class, object property, data property, or
-        annotation property.
+        annotation property.  Both the main ontology and its imports closure
+        searched for the target entity.
         
         ent_id: The identifier of the entity.  Can be either an OWL API IRI
             object or a string containing: a prefix IRI (i.e., a curie, such as
@@ -616,6 +618,37 @@ class Ontology:
         for ont in ontset:
             if ont.getDeclarationAxioms(classobj).size() > 0:
                 return classobj
+
+        return None
+
+    def getExistingProperty(self, prop_id):
+        """
+        Searches for an existing property in the ontology.  If the property is
+        declared either directly in the ontology or is declared in its
+        transitive imports closure, an OWL API object representing the property
+        is returned.  Otherwise, None is returned.  Object properties, data
+        properties, and annotation properties are all considered; ontology
+        properties are not.
+
+        prop_iri: The identifier of the property to search for.  Can be either
+            an OWL API IRI object or a string containing: a prefix IRI (i.e., a
+            curie, such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a
+            string of the form "PO:0000003").
+        """
+        propIRI = self.expandIdentifier(prop_id)
+
+        obj_prop = self.df.getOWLObjectProperty(propIRI)
+        annot_prop = self.df.getOWLAnnotationProperty(propIRI)
+        data_prop = self.df.getOWLDataProperty(propIRI)
+
+        ontset = self.ontology.getImportsClosure()
+        for ont in ontset:
+            if ont.getDeclarationAxioms(obj_prop).size() > 0:
+                return obj_prop
+            elif ont.getDeclarationAxioms(annot_prop).size() > 0:
+                return annot_prop
+            elif ont.getDeclarationAxioms(data_prop).size() > 0:
+                return data_prop
 
         return None
 
@@ -708,37 +741,6 @@ class Ontology:
         for ont in ontset:
             if ont.getDeclarationAxioms(indvobj).size() > 0:
                 return indvobj
-
-        return None
-
-    def getExistingProperty(self, prop_id):
-        """
-        Searches for an existing property in the ontology.  If the property is
-        declared either directly in the ontology or is declared in its
-        transitive imports closure, an OWL API object representing the property
-        is returned.  Otherwise, None is returned.  Object properties, data
-        properties, and annotation properties are all considered; ontology
-        properties are not.
-
-        prop_iri: The identifier of the property to search for.  Can be either
-            an OWL API IRI object or a string containing: a prefix IRI (i.e., a
-            curie, such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a
-            string of the form "PO:0000003").
-        """
-        propIRI = self.expandIdentifier(prop_id)
-
-        obj_prop = self.df.getOWLObjectProperty(propIRI)
-        annot_prop = self.df.getOWLAnnotationProperty(propIRI)
-        data_prop = self.df.getOWLDataProperty(propIRI)
-
-        ontset = self.ontology.getImportsClosure()
-        for ont in ontset:
-            if ont.getDeclarationAxioms(obj_prop).size() > 0:
-                return obj_prop
-            elif ont.getDeclarationAxioms(annot_prop).size() > 0:
-                return annot_prop
-            elif ont.getDeclarationAxioms(data_prop).size() > 0:
-                return data_prop
 
         return None
 
@@ -836,6 +838,19 @@ class Ontology:
                 self.labelmap.add(labeltxt, subjIRI)
 
         self.ontman.applyChange(AddAxiom(self.ontology, owl_axiom))
+
+    def removeEntity(self, entity):
+        """
+        Removes an entity from the ontology (including its imports closure).
+        """
+        ontset = self.ontology.getImportsClosure()
+        for ont in ontset:
+            del_axioms = HashSet()
+            for axiom in ont.getAxioms():
+                if axiom.getSignature().contains(entity):
+                    del_axioms.add(axiom)
+
+            self.ontman.removeAxioms(ont, del_axioms)
 
     def setOntologyID(self, ont_iri):
         """
