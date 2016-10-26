@@ -40,9 +40,6 @@ class LabelMap:
         ambiguous (i.e., associated with more than one IRI), an exception is
         thrown.
         """
-        if self.lmap == None:
-            self.lmap = self._makeMap(self.ontology)
-
         if label not in self.ambiglabels:
             return self.lmap[label]
         else:
