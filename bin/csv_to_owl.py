@@ -10,7 +10,7 @@ from ontobuilder import OWLOntologyBuilder
 
 
 # Set the format for logging output.
-logging.basicConfig(format='%(levelname)s: %(message)s')
+logging.basicConfig(format='\n%(levelname)s: %(message)s\n')
 
 # Define and process the command-line arguments.
 argp = ArgumentParser(description='Compiles an OWL ontology from a base \
@@ -56,7 +56,6 @@ for termsfile in args.termsfiles:
                 labelstr = csvrow['Label'].strip()
                 try:
                     if (idstr != '') and (labelstr != ''):
-                        print labelstr, idstr
                         ontbuilder.getOntology().preloadLabelIdPair(labelstr, idstr)
                 except RuntimeError as err:
                     print('\nError encountered while processing term label in row '

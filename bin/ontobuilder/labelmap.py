@@ -1,7 +1,16 @@
-#
-# Provides a single class, LabelMap, that implements methods for mapping term
-# labels to term IRIs in a given ontology.
-#
+"""
+Provides a single class, LabelMap, that implements methods for mapping term
+labels to term IRIs in a given ontology.  A major challenge with using labels
+to identify terms is deciding how to deal with label collisions, which are
+nearly inevitable given a large enough imports closure.  LableMap takes the
+approach of issuing non-fatal warnings when collisions are encountered while
+building the label lookup table.  However, LabelMap keeps track of all known
+ambiguous labels, and if client code attempts to look up the IRI for an
+ambiguous label, an exception is thrown.
+"""
+
+# Python imports.
+import logging
 
 # Java imports.
 from org.semanticweb.owlapi.model import AxiomType
@@ -14,48 +23,79 @@ class LabelMap:
     associated term IRIs.
     """
     def __init__(self, ontology):
-        # Don't initialize the label map until a lookup or update is requested.
-        # This allows Ontology objects to be used with OWL ontologies that have
-        # ambiguous labels, as long as the labels are not needed.
-        self.lmap = None
+        # Dictionary for the labels lookup table.
+        self.lmap = {}
+
+        # Dictionary to keep track of ambiguous labels and the IRIs to which
+        # they refer.
+        self.ambiglabels = {}
+
         self.ontology = ontology
 
+        self._makeMap(ontology)
+
     def lookupIRI(self, label):
+        """
+        Retrieve the IRI associated with a given term label.  If the label is
+        ambiguous (i.e., associated with more than one IRI), an exception is
+        thrown.
+        """
         if self.lmap == None:
             self.lmap = self._makeMap(self.ontology)
 
-        return self.lmap[label]
+        if label not in self.ambiglabels:
+            return self.lmap[label]
+        else:
+            raise RuntimeError(
+                'Attempted to use an ambiguous label: The label "' + label +
+                '" is used for multiple terms in the ontology <'
+                + str(self.ontology.getOntologyID().getOntologyIRI().get())
+                + '>, including its imports closure.  The label "' + label
+                + '" is associated with the following IRIs: ' + '<'
+                + '>, <'.join([str(labelIRI) for labelIRI in self.ambiglabels[label]])
+                + '>.'
+            )
+
+    def _addAmbiguousLabel(self, label, termIRI):
+        """
+        Adds a label, along with its term IRI, to the set of ambiguous labels.
+        """
+        if label not in self.ambiglabels:
+            self.ambiglabels[label] = [self.lmap[label], termIRI]
+        else:
+            self.ambiglabels[label].append(termIRI)
 
     def add(self, label, termIRI):
         """
-        Adds an IRI/label pair to this LabelMap.
+        Adds an IRI/label pair to this LabelMap.  If the label is already in
+        use in the ontology, a warning is issued.
 
         label: A string containing the label text.
         termIRI: An OWl API IRI object.
         """
-        if self.lmap == None:
-            self.lmap = self._makeMap(self.ontology)
-
         if label not in self.lmap:
             self.lmap[label] = termIRI
         else:
             if not(self.lmap[label].equals(termIRI)):
-                raise RuntimeError(
+                self._addAmbiguousLabel(label, termIRI)
+                logging.warning(
                     'The label "' + label +
-                    '" is already in use in the ontology <'
+                    '" is used for more than one IRI in the ontology <'
                     + str(self.ontology.getOntologyID().getOntologyIRI().get())
-                    + '>, including its imports closure.'
+                    + '>, including its imports closure.  The label "' + label
+                    + '" is associated with the following IRIs: ' + '<'
+                    + '>, <'.join([str(labelIRI) for labelIRI in self.ambiglabels[label]])
+                    + '>.'
                 )
 
     def _makeMap(self, ontology):
         """
-        Constructs a dictionary for a given ontology that maps class labels
-        (i.e., the values of rdfs:label axioms) to their corresponding class
-        IRIs.  This function verifies that none of the labels are ambiguous;
-        that is, that no label is used for more than one IRI.
+        Creates label lookup table entries for a given ontology that map class
+        labels (i.e., the values of rdfs:label axioms) to their corresponding
+        class IRIs.  This function verifies that none of the labels are
+        ambiguous; that is, that no label is used for more than one IRI.  If an
+        ambiguous label is encountered, a warning is issued.
         """
-        # Create a dictionary that maps term labels to their IRIs.
-        labelmap = {}
         for annotation_axiom in ontology.getAxioms(AxiomType.ANNOTATION_ASSERTION, True):
             avalue = annotation_axiom.getValue()
             aproperty = annotation_axiom.getProperty()
@@ -63,16 +103,5 @@ class LabelMap:
             if aproperty.isLabel():
                 if isinstance(avalue, OWLLiteral) and isinstance(asubject, IRI):
                     literalval = avalue.getLiteral()
-                    if literalval not in labelmap:
-                        labelmap[literalval] = asubject
-                    else:
-                        if not(labelmap[literalval].equals(asubject)):
-                            raise RuntimeError(
-                                'The label "' + literalval +
-                                '" is used for more than one IRI in the source ontology <'
-                                + str(ontology.getOntologyID().getOntologyIRI().get())
-                                + '>, including its imports closure.'
-                            )
-    
-        return labelmap
+                    self.add(literalval, asubject)
 
