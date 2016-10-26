@@ -142,7 +142,7 @@ class ImportModuleBuilder:
 
                 signature.add(owlent)
 
-                if row['seed_subclasses'].strip().lower() in self.true_strs:
+                if row['Seed descendants'].strip().lower() in self.true_strs:
                     if reasoner == None:
                         reasoner = sourceont.getHermitReasoner()
 
