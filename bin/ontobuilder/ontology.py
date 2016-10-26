@@ -839,18 +839,28 @@ class Ontology:
 
         self.ontman.applyChange(AddAxiom(self.ontology, owl_axiom))
 
-    def removeEntity(self, entity):
+    def removeEntity(self, entity, remove_annotations=True):
         """
         Removes an entity from the ontology (including its imports closure).
+        Optionally, any annotations referencing the deleted entity can also be
+        removed (this is the default behavior).
         """
         ontset = self.ontology.getImportsClosure()
         for ont in ontset:
-            del_axioms = HashSet()
             for axiom in ont.getAxioms():
+                # See if this axiom includes the target entity (e.g., a
+                # declaration axiom for the target entity).
                 if axiom.getSignature().contains(entity):
-                    del_axioms.add(axiom)
-
-            self.ontman.removeAxioms(ont, del_axioms)
+                    self.ontman.removeAxiom(ont, axiom)
+                # See if this axiom is an annotation axiom.
+                elif axiom.getAxiomType() == AxiomType.ANNOTATION_ASSERTION:
+                    if remove_annotations:
+                        # Check if this annotation axiom refers to the target
+                        # entity.
+                        asubject = axiom.getSubject()
+                        if isinstance(asubject, IRI):
+                            if asubject.equals(entity.getIRI()):
+                                self.ontman.removeAxiom(ont, axiom)
 
     def setOntologyID(self, ont_iri):
         """
