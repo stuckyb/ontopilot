@@ -22,6 +22,9 @@ class OWLOntologyBuilder:
     # Required fields (i.e., keys) for all entity descriptions.
     REQUIRED_FIELDS = ('Type', 'ID')
 
+    # Fields for which no warnings are issued if the field is missing.
+    NO_WARN_FIELDS = ('Subclass of', 'Equivalent to')
+
     def __init__(self, base_ont_path):
         # Load the base ontology.
         self.ontology = Ontology(base_ont_path)
@@ -47,11 +50,13 @@ class OWLOntologyBuilder:
                 raise RuntimeError(
                     'The required field "' + key + '" is missing in the entity description.'
                 )
-            else:
+            elif key not in self.NO_WARN_FIELDS:
                 logging.warning(
                     'The field "' + key + '" was missing in the description of the entity "'
                     + self._getDescField(desc, 'ID') + '".'
                 )
+                return ''
+            else:
                 return ''
 
     def addClass(self, classdesc, expanddef=True):
