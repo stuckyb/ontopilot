@@ -101,14 +101,17 @@ class _OntologyClass:
         newaxiom = self.df.getOWLSubClassOfAxiom(self.owlclass, parentclass)
         self.ontology.addTermAxiom(newaxiom)
 
-    def addClassExpression(self, manchester_exp):
+    def addClassExpression(self, manchester_exp, is_equivalency=True):
         """
-        Adds a class expression as either an equivalency axiom or a subclass
-        axiom.  The class expression should be written in Manchester Syntax.
-        """
-        formaldef = manchester_exp
+        Adds a class expression as either an equivalency axiom (the default) or
+        a subclass axiom.  The class expression should be written in Manchester
+        Syntax (MS).
 
-        if formaldef != '':
+        manchester_exp: An MS "description" string.
+        is_equivalency: If True, parse the MS expression as an equivalency
+            axiom; otherwise, parse it as a subclass of axiom.
+        """
+        if manchester_exp != '':
             try:
                 #self.ontology.mparser = ManchesterSyntaxTool(self.ontology.ontology)
                 #cexp = self.ontology.mparser.parseManchesterExpression(formaldef)
@@ -119,9 +122,14 @@ class _OntologyClass:
                 raise RuntimeError('Error parsing "' + err.getCurrentToken()
                         + '" at line ' + str(err.getLineNumber()) + ', column '
                         + str(err.getColumnNumber())
-                        + ' of the formal term definition (Manchester Syntax expected).')
-            ecaxiom = self.df.getOWLEquivalentClassesAxiom(cexp, self.owlclass)
-            self.ontology.addTermAxiom(ecaxiom)
+                        + ' of the class expression (Manchester Syntax expected).')
+
+            if is_equivalency:
+                eaxiom = self.df.getOWLEquivalentClassesAxiom(cexp, self.owlclass)
+            else:
+                eaxiom = self.df.getOWLSubClassOfAxiom(self.owlclass, cexp)
+
+            self.ontology.addTermAxiom(eaxiom)
 
 
 class _OntologyDataProperty:

@@ -86,11 +86,17 @@ class OWLOntologyBuilder:
         if parentIRI != None:
             newclass.addSuperclass(parentIRI)
     
-        # Add the formal definition (specified as a class expression in
-        # Manchester Syntax), if we have one.
-        formaldef = self._getDescField(classdesc, 'Formal definition')
-        if formaldef != '':
-            newclass.addClassExpression(formaldef)
+        # Add any subclass of axioms (specified as class expressions in
+        # Manchester Syntax).
+        ms_exp = self._getDescField(classdesc, 'Subclass of')
+        if ms_exp != '':
+            newclass.addClassExpression(ms_exp, False)
+ 
+        # Add any equivalency axioms (specified as class expressions in
+        # Manchester Syntax).
+        ms_exp = self._getDescField(classdesc, 'Equivalent to')
+        if ms_exp != '':
+            newclass.addClassExpression(ms_exp, True)
  
     def addDataProperty(self, propdesc, expanddef=True):
         """
