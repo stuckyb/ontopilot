@@ -79,6 +79,19 @@ class _OntologyClass:
 
         self.ontology.addTermAxiom(annotaxiom)
 
+    def addComment(self, commenttxt):
+        """
+        Adds an rdfs:comment for this class.
+        """
+        commenttxt = commenttxt.strip()
+
+        commentannot = self.df.getOWLAnnotation(
+            self.df.getRDFSComment(), self.df.getOWLLiteral(commenttxt, 'en')
+        )
+        annotaxiom = self.df.getOWLAnnotationAssertionAxiom(self.classIRI, commentannot)
+
+        self.ontology.addTermAxiom(annotaxiom)
+
     def addSuperclass(self, parent_id):
         """
         Adds a parent class for this class.
@@ -181,6 +194,19 @@ class _OntologyDataProperty:
             self.df.getRDFSLabel(), self.df.getOWLLiteral(labeltxt, 'en')
         )
         annotaxiom = self.df.getOWLAnnotationAssertionAxiom(self.propIRI, labelannot)
+
+        self.ontology.addTermAxiom(annotaxiom)
+
+    def addComment(self, commenttxt):
+        """
+        Adds an rdfs:comment for this property.
+        """
+        commenttxt = commenttxt.strip()
+
+        commentannot = self.df.getOWLAnnotation(
+            self.df.getRDFSComment(), self.df.getOWLLiteral(commenttxt, 'en')
+        )
+        annotaxiom = self.df.getOWLAnnotationAssertionAxiom(self.propIRI, commentannot)
 
         self.ontology.addTermAxiom(annotaxiom)
 
@@ -327,6 +353,19 @@ class _OntologyObjectProperty:
             self.df.getRDFSLabel(), self.df.getOWLLiteral(labeltxt, 'en')
         )
         annotaxiom = self.df.getOWLAnnotationAssertionAxiom(self.propIRI, labelannot)
+
+        self.ontology.addTermAxiom(annotaxiom)
+
+    def addComment(self, commenttxt):
+        """
+        Adds an rdfs:comment for this property.
+        """
+        commenttxt = commenttxt.strip()
+
+        commentannot = self.df.getOWLAnnotation(
+            self.df.getRDFSComment(), self.df.getOWLLiteral(commenttxt, 'en')
+        )
+        annotaxiom = self.df.getOWLAnnotationAssertionAxiom(self.propIRI, commentannot)
 
         self.ontology.addTermAxiom(annotaxiom)
 

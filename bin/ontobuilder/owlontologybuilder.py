@@ -23,7 +23,7 @@ class OWLOntologyBuilder:
     REQUIRED_FIELDS = ('Type', 'ID')
 
     # Fields for which no warnings are issued if the field is missing.
-    NO_WARN_FIELDS = ('Subclass of', 'Equivalent to')
+    NO_WARN_FIELDS = ('Comments', 'Subclass of', 'Equivalent to')
 
     def __init__(self, base_ont_path):
         # Load the base ontology.
@@ -84,6 +84,11 @@ class OWLOntologyBuilder:
 
             newclass.addDefinition(textdef)
 
+        # Add any comments for the class.
+        commenttext = self._getDescField(classdesc, 'Comments')
+        if commenttext != '':
+            newclass.addComment(commenttext)
+
         # Get the IRI object of the parent class and add it as a parent.
         parentIRI = self._getIRIFromDesc(
             self._getDescField(classdesc, 'Parent')
@@ -129,6 +134,11 @@ class OWLOntologyBuilder:
 
             newprop.addDefinition(textdef)
         
+        # Add any comments for the property.
+        commenttext = self._getDescField(propdesc, 'Comments')
+        if commenttext != '':
+            newprop.addComment(commenttext)
+
         # Get the IRI object of the parent property and add it as a parent.
         parentIRI = self._getIRIFromDesc(
             self._getDescField(propdesc, 'Parent')
@@ -194,6 +204,11 @@ class OWLOntologyBuilder:
 
             newprop.addDefinition(textdef)
         
+        # Add any comments for the property.
+        commenttext = self._getDescField(propdesc, 'Comments')
+        if commenttext != '':
+            newprop.addComment(commenttext)
+
         # Get the IRI object of the parent property and add it as a parent.
         parentIRI = self._getIRIFromDesc(
             self._getDescField(propdesc, 'Parent')
