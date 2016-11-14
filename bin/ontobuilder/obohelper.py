@@ -15,7 +15,7 @@ from org.semanticweb.owlapi.model import IRI
 OBO_BASE_IRI = 'http://purl.obolibrary.org/obo/'
 
 # Compile a regular expression for matching OBO ID strings.
-oboid_re = re.compile('[A-Za-z]+:\d{7}')
+oboid_re = re.compile('[A-Za-z]+:\d+')
 
 
 def isOboID(termIDstr):
