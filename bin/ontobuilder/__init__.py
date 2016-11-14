@@ -1,8 +1,9 @@
 #
-# This package initialization script does two things:
+# This package initialization script does three things:
 #
 #   1. Adds all required java library jar files to the classpath.
 #   2. Adds classes in package modules to the package's top-level scope.
+#   3. Initializes a logger object for printing status messages.
 #
 # The directory "../../javalib" contains all of the java libraries on which the
 # OWL API depends.  The easiest way to get all of these library jar files is to
@@ -15,6 +16,7 @@
 #
 
 import os, glob, sys
+import logging
 
 
 # Get the paths to all of the java libraries needed by the OWL API and add them
@@ -32,4 +34,14 @@ from labelmap import LabelMap
 from ontology import Ontology
 from owlontologybuilder import OWLOntologyBuilder
 from importmodulebuilder import ImportModuleBuilder
+
+# Initialize the logger for this package.
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.propagate = False
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
