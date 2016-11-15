@@ -20,6 +20,7 @@ from org.semanticweb.owlapi.model import SetOntologyID, AxiomType, OWLOntology
 from org.semanticweb.owlapi.model import AddOntologyAnnotation
 from org.semanticweb.owlapi.model import OWLRuntimeException
 from org.semanticweb.owlapi.formats import RDFXMLDocumentFormat
+from org.semanticweb.elk.owlapi import ElkReasonerFactory
 from org.semanticweb import HermiT
 from uk.ac.manchester.cs.owlapi.modularity import SyntacticLocalityModuleExtractor
 from uk.ac.manchester.cs.owlapi.modularity import ModuleType
@@ -945,6 +946,14 @@ class Ontology:
         foutputstream = FileOutputStream(File(filepath))
         self.ontman.saveOntology(self.ontology, oformat, foutputstream)
         foutputstream.close()
+
+    def getELKReasoner(self):
+        """
+        Returns an instance of an ELK reasoner for this ontology.
+        """
+        rfact = ElkReasonerFactory()
+
+        return rfact.createReasoner(self.getOWLOntology())
 
     def getHermitReasoner(self):
         """

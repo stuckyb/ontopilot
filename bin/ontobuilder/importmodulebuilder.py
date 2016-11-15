@@ -130,9 +130,9 @@ class ImportModuleBuilder:
 
         ontobuilder.logger.info('Loading source ontology from file ' + ontfile + '.')
         sourceont = Ontology(ontfile)
+        reasoner_man = _ReasonerManager(sourceont)
 
         signature = HashSet()
-        reasoner = None
         excluded_ents = []
         with open(termsfile_path) as filein:
             reader = csv.DictReader(filein)
@@ -152,11 +152,19 @@ class ImportModuleBuilder:
                     signature.add(owlent)
     
                     if row['Seed descendants'].strip().lower() in self.true_strs:
-                        ontobuilder.logger.info('Adding descendant entities of ' + str(owlent) + '.')
-                        if reasoner == None:
-                            reasoner = sourceont.getHermitReasoner()
+                        # Get the reasoner name from the input file, using
+                        # HermiT as the default.
+                        reasoner_name = ''
+                        if 'Reasoner' in row:
+                            reasoner_name = row['Reasoner'].strip()
+                        if reasoner_name == '':
+                            reasoner_name = 'HermiT'
+
+                        # Get the reasoner instance.
+                        reasoner = reasoner_man.getReasoner(reasoner_name)
     
                         # Get the entity's subclasses or subproperties.
+                        ontobuilder.logger.info('Adding descendant entities of ' + str(owlent) + '.')
                         if isinstance(owlent, OWLClassExpression):
                             signature.addAll(reasoner.getSubClasses(owlent, False).getFlattened())
                         elif isinstance(owlent, OWLObjectPropertyExpression):
@@ -182,4 +190,36 @@ class ImportModuleBuilder:
             module.removeEntity(ent)
 
         module.saveOntology(outputfile)
+
+
+class _ReasonerManager:
+    """
+    Manages DL reasoners for ImportModuleBuilder objects.  Given a string
+    designating a reasoner type and a source ontology, _ReasonerManager will
+    return a corresponding reasoner object and ensure that only one instance of
+    each reasoner type is created.
+    """
+    def __init__(self, ontology):
+        self.ontology = ontology
+
+        # A dictionary to keep track of instantiated reasoners.
+        self.reasoners = {}
+
+    def getReasoner(self, reasoner_name):
+        reasoner_name = reasoner_name.lower().strip()
+
+        if reasoner_name not in self.reasoners:
+            if reasoner_name == 'elk':
+                ontobuilder.logger.info('Creating ELK reasoner...')
+                self.reasoners[reasoner_name] = self.ontology.getELKReasoner()
+            elif reasoner_name == 'hermit':
+                ontobuilder.logger.info('Creating HermiT reasoner...')
+                self.reasoners[reasoner_name] = self.ontology.getHermitReasoner()
+            else:
+                raise RuntimeError(
+                    'Unrecognized DL reasoner name: '
+                    + reasoner_name + '.'
+                )
+
+        return self.reasoners[reasoner_name]
 
