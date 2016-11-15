@@ -181,12 +181,12 @@ class ImportModuleBuilder:
                 if owlent == None:
                     raise RuntimeError(idstr + ' could not be found in the source ontology')
 
-                if self._getDescField(row, 'Exclude') in self.true_strs:
+                if self._getDescField(row, 'Exclude').lower() in self.true_strs:
                     excluded_ents.append(owlent)
                 else:
                     signature.add(owlent)
     
-                    if self._getDescField(row, 'Seed descendants') in self.true_strs:
+                    if self._getDescField(row, 'Seed descendants').lower() in self.true_strs:
                         # Get the reasoner name from the input file, using
                         # HermiT as the default.
                         reasoner_name = self._getDescField(row, 'Reasoner', 'HermiT')
@@ -211,8 +211,7 @@ class ImportModuleBuilder:
         if signature.size() == 0:
             raise RuntimeError('No terms to import were found in the terms file.')
         
-        if reasoner != None:
-            reasoner.dispose()
+        reasoner_man.disposeReasoners()
 
         module = sourceont.extractModule(signature, ont_IRI)
 
@@ -253,4 +252,10 @@ class _ReasonerManager:
                 )
 
         return self.reasoners[reasoner_name]
+
+    def disposeReasoners(self):
+        for reasoner_name in self.reasoners:
+            self.reasoners[reasoner_name].dispose()
+
+        self.reasoners = {}
 
