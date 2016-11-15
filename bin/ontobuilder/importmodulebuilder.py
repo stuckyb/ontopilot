@@ -36,6 +36,40 @@ class ImportModuleBuilder:
     "base_IRI" is the base IRI string to use when generating IRIs for module
     OWL files.
     """
+    # Required fields (i.e., keys) for all import term specifications.
+    REQUIRED_FIELDS = ('ID')
+
+    # Fields for which no warnings are issued if the field is missing.
+    NO_WARN_FIELDS = ('Exclude', 'Seed descendants', 'Reasoner')
+
+    def _getDescField(self, desc, key, defaultval=''):
+        """
+        Retrieves the value of a field from a dictionary describing a term to
+        import from a source ontology, with all beginning and ending white
+        space removed.  If the field (i.e., key) does not exist in the
+        dictionary and the field is required, an exception is thrown.  If the
+        key does not exist and the field is optional, a warning is issued
+        (unless the field is listed in NO_WARN_FIELDS) and defaultval is
+        returned.
+        """
+        if key in desc:
+            return desc[key].strip()
+        else:
+            if key in self.REQUIRED_FIELDS:
+                raise RuntimeError(
+                    'The required field "' + key
+                    + '" was missing in the import term description.'
+                )
+            elif key not in self.NO_WARN_FIELDS:
+                logging.warning(
+                    'The field "' + key
+                    + '" was missing in the description of the import term "'
+                    + self._getDescField(desc, 'ID') + '".'
+                )
+                return defaultval
+            else:
+                return defaultval
+
     def __init__(self, base_IRI):
         self.progbar = None
         self.sourceOntologyIRI = ''
@@ -141,24 +175,21 @@ class ImportModuleBuilder:
             # signature set for module extraction, and add the descendents of
             # each term, if desired.
             for row in reader:
-                ontobuilder.logger.info('Processing entity ' + row['ID'] + '.')
-                owlent = sourceont.getEntityByID(row['ID'])
+                idstr = self._getDescField(row, 'ID')
+                ontobuilder.logger.info('Processing entity ' + idstr + '.')
+                owlent = sourceont.getEntityByID(idstr)
                 if owlent == None:
-                    raise RuntimeError(row['ID'] + ' could not be found in the source ontology')
+                    raise RuntimeError(idstr + ' could not be found in the source ontology')
 
-                if row['Exclude'].strip().lower() in self.true_strs:
+                if self._getDescField(row, 'Exclude') in self.true_strs:
                     excluded_ents.append(owlent)
                 else:
                     signature.add(owlent)
     
-                    if row['Seed descendants'].strip().lower() in self.true_strs:
+                    if self._getDescField(row, 'Seed descendants') in self.true_strs:
                         # Get the reasoner name from the input file, using
                         # HermiT as the default.
-                        reasoner_name = ''
-                        if 'Reasoner' in row:
-                            reasoner_name = row['Reasoner'].strip()
-                        if reasoner_name == '':
-                            reasoner_name = 'HermiT'
+                        reasoner_name = self._getDescField(row, 'Reasoner', 'HermiT')
 
                         # Get the reasoner instance.
                         reasoner = reasoner_man.getReasoner(reasoner_name)
