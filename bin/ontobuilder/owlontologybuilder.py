@@ -15,16 +15,11 @@ from ontology import Ontology
 
 class OWLOntologyBuilder:
     """
-    Builds an OWL ontology using Python dictionaries that describe new entities
+    Builds an OWL ontology using _TableRow objects that describe new entities
     to add to an existing "base" ontology.  Typically, the new entity
-    description dictionaries will correspond with rows in an input CSV file.
+    descriptions will correspond with rows in an input CSV file or other
+    tabular file format.
     """
-    # Required fields (i.e., keys) for all entity descriptions.
-    REQUIRED_FIELDS = ('Type', 'ID')
-
-    # Fields for which no warnings are issued if the field is missing.
-    NO_WARN_FIELDS = ('Comments', 'Subclass of', 'Equivalent to')
-
     def __init__(self, base_ont_path):
         # Load the base ontology.
         self.ontology = Ontology(base_ont_path)
@@ -35,49 +30,25 @@ class OWLOntologyBuilder:
         """
         return self.ontology
 
-    def _getDescField(self, desc, key):
-        """
-        Retrieves the value of a field from an entity description dictionary,
-        with all beginning and ending white space removed.  If the field (i.e.,
-        key) does not exist in the dictionary and the field is required, an
-        exception is thrown.  If the key does not exist and the field is
-        optional, a warning is issued and an empty string is returned.
-        """
-        if key in desc:
-            return desc[key].strip()
-        else:
-            if key in self.REQUIRED_FIELDS:
-                raise RuntimeError(
-                    'The required field "' + key + '" is missing in the entity description.'
-                )
-            elif key not in self.NO_WARN_FIELDS:
-                logging.warning(
-                    'The field "' + key + '" was missing in the description of the entity "'
-                    + self._getDescField(desc, 'ID') + '".'
-                )
-                return ''
-            else:
-                return ''
-
     def addClass(self, classdesc, expanddef=True):
         """
         Adds a new class to the ontology, based on a class description provided
-        as the dictionary classdesc (i.e., the single explicit argument).  If
+        as the table row classdesc (i.e., the single explicit argument).  If
         expanddef is True, then term labels in the text definition for the new
         class will be expanded to include the terms' OBO IDs.
         """
         # Create the new class.
         newclass = self.ontology.createNewClass(
-            oboIDToIRI(self._getDescField(classdesc, 'ID'))
+            oboIDToIRI(classdesc['ID'])
         )
         
         # Make sure we have a label and add it to the new class.
-        labeltext = self._getDescField(classdesc, 'Label')
+        labeltext = classdesc['Label']
         if labeltext != '':
             newclass.addLabel(labeltext)
 
         # Add the text definition to the class, if we have one.
-        textdef = self._getDescField(classdesc, 'Text definition')
+        textdef = classdesc['Text definition']
         if textdef != '':
             if expanddef:
                 textdef = self._expandDefinition(textdef)
@@ -85,49 +56,49 @@ class OWLOntologyBuilder:
             newclass.addDefinition(textdef)
 
         # Add any comments for the class.
-        commenttext = self._getDescField(classdesc, 'Comments')
+        commenttext = classdesc['Comments']
         if commenttext != '':
             newclass.addComment(commenttext)
 
         # Get the IRI object of the parent class and add it as a parent.
         parentIRI = self._getIRIFromDesc(
-            self._getDescField(classdesc, 'Parent')
+            classdesc['Parent']
         )
         if parentIRI != None:
             newclass.addSuperclass(parentIRI)
     
         # Add any subclass of axioms (specified as class expressions in
         # Manchester Syntax).
-        ms_exp = self._getDescField(classdesc, 'Subclass of')
+        ms_exp = classdesc['Subclass of']
         if ms_exp != '':
             newclass.addClassExpression(ms_exp, False)
  
         # Add any equivalency axioms (specified as class expressions in
         # Manchester Syntax).
-        ms_exp = self._getDescField(classdesc, 'Equivalent to')
+        ms_exp = classdesc['Equivalent to']
         if ms_exp != '':
             newclass.addClassExpression(ms_exp, True)
  
     def addDataProperty(self, propdesc, expanddef=True):
         """
         Adds a new data property to the ontology, based on a property
-        description provided as the dictionary propdesc (i.e., the single
+        description provided as the table row propdesc (i.e., the single
         explicit argument).  If expanddef is True, then term labels in the text
         definition for the new property will be expanded to include the terms'
         OBO IDs.
         """
         # Create the new data property.
         newprop = self.ontology.createNewDataProperty(
-            oboIDToIRI(self._getDescField(propdesc, 'ID'))
+            oboIDToIRI(propdesc['ID'])
         )
         
         # Make sure we have a label and add it to the new class.
-        labeltext = self._getDescField(propdesc, 'Label')
+        labeltext = propdesc['Label']
         if labeltext != '':
             newprop.addLabel(labeltext)
         
         # Add the text definition to the class, if we have one.
-        textdef = self._getDescField(propdesc, 'Text definition')
+        textdef = propdesc['Text definition']
         if textdef != '':
             if expanddef:
                 textdef = self._expandDefinition(textdef)
@@ -135,39 +106,39 @@ class OWLOntologyBuilder:
             newprop.addDefinition(textdef)
         
         # Add any comments for the property.
-        commenttext = self._getDescField(propdesc, 'Comments')
+        commenttext = propdesc['Comments']
         if commenttext != '':
             newprop.addComment(commenttext)
 
         # Get the IRI object of the parent property and add it as a parent.
         parentIRI = self._getIRIFromDesc(
-            self._getDescField(propdesc, 'Parent')
+            propdesc['Parent']
         )
         if parentIRI != None:
             newprop.addSuperproperty(parentIRI)
 
         # Add the domain, if we have one.
         domainIRI = self._getIRIFromDesc(
-            self._getDescField(propdesc, 'Domain')
+            propdesc['Domain']
         )
         if domainIRI != None:
             newprop.setDomain(domainIRI)
 
         # Add the range, if we have one.
-        range_exp = self._getDescField(propdesc, 'Range')
+        range_exp = propdesc['Range']
         if range_exp != '':
             newprop.setRange(range_exp)
 
         # Add the disjoint with axiom, if we have a disjoint property.
         disjIRI = self._getIRIFromDesc(
-            self._getDescField(propdesc, 'Disjoint with')
+            propdesc['Disjoint with']
         )
         if disjIRI != None:
             newprop.setDisjointWith(disjIRI)
 
         # Add the characteristics, if provided.  The only supported
         # characteristic for data properties is "functional".
-        chars_str = self._getDescField(propdesc, 'Characteristics')
+        chars_str = propdesc['Characteristics']
         if chars_str != '':
             if chars_str.lower() == 'functional':
                 newprop.makeFunctional()
@@ -181,23 +152,23 @@ class OWLOntologyBuilder:
     def addObjectProperty(self, propdesc, expanddef=True):
         """
         Adds a new object property to the ontology, based on a property
-        description provided as the dictionary propdesc (i.e., the single
+        description provided as the table row propdesc (i.e., the single
         explicit argument).  If expanddef is True, then term labels in the text
         definition for the new property will be expanded to include the terms'
         OBO IDs.
         """
         # Create the new object property.
         newprop = self.ontology.createNewObjectProperty(
-            oboIDToIRI(self._getDescField(propdesc, 'ID'))
+            oboIDToIRI(propdesc['ID'])
         )
         
         # Make sure we have a label and add it to the new class.
-        labeltext = self._getDescField(propdesc, 'Label')
+        labeltext = propdesc['Label']
         if labeltext != '':
             newprop.addLabel(labeltext)
         
         # Add the text definition to the class, if we have one.
-        textdef = self._getDescField(propdesc, 'Text definition')
+        textdef = propdesc['Text definition']
         if textdef != '':
             if expanddef:
                 textdef = self._expandDefinition(textdef)
@@ -205,48 +176,48 @@ class OWLOntologyBuilder:
             newprop.addDefinition(textdef)
         
         # Add any comments for the property.
-        commenttext = self._getDescField(propdesc, 'Comments')
+        commenttext = propdesc['Comments']
         if commenttext != '':
             newprop.addComment(commenttext)
 
         # Get the IRI object of the parent property and add it as a parent.
         parentIRI = self._getIRIFromDesc(
-            self._getDescField(propdesc, 'Parent')
+            propdesc['Parent']
         )
         if parentIRI != None:
             newprop.addSuperproperty(parentIRI)
 
         # Add the domain, if we have one.
         domainIRI = self._getIRIFromDesc(
-            self._getDescField(propdesc, 'Domain')
+            propdesc['Domain']
         )
         if domainIRI != None:
             newprop.setDomain(domainIRI)
 
         # Add the range, if we have one.
         rangeIRI = self._getIRIFromDesc(
-            self._getDescField(propdesc, 'Range')
+            propdesc['Range']
         )
         if rangeIRI != None:
             newprop.setRange(rangeIRI)
 
         # Add the inverse axiom, if we have an inverse property.
         inverseIRI = self._getIRIFromDesc(
-            self._getDescField(propdesc, 'Inverse')
+            propdesc['Inverse']
         )
         if inverseIRI != None:
             newprop.setInverse(inverseIRI)
 
         # Add the disjoint with axiom, if we have a disjoint property.
         disjIRI = self._getIRIFromDesc(
-            self._getDescField(propdesc, 'Disjoint with')
+            propdesc['Disjoint with']
         )
         if disjIRI != None:
             newprop.setDisjointWith(disjIRI)
 
         # Add the characteristics, if provided.  The only supported
         # characteristic for data properties is "functional".
-        chars_str = self._getDescField(propdesc, 'Characteristics')
+        chars_str = propdesc['Characteristics']
         if chars_str != '':
             self._processObjPropCharacteristics(newprop, chars_str)
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env jython
 
 # Python imports.
-import csv
 import os
 import sys
 import logging
 from argparse import ArgumentParser
+from ontobuilder.tablereader import CSVTableReader
 from ontobuilder import OWLOntologyBuilder
 
 
@@ -43,17 +43,25 @@ for termsfile in args.termsfiles:
 
 ontbuilder = OWLOntologyBuilder(args.base_ontology)
 
+# Required columns.
+REQUIRED_COLS = ('Type', 'ID')
+# Optional columns.
+OPTIONAL_COLS = ('Comments', 'Subclass of', 'Equivalent to')
+
 # Preprocess all new term IDs and labels so that forward references to
 # undefined terms can succeed.
 for termsfile in args.termsfiles:
     with open(termsfile) as fin:
-        reader = csv.DictReader(fin)
+        reader = CSVTableReader(fin)
+        reader.setRequiredColumns(REQUIRED_COLS)
+        reader.setOptionalColumns(OPTIONAL_COLS)
+
         rowcnt = 1
         for csvrow in reader:
             rowcnt += 1
-            if not(csvrow['Ignore'].strip().upper().startswith('Y')):
-                idstr = csvrow['ID'].strip()
-                labelstr = csvrow['Label'].strip()
+            if not(csvrow['Ignore'].upper().startswith('Y')):
+                idstr = csvrow['ID']
+                labelstr = csvrow['Label']
                 try:
                     if (idstr != '') and (labelstr != ''):
                         ontbuilder.getOntology().preloadLabelIdPair(labelstr, idstr)
@@ -67,12 +75,15 @@ for termsfile in args.termsfiles:
 # Process each source CSV file.
 for termsfile in args.termsfiles:
     with open(termsfile) as fin:
-        reader = csv.DictReader(fin)
+        reader = CSVTableReader(fin)
+        reader.setRequiredColumns(REQUIRED_COLS)
+        reader.setOptionalColumns(OPTIONAL_COLS)
+
         rowcnt = 1
         for csvrow in reader:
             rowcnt += 1
-            if not(csvrow['Ignore'].strip().upper().startswith('Y')):
-                typestr = csvrow['Type'].strip().lower()
+            if not(csvrow['Ignore'].upper().startswith('Y')):
+                typestr = csvrow['Type'].lower()
 
                 try:
                     if typestr == 'class':
