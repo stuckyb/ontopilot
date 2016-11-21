@@ -16,6 +16,7 @@
 
 from ontobuilder.tablereader import _TableRow, ColumnNameError, CSVTableReader
 import unittest
+from testfixtures import LogCapture
 
 
 class TestTableRow(unittest.TestCase):
@@ -52,9 +53,17 @@ class TestTableRow(unittest.TestCase):
         self.assertEqual(self.tr['col5'], '')
 
     def test_missing(self):
-        # Test missing required column.
+        # Test a missing required column.
         with self.assertRaises(ColumnNameError):
             self.tr['col1']
+
+        # Test a column that should trigger a warning.
+        with LogCapture() as lc:
+            self.tr['col6']
+        lc.check((
+            'root', 'WARNING',
+            'The column "col6" was missing in the table row.'
+        ))
 
 
 class TestCSVTableReader(unittest.TestCase):
@@ -128,6 +137,14 @@ class TestCSVTableReader(unittest.TestCase):
             row['col4']
         with self.assertRaises(RuntimeError):
             row['col5']
+
+        # Reference a column that should trigger a warning.
+        with LogCapture() as lc:
+            row['column 7']
+        lc.check((
+            'root', 'WARNING',
+            'The column "column 7" was missing in the table row.'
+        ))
 
     def test_defaults(self):
         """
