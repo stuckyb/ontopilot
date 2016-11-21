@@ -21,12 +21,13 @@ class _TableRow:
     instantiated directly; rather, instances should be obtained from one of the
     TableReader classes.
     """
-    def __init__(self, required_cols=[], warning_cols=[], default_vals={}):
+    def __init__(self, required_cols=[], optional_cols=[], default_vals={}):
         # Required columns.
         self.required = required_cols
 
-        # Columns for which a warning is issued if the column is missing.
-        self.warning = warning_cols
+        # Columns which are optional: no exception will be raised and no
+        # warning will be issued if one of these columns is missing.
+        self.optional = optional_cols
 
         # A dictionary for storing the data values.
         self.data = {}
@@ -38,6 +39,13 @@ class _TableRow:
         self.data[colname.lower()] = value.strip()
 
     def __getitem__(self, colname):
+        """
+        Retrieves an item from the table row using a column name as an index.
+        If the column is missing and required, an exception is raised.  If the
+        missing column is optional, not exception is raised and no warning is
+        issued.  If the missing column is neither required nor optional, a
+        warning is issued.
+        """
         colname = colname.lower()
 
         if colname in self.data:
@@ -49,7 +57,7 @@ class _TableRow:
                     + '" was missing in the table row.'
                 )
             else:
-                if colname in self.warning:
+                if colname not in self.optional:
                     logging.warning(
                         'The column "' + colname
                         + '" was missing in the table row.'
@@ -74,6 +82,10 @@ class CSVTableReader:
         self.csvr = csv.reader(filein)
         self.filename = filein.name
 
+        self.required_cols = []
+        self.optional_cols = []
+        self.defaultvals = {}
+
         try:
             self.colnames = self.csvr.next()
         except StopIteration:
@@ -89,6 +101,56 @@ class CSVTableReader:
 
         self.rowcnt = 1
 
+    def setRequiredColumns(self, colnames):
+        """
+        Sets the column names that are required in the input CSV file.  If one
+        or more of these columns are missing, an exception will be thrown.
+        Note, however, that required column checking is "lazy": columns are
+        only checked when they are accessed.  In other words, if a required
+        column is missing in an input file, but no data from that column are
+        ever accessed, then no exception will be raised.
+
+        colnames: A list of column names (strings).
+        """
+        # Make sure all column names are lower case so comparisons in _TableRow
+        # are not case sensitive.  From a modularity standpoint, this should be
+        # done in _TableRow, but it is more efficient to do it here, since the
+        # conversion need be done only once.
+        self.required_cols = [colname.lower() for colname in colnames]
+
+    def setOptionalColumns(self, colnames):
+        """
+        Sets the column names that are optional in the input CSV file.  If one
+        or more of these columns are missing, no exception will be thrown and
+        no warning will be issued.  Access to missing columns that are neither
+        required nor optional will result in a warning being issued.
+
+        colnames: A list of column names (strings).
+        """
+        # Make sure all column names are lower case so comparisons in _TableRow
+        # are not case sensitive.  From a modularity standpoint, this should be
+        # done in _TableRow, but it is more efficient to do it here, since the
+        # conversion need be done only once.
+        self.optional_cols = [colname.lower() for colname in colnames]
+
+    def setDefaultValues(self, defaultvals):
+        """
+        Sets default values for one or more columns.  If a non-required column
+        is missing, the default value will be returned.  An empty string ('')
+        is the default default value.
+
+        defaultvals: A dictionary mapping column names to default values.
+        """
+        # Add lower-case versions of all column names to the dictionary to
+        # ensure that comparisions in _TableRow are not case sensitive.  From a
+        # modularity standpoint, this should be done in _TableRow, but it is
+        # more efficient to do it here rather than each time a _TableRow is
+        # instantiated.
+        for colname in defaultvals:
+            defaultvals[colname.lower()] = defaultvals[colname]
+
+        self.defaultvals = defaultvals
+
     def __iter__(self):
         return self
 
@@ -103,7 +165,7 @@ class CSVTableReader:
                 + str(self.rowcnt) + '.'
             )
 
-        trow = _TableRow()
+        trow = _TableRow(self.required_cols, self.optional_cols, self.defaultvals)
         for colnum in range(len(rowdata)):
             trow[self.colnames[colnum]] = rowdata[colnum]
 

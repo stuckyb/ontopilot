@@ -18,17 +18,16 @@ from ontobuilder.tablereader import _TableRow, ColumnNameError, CSVTableReader
 import unittest
 
 
-
 class TestTableRow(unittest.TestCase):
     """
     Tests the _TableRow class.
     """
     def setUp(self):
         self.required = ['col1']
-        self.warning = ['col2']
+        self.optional = ['col2', 'col3', 'col4', 'col5']
         self.defaults = {'col3': 'default1', 'col4': 'default2'}
 
-        self.tr = _TableRow(self.required, self.warning, self.defaults)
+        self.tr = _TableRow(self.required, self.optional, self.defaults)
 
     def test_setGetContains(self):
         self.tr['Col1'] = 'testval'
@@ -108,4 +107,43 @@ class TestCSVTableReader(unittest.TestCase):
         # Read a row that is too long.
         with self.assertRaises(RuntimeError):
             self.tr.next()
+
+    def test_requiredAndOptional(self):
+        """
+        Tests that required column names are handled properly.
+        """
+        self._openFile('test_data/test_table-valid.csv')
+        self.tr.setRequiredColumns(['col1', 'col4', 'COL5'])
+        self.tr.setOptionalColumns(['col6'])
+
+        row = self.tr.next()
+
+        # These should not trigger exceptions.
+        row['col1']
+        row['col6']
+
+        # Reference missing required columns, including a test to make sure
+        # that column specification is not case sensitive.
+        with self.assertRaises(RuntimeError):
+            row['col4']
+        with self.assertRaises(RuntimeError):
+            row['col5']
+
+    def test_defaults(self):
+        """
+        Tests setting and using default column values.
+        """
+        self._openFile('test_data/test_table-valid.csv')
+        self.tr.setOptionalColumns(['col4', 'col5', 'col6'])
+        self.tr.setDefaultValues({'col4': 'default 1', 'COL5': 'default2'})
+
+        row = self.tr.next()
+
+        # Test explicitly specified defaults, including a test to make sure
+        # that default value column names are not case sensitive.
+        self.assertEqual(row['col4'], 'default 1')
+        self.assertEqual(row['col5'], 'default2')
+
+        # Test the default default value.
+        self.assertEqual(row['col6'], '')
 

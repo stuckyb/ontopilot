@@ -41,7 +41,7 @@ test_modules = ['test_tablereader']
 successful = True
 total = 0
 
-runner = unittest.TextTestRunner(verbosity=1)
+runner = unittest.TextTestRunner(verbosity=2)
 
 for test_module in test_modules:
     suite = unittest.defaultTestLoader.loadTestsFromName(test_module)
