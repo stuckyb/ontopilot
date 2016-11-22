@@ -34,9 +34,7 @@ if not(os.path.isfile(args.importsfile)):
 
 mbuilder = ImportModuleBuilder(IRI_BASE)
 
-with open(args.importsfile) as ifilein:
-    ireader = CSVTableReader(ifilein)
-
+with CSVTableReader(args.importsfile) as ireader:
     for table in ireader:
         table.setRequiredColumns(['Termsfile', 'IRI'])
     

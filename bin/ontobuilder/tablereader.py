@@ -187,7 +187,9 @@ class _BaseTableReader:
 
 class _CSVTable(_BaseTable):
     """
-    Represents a single table in a CSV file.
+    Represents a single table in a CSV file.  _CSVTable assumes that the first
+    row of the file contains the column names.  Each subsequent row is returned
+    as a _TableRow object; thus, column names are not case sensitive.
     """
     def __init__(self, csvreader, tablename, required_cols=[], optional_cols=[], default_vals={}):
         _BaseTable.__init__(self, tablename, required_cols, optional_cols, default_vals)
@@ -233,18 +235,23 @@ class _CSVTable(_BaseTable):
 
 class CSVTableReader(_BaseTableReader):
     """
-    Reads a table of values from a CSV file.  CSVTableReader assumes that the
-    first row of the file contains the column names.  Each subsequent row is
-    returned as a _TableRow object; thus, column names are not case sensitive.
+    Reads a table of values from a CSV file.
     """
-    def __init__(self, filein):
+    def __init__(self, filepath):
         _BaseTableReader.__init__(self)
 
-        self.csvr = csv.reader(filein)
-        self.filename = filein.name
+        self.filename = filepath
+        self.filein = open(filepath)
+        self.csvr = csv.reader(self.filein)
 
         # A list of tables in the input source.
         self.tables = [_CSVTable(self.csvr, self.filename)]
         # A dictionary mapping table names to indices in the table list.
         self.tablename_map = {self.filename: 0}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, tb):
+        self.filein.close()
 

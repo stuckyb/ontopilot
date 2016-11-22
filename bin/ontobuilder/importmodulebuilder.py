@@ -143,9 +143,7 @@ class ImportModuleBuilder:
 
         signature = HashSet()
         excluded_ents = []
-        with open(termsfile_path) as filein:
-            reader = CSVTableReader(filein)
-        
+        with CSVTableReader(termsfile_path) as reader:
             # Read the terms to import from each table in the input file, add
             # each term to the signature set for module extraction, and add the
             # descendants of each term, if desired.

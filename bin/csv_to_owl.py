@@ -51,9 +51,7 @@ OPTIONAL_COLS = ('Comments', 'Subclass of', 'Equivalent to')
 # Preprocess all new term IDs and labels so that forward references to
 # undefined terms can succeed.
 for termsfile in args.termsfiles:
-    with open(termsfile) as fin:
-        reader = CSVTableReader(fin)
-
+    with CSVTableReader(termsfile) as reader:
         for table in reader:
             table.setRequiredColumns(REQUIRED_COLS)
             table.setOptionalColumns(OPTIONAL_COLS)
@@ -76,9 +74,7 @@ for termsfile in args.termsfiles:
 
 # Process each source CSV file.
 for termsfile in args.termsfiles:
-    with open(termsfile) as fin:
-        reader = CSVTableReader(fin)
-
+    with CSVTableReader(termsfile) as reader:
         for table in reader:
             table.setRequiredColumns(REQUIRED_COLS)
             table.setOptionalColumns(OPTIONAL_COLS)
