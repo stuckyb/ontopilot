@@ -86,19 +86,40 @@ class TestCSVTableReader(unittest.TestCase):
     def tearDown(self):
         self.fin.close()
 
-    def test_iteration(self):
+    def test_retrieveTable(self):
+        """
+        Test retrieving tables by index and by name.
+        """
         self._openFile('test_data/test_table-valid.csv')
 
-        rowcnt = 0
-        for row in self.tr:
-            rowcnt += 1
+        self.assertEqual(len(self.tr.tables), 1)
+        self.assertEqual(len(self.tr.tablename_map), 1)
 
+        tname = self.tr.getTableByIndex(0).name
+        self.assertEqual(self.tr.getTableByName(tname).name, tname)
+
+    def test_iteration(self):
+        """
+        Test that iteration over tables in a TableReader and rows in a Table
+        behave as expected.
+        """
+        self._openFile('test_data/test_table-valid.csv')
+
+        tablecnt = 0
+        rowcnt = 0
+        for table in self.tr:
+            tablecnt += 1
+            for row in table:
+                rowcnt += 1
+
+        self.assertEqual(tablecnt, 1)
         self.assertEqual(rowcnt, 2)
 
     def test_read(self):
         self._openFile('test_data/test_table-valid.csv')
+        table = self.tr.next()
 
-        for exprow, row in zip(self.testvals, self.tr):
+        for exprow, row in zip(self.testvals, table):
             for colname in exprow:
                 self.assertEqual(exprow[colname], row[colname])
 
@@ -108,24 +129,27 @@ class TestCSVTableReader(unittest.TestCase):
         to the number of columns found in the header.
         """
         self._openFile('test_data/test_table-colnum_error.csv')
+        table = self.tr.next()
 
         # Read a row that is too short.
         with self.assertRaises(RuntimeError):
-            self.tr.next()
+            table.next()
 
         # Read a row that is too long.
         with self.assertRaises(RuntimeError):
-            self.tr.next()
+            table.next()
 
     def test_requiredAndOptional(self):
         """
         Tests that required column names are handled properly.
         """
         self._openFile('test_data/test_table-valid.csv')
-        self.tr.setRequiredColumns(['col1', 'col4', 'COL5'])
-        self.tr.setOptionalColumns(['col6'])
+        table = self.tr.next()
 
-        row = self.tr.next()
+        table.setRequiredColumns(['col1', 'col4', 'COL5'])
+        table.setOptionalColumns(['col6'])
+
+        row = table.next()
 
         # These should not trigger exceptions.
         row['col1']
@@ -151,10 +175,12 @@ class TestCSVTableReader(unittest.TestCase):
         Tests setting and using default column values.
         """
         self._openFile('test_data/test_table-valid.csv')
-        self.tr.setOptionalColumns(['col4', 'col5', 'col6'])
-        self.tr.setDefaultValues({'col4': 'default 1', 'COL5': 'default2'})
+        table = self.tr.next()
 
-        row = self.tr.next()
+        table.setOptionalColumns(['col4', 'col5', 'col6'])
+        table.setDefaultValues({'col4': 'default 1', 'COL5': 'default2'})
+
+        row = table.next()
 
         # Test explicitly specified defaults, including a test to make sure
         # that default value column names are not case sensitive.

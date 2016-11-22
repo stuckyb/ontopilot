@@ -72,34 +72,24 @@ class _TableRow:
         return colname.lower() in self.data
 
 
-class CSVTableReader:
+class _BaseTable:
     """
-    Reads a table of values from a CSV file.  CSVTable assumes that the first
-    row of the file contains the column names.  Each subsequent row is returned
-    as a _TableRow object; thus, column names are not case sensitive.
+    Base class for a single table in an input data file.
     """
-    def __init__(self, filein):
-        self.csvr = csv.reader(filein)
-        self.filename = filein.name
+    def __init__(self, tablename, required_cols=[], optional_cols=[], default_vals={}):
+        self.name = tablename
 
-        self.required_cols = []
-        self.optional_cols = []
-        self.defaultvals = {}
+        # Required columns.
+        self.required_cols = required_cols
 
-        try:
-            self.colnames = self.csvr.next()
-        except StopIteration:
-            raise RuntimeError('The input CSV file, "' + self.filename
-                    + '", is empty.')
+        # Columns which are optional: no exception will be raised and no
+        # warning will be issued if one of these columns is missing.
+        self.optional_cols = optional_cols
 
-        # Trim the column names and make sure none are empty.
-        for colnum in range(len(self.colnames)):
-            self.colnames[colnum] = self.colnames[colnum].strip()
-            if self.colnames[colnum] == '':
-                raise RuntimeError('The input CSV file, "' + self.filename
-                    + '", has one or more empty column names.')
+        # Default column values.
+        self.defaultvals = default_vals
 
-        self.rowcnt = 1
+        self.rowcnt = 0
 
     def setRequiredColumns(self, colnames):
         """
@@ -155,13 +145,82 @@ class CSVTableReader:
         return self
 
     def next(self):
+        """
+        Allows iteration through each row of the table.  This needs to be
+        overridden in child classes.
+        """
+        raise StopIteration()
+
+
+class _BaseTableReader:
+    """
+    A base class for all table readers.
+    """
+    def __init__(self):
+        # A list of tables in the input source.
+        self.tables = []
+        # A dictionary mapping table names to indices in the table list.
+        self.tablename_map = {}
+
+        self.curr_table = -1
+
+    def getTableByIndex(self, index):
+        return self.tables[index]
+
+    def getTableByName(self, tablename):
+        return self.tables[self.tablename_map[tablename]]
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        """
+        Allows iteration through the set of tables in the input source.
+        """
+        self.curr_table += 1
+
+        if self.curr_table == len(self.tables):
+            raise StopIteration()
+        else:
+            return self.tables[self.curr_table]
+
+
+class _CSVTable(_BaseTable):
+    """
+    Represents a single table in a CSV file.
+    """
+    def __init__(self, csvreader, tablename, required_cols=[], optional_cols=[], default_vals={}):
+        _BaseTable.__init__(self, tablename, required_cols, optional_cols, default_vals)
+
+        self.csvr = csvreader
+
+        # Get the column names from the input CSV file.
+        try:
+            self.colnames = self.csvr.next()
+        except StopIteration:
+            raise RuntimeError('The input CSV file, "' + self.name
+                    + '", is empty.')
+
+        # Trim the column names and make sure none are empty.
+        for colnum in range(len(self.colnames)):
+            self.colnames[colnum] = self.colnames[colnum].strip()
+            if self.colnames[colnum] == '':
+                raise RuntimeError('The input CSV file, "' + self.name
+                    + '", has one or more empty column names.')
+
+        self.rowcnt = 1
+
+    def next(self):
+        """
+        Allows iteration through each row of the CSV file.
+        """
         rowdata = self.csvr.next()
         self.rowcnt += 1
 
         if len(rowdata) != len(self.colnames):
             raise RuntimeError(
                 'The number of column names in the header of the CSV file "'
-                + self.filename + '" does not match the number of fields in row '
+                + self.name + '" does not match the number of fields in row '
                 + str(self.rowcnt) + '.'
             )
 
@@ -170,4 +229,22 @@ class CSVTableReader:
             trow[self.colnames[colnum]] = rowdata[colnum]
 
         return trow
+
+
+class CSVTableReader(_BaseTableReader):
+    """
+    Reads a table of values from a CSV file.  CSVTableReader assumes that the
+    first row of the file contains the column names.  Each subsequent row is
+    returned as a _TableRow object; thus, column names are not case sensitive.
+    """
+    def __init__(self, filein):
+        _BaseTableReader.__init__(self)
+
+        self.csvr = csv.reader(filein)
+        self.filename = filein.name
+
+        # A list of tables in the input source.
+        self.tables = [_CSVTable(self.csvr, self.filename)]
+        # A dictionary mapping table names to indices in the table list.
+        self.tablename_map = {self.filename: 0}
 
