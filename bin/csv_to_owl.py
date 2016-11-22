@@ -53,58 +53,62 @@ OPTIONAL_COLS = ('Comments', 'Subclass of', 'Equivalent to')
 for termsfile in args.termsfiles:
     with open(termsfile) as fin:
         reader = CSVTableReader(fin)
-        reader.setRequiredColumns(REQUIRED_COLS)
-        reader.setOptionalColumns(OPTIONAL_COLS)
 
-        rowcnt = 1
-        for csvrow in reader:
-            rowcnt += 1
-            if not(csvrow['Ignore'].upper().startswith('Y')):
-                idstr = csvrow['ID']
-                labelstr = csvrow['Label']
-                try:
-                    if (idstr != '') and (labelstr != ''):
-                        ontbuilder.getOntology().preloadLabelIdPair(labelstr, idstr)
-                except RuntimeError as err:
-                    print('\nError encountered while processing term label in row '
-                            + str(rowcnt) + ' of "' + termsfile + '":')
-                    print err
-                    print
-                    sys.exit(1)
+        for table in reader:
+            table.setRequiredColumns(REQUIRED_COLS)
+            table.setOptionalColumns(OPTIONAL_COLS)
+    
+            rowcnt = 1
+            for t_row in table:
+                rowcnt += 1
+                if not(t_row['Ignore'].upper().startswith('Y')):
+                    idstr = t_row['ID']
+                    labelstr = t_row['Label']
+                    try:
+                        if (idstr != '') and (labelstr != ''):
+                            ontbuilder.getOntology().preloadLabelIdPair(labelstr, idstr)
+                    except RuntimeError as err:
+                        print('\nError encountered while processing term label in row '
+                                + str(rowcnt) + ' of "' + termsfile + '":')
+                        print err
+                        print
+                        sys.exit(1)
 
 # Process each source CSV file.
 for termsfile in args.termsfiles:
     with open(termsfile) as fin:
         reader = CSVTableReader(fin)
-        reader.setRequiredColumns(REQUIRED_COLS)
-        reader.setOptionalColumns(OPTIONAL_COLS)
 
-        rowcnt = 1
-        for csvrow in reader:
-            rowcnt += 1
-            if not(csvrow['Ignore'].upper().startswith('Y')):
-                typestr = csvrow['Type'].lower()
-
-                try:
-                    if typestr == 'class':
-                        ontbuilder.addClass(csvrow, not(args.no_def_expand))
-                    elif typestr == 'dataproperty':
-                        ontbuilder.addDataProperty(csvrow, not(args.no_def_expand))
-                    elif typestr == 'objectproperty':
-                        ontbuilder.addObjectProperty(csvrow, not(args.no_def_expand))
-                    elif typestr == '':
-                        raise RuntimeError(
-                            'The entity type (e.g., "class", "data property") was not specified.'
-                        )
-                    else:
-                        raise RuntimeError('The entity type "' + csvrow['Type']
-                                + '" is not supported.')
-                except RuntimeError as err:
-                    print('\nError encountered in term description in row '
-                            + str(rowcnt) + ' of "' + termsfile + '":')
-                    print err
-                    print
-                    sys.exit(1)
+        for table in reader:
+            table.setRequiredColumns(REQUIRED_COLS)
+            table.setOptionalColumns(OPTIONAL_COLS)
+    
+            rowcnt = 1
+            for t_row in table:
+                rowcnt += 1
+                if not(t_row['Ignore'].upper().startswith('Y')):
+                    typestr = t_row['Type'].lower()
+    
+                    try:
+                        if typestr == 'class':
+                            ontbuilder.addClass(t_row, not(args.no_def_expand))
+                        elif typestr == 'dataproperty':
+                            ontbuilder.addDataProperty(t_row, not(args.no_def_expand))
+                        elif typestr == 'objectproperty':
+                            ontbuilder.addObjectProperty(t_row, not(args.no_def_expand))
+                        elif typestr == '':
+                            raise RuntimeError(
+                                'The entity type (e.g., "class", "data property") was not specified.'
+                            )
+                        else:
+                            raise RuntimeError('The entity type "' + t_row['Type']
+                                    + '" is not supported.')
+                    except RuntimeError as err:
+                        print('\nError encountered in term description in row '
+                                + str(rowcnt) + ' of "' + termsfile + '":')
+                        print err
+                        print
+                        sys.exit(1)
 
 # Set the ontology ID, if a new ID was provided.
 newid = args.id.strip()

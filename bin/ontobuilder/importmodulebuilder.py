@@ -145,46 +145,48 @@ class ImportModuleBuilder:
         excluded_ents = []
         with open(termsfile_path) as filein:
             reader = CSVTableReader(filein)
-            reader.setRequiredColumns(self.REQUIRED_COLS)
-            reader.setOptionalColumns(self.OPTIONAL_COLS)
-            reader.setDefaultValues(self.DEFAULT_COL_VALS)
         
-            # Read the terms to import from the CSV file, add each term to the
-            # signature set for module extraction, and add the descendents of
-            # each term, if desired.
-            for row in reader:
-                idstr = row['ID']
-                ontobuilder.logger.info('Processing entity ' + idstr + '.')
-                owlent = sourceont.getEntityByID(idstr)
-                if owlent == None:
-                    raise RuntimeError(idstr + ' could not be found in the source ontology')
+            # Read the terms to import from each table in the input file, add
+            # each term to the signature set for module extraction, and add the
+            # descendants of each term, if desired.
+            for table in reader:
+                table.setRequiredColumns(self.REQUIRED_COLS)
+                table.setOptionalColumns(self.OPTIONAL_COLS)
+                table.setDefaultValues(self.DEFAULT_COL_VALS)
 
-                if row['Exclude'].lower() in self.true_strs:
-                    excluded_ents.append(owlent)
-                else:
-                    signature.add(owlent)
+                for row in table:
+                    idstr = row['ID']
+                    ontobuilder.logger.info('Processing entity ' + idstr + '.')
+                    owlent = sourceont.getEntityByID(idstr)
+                    if owlent == None:
+                        raise RuntimeError(idstr + ' could not be found in the source ontology')
     
-                    if row['Seed descendants'].lower() in self.true_strs:
-                        # Get the reasoner name from the input file, using
-                        # HermiT as the default.
-                        reasoner_name = row['Reasoner']
-
-                        # Get the reasoner instance.
-                        reasoner = reasoner_man.getReasoner(reasoner_name)
+                    if row['Exclude'].lower() in self.true_strs:
+                        excluded_ents.append(owlent)
+                    else:
+                        signature.add(owlent)
+        
+                        if row['Seed descendants'].lower() in self.true_strs:
+                            # Get the reasoner name from the input file, using
+                            # HermiT as the default.
+                            reasoner_name = row['Reasoner']
     
-                        # Get the entity's subclasses or subproperties.
-                        ontobuilder.logger.info('Adding descendant entities of ' + str(owlent) + '.')
-                        if isinstance(owlent, OWLClassExpression):
-                            signature.addAll(reasoner.getSubClasses(owlent, False).getFlattened())
-                        elif isinstance(owlent, OWLObjectPropertyExpression):
-                            propset = reasoner.getSubObjectProperties(owlent, False).getFlattened()
-                            # Note that getSubObjectProperties() can return both
-                            # named properties and ObjectInverseOf (i.e., unnamed)
-                            # properties, so we need to check the type of each
-                            # property before adding it to the module signature.
-                            for prop in propset:
-                                if isinstance(prop, OWLObjectProperty):
-                                    signature.add(prop)
+                            # Get the reasoner instance.
+                            reasoner = reasoner_man.getReasoner(reasoner_name)
+        
+                            # Get the entity's subclasses or subproperties.
+                            ontobuilder.logger.info('Adding descendant entities of ' + str(owlent) + '.')
+                            if isinstance(owlent, OWLClassExpression):
+                                signature.addAll(reasoner.getSubClasses(owlent, False).getFlattened())
+                            elif isinstance(owlent, OWLObjectPropertyExpression):
+                                propset = reasoner.getSubObjectProperties(owlent, False).getFlattened()
+                                # Note that getSubObjectProperties() can return both
+                                # named properties and ObjectInverseOf (i.e., unnamed)
+                                # properties, so we need to check the type of each
+                                # property before adding it to the module signature.
+                                for prop in propset:
+                                    if isinstance(prop, OWLObjectProperty):
+                                        signature.add(prop)
 
         if signature.size() == 0:
             raise RuntimeError('No terms to import were found in the terms file.')

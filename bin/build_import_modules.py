@@ -36,21 +36,24 @@ mbuilder = ImportModuleBuilder(IRI_BASE)
 
 with open(args.importsfile) as ifilein:
     ireader = CSVTableReader(ifilein)
-    ireader.setRequiredColumns(['termsfile', 'IRI'])
 
-    for row in ireader:
-        termsfile_path = row['termsfile']
-        # If the termsfile path is a relative path, convert it to an absolute
-        # path using the location of the top-level CSV file as the base.
-        if not(os.path.isabs(termsfile_path)):
-            termsdir = os.path.dirname(os.path.abspath(args.importsfile))
-            termsfile_path = os.path.join(termsdir, termsfile_path)
-
-        if mbuilder.isBuildNeeded(row['IRI'], termsfile_path, args.outputsuffix):
-            print ('Building the ' + row['name'] + ' (' + row['IRI']
-                    + ') import module.')
-            mbuilder.buildModule(row['IRI'], termsfile_path, args.outputsuffix)
-        else:
-            print ('The ' + row['name'] + ' (' + row['IRI']
-                    + ') import module is already up-to-date.')
+    for table in ireader:
+        table.setRequiredColumns(['Termsfile', 'IRI'])
+    
+        for row in table:
+            termsfile_path = row['Termsfile']
+            # If the termsfile path is a relative path, convert it to an
+            # absolute path using the location of the top-level imports table
+            # file as the base.
+            if not(os.path.isabs(termsfile_path)):
+                termsdir = os.path.dirname(os.path.abspath(args.importsfile))
+                termsfile_path = os.path.join(termsdir, termsfile_path)
+    
+            if mbuilder.isBuildNeeded(row['IRI'], termsfile_path, args.outputsuffix):
+                print ('Building the ' + row['name'] + ' (' + row['IRI']
+                        + ') import module.')
+                mbuilder.buildModule(row['IRI'], termsfile_path, args.outputsuffix)
+            else:
+                print ('The ' + row['name'] + ' (' + row['IRI']
+                        + ') import module is already up-to-date.')
 
