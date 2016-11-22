@@ -4,6 +4,7 @@ import csv
 import os
 import logging
 from argparse import ArgumentParser
+from ontobuilder.tablereader import CSVTableReader
 from ontobuilder import ImportModuleBuilder
 
 
@@ -34,7 +35,8 @@ if not(os.path.isfile(args.importsfile)):
 mbuilder = ImportModuleBuilder(IRI_BASE)
 
 with open(args.importsfile) as ifilein:
-    ireader = csv.DictReader(ifilein)
+    ireader = CSVTableReader(ifilein)
+    ireader.setRequiredColumns(['termsfile', 'IRI'])
 
     for row in ireader:
         termsfile_path = row['termsfile']

@@ -12,6 +12,7 @@ import logging
 from progressbar import ProgressBar, Percentage, Bar, ETA
 import math
 import ontobuilder
+from ontobuilder.tablereader import CSVTableReader
 from ontology import Ontology
 
 # Java imports.
@@ -37,38 +38,13 @@ class ImportModuleBuilder:
     OWL files.
     """
     # Required fields (i.e., keys) for all import term specifications.
-    REQUIRED_FIELDS = ('ID')
+    REQUIRED_COLS = ('ID')
 
     # Fields for which no warnings are issued if the field is missing.
-    NO_WARN_FIELDS = ('Exclude', 'Seed descendants', 'Reasoner')
+    OPTIONAL_COLS = ('Exclude', 'Seed descendants', 'Reasoner')
 
-    def _getDescField(self, desc, key, defaultval=''):
-        """
-        Retrieves the value of a field from a dictionary describing a term to
-        import from a source ontology, with all beginning and ending white
-        space removed.  If the field (i.e., key) does not exist in the
-        dictionary and the field is required, an exception is thrown.  If the
-        key does not exist and the field is optional, a warning is issued
-        (unless the field is listed in NO_WARN_FIELDS) and defaultval is
-        returned.
-        """
-        if key in desc:
-            return desc[key].strip()
-        else:
-            if key in self.REQUIRED_FIELDS:
-                raise RuntimeError(
-                    'The required field "' + key
-                    + '" was missing in the import term description.'
-                )
-            elif key not in self.NO_WARN_FIELDS:
-                logging.warning(
-                    'The field "' + key
-                    + '" was missing in the description of the import term "'
-                    + self._getDescField(desc, 'ID') + '".'
-                )
-                return defaultval
-            else:
-                return defaultval
+    # Default values for input table columns.
+    DEFAULT_COL_VALS = {'Reasoner': 'HermiT'}
 
     def __init__(self, base_IRI):
         self.progbar = None
@@ -115,8 +91,7 @@ class ImportModuleBuilder:
 
     def isBuildNeeded(self, ontologyIRI, termsfile_path, outputsuffix):
         """
-        Tests whether an import module actually needs to be built.  If the file
-        located at termsfile_path has 
+        Tests whether an import module actually needs to be built.
         """
         outputfile = self._getOutputFileName(ontologyIRI, outputsuffix)
     
@@ -148,7 +123,7 @@ class ImportModuleBuilder:
         # Extract the name of the source ontology file from the IRI.
         ontfile = os.path.basename(ontologyIRI)
 
-        # Generate the file name and IRI for the ouput ontology OWL file.
+        # Generate the file name and IRI for the output ontology OWL file.
         outputfile = self._getOutputFileName(ontologyIRI, outputsuffix)
         ont_IRI = IRI.create(self.base_IRI + outputfile)
 
@@ -169,27 +144,30 @@ class ImportModuleBuilder:
         signature = HashSet()
         excluded_ents = []
         with open(termsfile_path) as filein:
-            reader = csv.DictReader(filein)
+            reader = CSVTableReader(filein)
+            reader.setRequiredColumns(self.REQUIRED_COLS)
+            reader.setOptionalColumns(self.OPTIONAL_COLS)
+            reader.setDefaultValues(self.DEFAULT_COL_VALS)
         
             # Read the terms to import from the CSV file, add each term to the
             # signature set for module extraction, and add the descendents of
             # each term, if desired.
             for row in reader:
-                idstr = self._getDescField(row, 'ID')
+                idstr = row['ID']
                 ontobuilder.logger.info('Processing entity ' + idstr + '.')
                 owlent = sourceont.getEntityByID(idstr)
                 if owlent == None:
                     raise RuntimeError(idstr + ' could not be found in the source ontology')
 
-                if self._getDescField(row, 'Exclude').lower() in self.true_strs:
+                if row['Exclude'].lower() in self.true_strs:
                     excluded_ents.append(owlent)
                 else:
                     signature.add(owlent)
     
-                    if self._getDescField(row, 'Seed descendants').lower() in self.true_strs:
+                    if row['Seed descendants'].lower() in self.true_strs:
                         # Get the reasoner name from the input file, using
                         # HermiT as the default.
-                        reasoner_name = self._getDescField(row, 'Reasoner', 'HermiT')
+                        reasoner_name = row['Reasoner']
 
                         # Get the reasoner instance.
                         reasoner = reasoner_man.getReasoner(reasoner_name)
