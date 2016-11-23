@@ -221,17 +221,18 @@ class _CSVTable(_BaseTable):
     row of the file contains the column names.  Each subsequent row is returned
     as a _TableRow object; thus, column names are not case sensitive.
     """
-    def __init__(self, csvreader, tablename, required_cols=[], optional_cols=[], default_vals={}):
+    def __init__(self, csvreader, tablename, filename, required_cols=[], optional_cols=[], default_vals={}):
         _BaseTable.__init__(self, tablename, required_cols, optional_cols, default_vals)
 
         self.csvr = csvreader
+        self.filename = filename
 
         # Get the column names from the input CSV file.
         try:
             self.colnames = self.csvr.next()
         except StopIteration:
-            raise RuntimeError('The input CSV file, "' + self.name
-                    + '", is empty.')
+            raise RuntimeError('The input CSV file "' + self.filename
+                    + '" is empty.')
 
         self.rowcnt = 1
 
@@ -241,8 +242,8 @@ class _CSVTable(_BaseTable):
             self.colnames[colnum] = self.colnames[colnum].strip().lower()
             if self.colnames[colnum] in nameset:
                 raise RuntimeError('The column name "' + self.colnames[colnum]
-                    + '" is used more than once in the input CSV file, "'
-                    + self.name + '".  All column names must be unique.')
+                    + '" is used more than once in the input CSV file "'
+                    + self.filename + '".  All column names must be unique.')
             else:
                 nameset.add(self.colnames[colnum])
 
@@ -256,7 +257,7 @@ class _CSVTable(_BaseTable):
         if len(rowdata) != len(self.colnames):
             raise RuntimeError(
                 'The number of column names in the header of the CSV file "'
-                + self.name + '" does not match the number of fields in row '
+                + self.filename + '" does not match the number of fields in row '
                 + str(self.rowcnt) + '.'
             )
 
@@ -277,8 +278,8 @@ class CSVTableReader(_BaseTableReader):
         self.filename = filepath
         self.filein = open(filepath, 'r')
 
-        # Use the file name as the table name.
-        self.tablename = self.filename
+        # Use a standard table name.
+        self.tablename = 'table'
 
         self.numtables = 1
 
@@ -291,7 +292,7 @@ class CSVTableReader(_BaseTableReader):
         self.csvr = csv.reader(self.filein)
 
         # Get the single table from the input source.
-        return _CSVTable(self.csvr, self.filename)
+        return _CSVTable(self.csvr, self.tablename, self.filename)
 
     def getTableByName(self, tablename):
         if tablename != self.tablename:
