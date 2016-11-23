@@ -201,19 +201,26 @@ class TestODFTableReader(unittest.TestCase):
     """
     tr = None
 
-    # The expected values from the table test files.  The casing of the column
-    # names varies to test that the returned table rows are not case sensitive.
+    # The expected values from the ODF test file.
     expvals = {
+        # Vary the casing of the column names to test that the returned table
+        # rows are not case sensitive.  The first sheet in the test file
+        # includes an empty row in between the two data-containing rows; the
+        # empty row should be ignored.
         'sheet 1': (
             {'COL1': 'data 1', 'COLUMN 2':'extra whitespace!', 'COL3':'data2'},
             {'col1': 'the', 'column 2':'last', 'col3':'row'}
         ),
+        # The second sheet in the test file includes date and time types as
+        # well as a huge number of empty cells that nevertheless count as
+        # defined rows and columns because they have explicit style formatting.
+        # These should be ignored by the table reader.
         'Sheet2': (
             {'date val': 'Nov. 24, 2016', 'time val': '01:22:00 PM', 'one more': 'Blah!!'},
         )
     }
 
-    # Calculate the expected numbers of tables and total rows.
+    # Calculate the expected number of tables and total row count.
     exp_tablecnt = exp_rowcnt = 0
     for tname in expvals:
         exp_tablecnt += 1
@@ -267,21 +274,27 @@ class TestODFTableReader(unittest.TestCase):
                 for colname in exprow:
                     self.assertEqual(exprow[colname], row[colname])
 
-#    def test_colnumErrors(self):
-#        """
-#        Tests errors caused by the number of columns in a row not being equal
-#        to the number of columns found in the header.
-#        """
-#        self._openFile('test_data/test_table-colnum_error.csv')
-#        table = self.tr.next()
-#
-#        # Read a row that is too short.
-#        with self.assertRaises(RuntimeError):
-#            table.next()
-#
-#        # Read a row that is too long.
-#        with self.assertRaises(RuntimeError):
-#            table.next()
+    def test_errors(self):
+        """
+        Tests a variety of error conditions.
+        """
+        self._openFile('test_data/test_table-error.ods')
+
+        # Use an invalid table index and name.
+        with self.assertRaises(KeyError):
+            self.tr.getTableByIndex(2)
+        with self.assertRaises(KeyError):
+            self.tr.getTableByName('nonexistant')
+
+        # Try loading a table with non-unique column names.  The test data is
+        # such that this also tests that checking for unique column names is
+        # not case sensitive.
+        with self.assertRaisesRegexp(RuntimeError, 'The column name "col1" is used more than once'):
+            self.tr.next()
+
+        # Try loading a table that is completely empty.
+        with self.assertRaisesRegexp(RuntimeError, 'The input ODF spreadsheet .* is empty.'):
+            self.tr.getTableByIndex(1)
 
     def test_requiredAndOptional(self):
         """

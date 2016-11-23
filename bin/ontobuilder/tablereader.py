@@ -238,7 +238,7 @@ class _CSVTable(_BaseTable):
         # Trim the column names and make sure they are unique.
         nameset = set()
         for colnum in range(len(self.colnames)):
-            self.colnames[colnum] = self.colnames[colnum].strip()
+            self.colnames[colnum] = self.colnames[colnum].strip().lower()
             if self.colnames[colnum] in nameset:
                 raise RuntimeError('The column name "' + self.colnames[colnum]
                     + '" is used more than once in the input CSV file, "'
@@ -311,10 +311,11 @@ class _ODFTable(_BaseTable):
     names.  Each subsequent row is returned as a _TableRow object; thus, column
     names are not case sensitive.
     """
-    def __init__(self, odfsheet, required_cols=[], optional_cols=[], default_vals={}):
+    def __init__(self, odfsheet, filename, required_cols=[], optional_cols=[], default_vals={}):
         _BaseTable.__init__(self, odfsheet.getName(), required_cols, optional_cols, default_vals)
 
         self.sheet = odfsheet
+        self.filename = filename
 
         # If the spreadsheet includes cells that contain no data, but to which
         # formatting was applied, then the number of defined rows and/or
@@ -330,8 +331,8 @@ class _ODFTable(_BaseTable):
         # columns are as large as possible.
         usedrange = self.sheet.getUsedRange(False)
         if usedrange == None:
-            raise RuntimeError('The input ODF spreadsheet, "' + self.name
-                    + '", is empty.')
+            raise RuntimeError('The input ODF spreadsheet "' + self.name
+                    + '" in the file "' + self.filename + '" is empty.')
         self.numrows = usedrange.getEndPoint().y + 1
         self.numcols = usedrange.getEndPoint().x + 1
         #print 'RAW ROW COUNT:', self.sheet.getRowCount()
@@ -348,11 +349,12 @@ class _ODFTable(_BaseTable):
         # Trim the column names and make sure they are unique.
         nameset = set()
         for colnum in range(len(self.colnames)):
-            self.colnames[colnum] = self.colnames[colnum].strip()
+            self.colnames[colnum] = self.colnames[colnum].strip().lower()
             if self.colnames[colnum] in nameset:
                 raise RuntimeError('The column name "' + self.colnames[colnum]
-                    + '" is used more than once in the input ODF spreadsheet, "'
-                    + self.name + '".  All column names must be unique.')
+                    + '" is used more than once in the input ODF spreadsheet "'
+                    + self.name + '" in the file "' + self.filename
+                    + '".  All column names must be unique.')
             else:
                 nameset.add(self.colnames[colnum])
 
@@ -376,6 +378,9 @@ class _ODFTable(_BaseTable):
 
         trow = _TableRow(self.required_cols, self.optional_cols, self.defaultvals)
         for colnum in range(self.numcols):
+            # Uncomment the following line to print the ODF value type for each
+            # data cell.
+            # print self.sheet.getImmutableCellAt(colnum, self.rowcnt - 1).getValueType()
             trow[self.colnames[colnum]] = self.sheet.getImmutableCellAt(colnum, self.rowcnt - 1).getTextValue()
 
         return trow
@@ -400,7 +405,7 @@ class ODFTableReader(_BaseTableReader):
                     + '.  No matching sheet could be found in the file "'
                     + self.filename + '".')
 
-        return _ODFTable(self.odfs.getSheet(index))
+        return _ODFTable(self.odfs.getSheet(index), self.filename)
 
     def getTableByName(self, tablename):
         sheet = self.odfs.getSheet(tablename)
@@ -409,7 +414,7 @@ class ODFTableReader(_BaseTableReader):
                     + '".  No matching sheet could be found in the file "'
                     + self.filename + '".')
 
-        table = _ODFTable(sheet)
+        table = _ODFTable(sheet, self.filename)
 
         return table
 
