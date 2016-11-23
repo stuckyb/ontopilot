@@ -249,10 +249,26 @@ class _CSVTable(_BaseTable):
 
     def next(self):
         """
-        Allows iteration through each row of the CSV file.
+        Allows iteration through each row of the CSV file.  Empty rows are
+        ignored.
         """
-        rowdata = self.csvr.next()
-        self.rowcnt += 1
+        # Find the next non-empty row.  After the loop, self.rowcnt will be one
+        # row beyond the next non-empty row (if the search succeeded).  Note
+        # that we don't need to check for an end-of-file condition, because if
+        # we reach the end of the file, the CSV reader will raise a
+        # StopIteration exception and we can just let that propagate to the
+        # caller, which will give us the desired behavior.
+        emptyrow = True
+        while emptyrow:
+            rowdata = self.csvr.next()
+            for val in rowdata:
+                if val.strip() != '':
+                    emptyrow = False
+                    break
+            self.rowcnt += 1
+
+        if emptyrow:
+            raise StopIteration()
 
         if len(rowdata) != len(self.colnames):
             raise RuntimeError(

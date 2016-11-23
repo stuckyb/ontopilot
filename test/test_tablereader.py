@@ -243,7 +243,6 @@ class TestCSVTableReader(_TestTableReader, unittest.TestCase):
             self.tr.getTableByIndex(0)
 
 
-
 class TestODFTableReader(_TestTableReader, unittest.TestCase):
     """
     Tests the ODFTableReader class.
