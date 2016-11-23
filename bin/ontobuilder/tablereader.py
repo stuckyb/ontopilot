@@ -1,6 +1,17 @@
 
+# Python imports.
 import csv
 import logging
+
+# Java imports.
+# The obvious way to support ODF spreadsheet documents (as produced, e.g., by
+# LibreOffice and OpenOffice) would be with the ezodf package in Python.
+# Unfortunately, this package requires the lxml package, which requires a
+# compiled C library.  Thus, it cannot run on the JVM, which means it won't
+# work with Jython.  The best alternative I could come up with was to use a
+# Java ODF library.
+from java.io import File
+from org.jopendocument.dom.spreadsheet import SpreadSheet
 
 
 class ColumnNameError(RuntimeError):
@@ -157,20 +168,39 @@ class _BaseTableReader:
     A base class for all table readers.
     """
     def __init__(self):
-        # A list of tables in the input source.
-        self.tables = []
-        # A dictionary mapping table names to indices in the table list.
-        self.tablename_map = {}
-
+        self.numtables = 0
         self.curr_table = -1
 
     def getTableByIndex(self, index):
-        return self.tables[index]
+        """
+        Retrieves a table from the source document according to an integer
+        index.  Must be implemented by child classes.
+        """
+        pass
 
     def getTableByName(self, tablename):
-        return self.tables[self.tablename_map[tablename]]
+        """
+        Retrieves a table from the source document according to a string index.
+        Must be implemented by child classes.
+        """
+        pass
+
+    def __enter__(self):
+        """
+        Enter portion of the context manager interface.
+        """
+        return self
+
+    def __exit__(self, etype, value, traceback):
+        """
+        Exit portion of the context manager interface.  Might need to be
+        implemented by child classes.
+        """
+        pass
 
     def __iter__(self):
+        self.curr_table = -1
+
         return self
 
     def next(self):
@@ -179,10 +209,10 @@ class _BaseTableReader:
         """
         self.curr_table += 1
 
-        if self.curr_table == len(self.tables):
+        if self.curr_table == self.numtables:
             raise StopIteration()
         else:
-            return self.tables[self.curr_table]
+            return self.getTableByIndex(self.curr_table)
 
 
 class _CSVTable(_BaseTable):
@@ -241,17 +271,115 @@ class CSVTableReader(_BaseTableReader):
         _BaseTableReader.__init__(self)
 
         self.filename = filepath
-        self.filein = open(filepath)
+        self.filein = open(filepath, 'r')
+
+        # Use the file name as the table name.
+        self.tablename = self.filename
+
+        self.numtables = 1
+
+    def getTableByIndex(self, index):
+        if index != 0:
+            raise KeyError('Invalid table index:' + str(index) + '.')
+
+        self.filein.seek(0)
         self.csvr = csv.reader(self.filein)
 
+        # Get the single table from the input source.
+        return _CSVTable(self.csvr, self.filename)
+
+    def getTableByName(self, tablename):
+        if tablename != self.tablename:
+            raise KeyError('Invalid table index: ' + str(tablename) + '.')
+
+        return self.getTableByIndex(0)
+
+    def __exit__(self, etype, value, traceback):
+        self.filein.close()
+
+
+
+class _ODFTable(_BaseTable):
+    """
+    Represents a single table (i.e., sheet) in an ODF spreadsheet file.
+    _CSVTable assumes that the first row of the sheet contains the column
+    names.  Each subsequent row is returned as a _TableRow object; thus, column
+    names are not case sensitive.
+    """
+    def __init__(self, csvreader, tablename, required_cols=[], optional_cols=[], default_vals={}):
+        _BaseTable.__init__(self, tablename, required_cols, optional_cols, default_vals)
+
+        self.csvr = csvreader
+
+        # Get the column names from the input CSV file.
+        try:
+            self.colnames = self.csvr.next()
+        except StopIteration:
+            raise RuntimeError('The input CSV file, "' + self.name
+                    + '", is empty.')
+
+        # Trim the column names and make sure none are empty.
+        for colnum in range(len(self.colnames)):
+            self.colnames[colnum] = self.colnames[colnum].strip()
+            if self.colnames[colnum] == '':
+                raise RuntimeError('The input CSV file, "' + self.name
+                    + '", has one or more empty column names.')
+
+        self.rowcnt = 1
+
+    def next(self):
+        """
+        Allows iteration through each row of the CSV file.
+        """
+        rowdata = self.csvr.next()
+        self.rowcnt += 1
+
+        if len(rowdata) != len(self.colnames):
+            raise RuntimeError(
+                'The number of column names in the header of the CSV file "'
+                + self.name + '" does not match the number of fields in row '
+                + str(self.rowcnt) + '.'
+            )
+
+        trow = _TableRow(self.required_cols, self.optional_cols, self.defaultvals)
+        for colnum in range(len(rowdata)):
+            trow[self.colnames[colnum]] = rowdata[colnum]
+
+        return trow
+
+
+class ODFTableReader(_BaseTableReader):
+    """
+    Reads tables (i.e., sheets) from an ODF spreadsheet file (as produced,
+    e.g., by LibreOffice and OpenOffice).
+    """
+    def __init__(self, filepath):
+        _BaseTableReader.__init__(self)
+
+        self.filename = filepath
+        self.filein = File(filepath)
+        self.odfs = SpreadSheet.createFromFile(self.filein)
+
+        for sheetcnt in range(self.odfs.getSheetCount()):
+            sheet = self.odfs.getSheet(sheetcnt)
+            print sheet.getName()
         # A list of tables in the input source.
-        self.tables = [_CSVTable(self.csvr, self.filename)]
+        #self.tables = [_CSVTable(self.csvr, self.filename)]
         # A dictionary mapping table names to indices in the table list.
-        self.tablename_map = {self.filename: 0}
+        #self.tablename_map = {self.filename: 0}
 
-    def __enter__(self):
-        return self
+    def getTableByIndex(self, index):
+        if index != 0:
+            raise KeyError('Invalid table index:' + str(index) + '.')
 
-    def __exit__(self, type, value, tb):
+        return self.table
+
+    def getTableByName(self, tablename):
+        if tablename != self.tablename:
+            raise KeyError('Invalid table index: ' + str(tablename) + '.')
+
+        return self.table
+
+    def __exit__(self, etype, value, traceback):
         self.filein.close()
 
