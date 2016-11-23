@@ -14,7 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from ontobuilder.tablereader import _TableRow, ColumnNameError, CSVTableReader
+from ontobuilder.tablereader import _TableRow, ColumnNameError
+from ontobuilder.tablereader import CSVTableReader, ODFTableReader
 import unittest
 from testfixtures import LogCapture
 
@@ -80,20 +81,16 @@ class TestCSVTableReader(unittest.TestCase):
     )
 
     def _openFile(self, filename):
-        self.fin = open(filename)
-        self.tr = CSVTableReader(self.fin)
+        self.tr = CSVTableReader(filename)
 
     def tearDown(self):
-        self.fin.close()
+        self.tr.__exit__(None, None, None)
 
     def test_retrieveTable(self):
         """
         Test retrieving tables by index and by name.
         """
         self._openFile('test_data/test_table-valid.csv')
-
-        self.assertEqual(len(self.tr.tables), 1)
-        self.assertEqual(len(self.tr.tablename_map), 1)
 
         tname = self.tr.getTableByIndex(0).name
         self.assertEqual(self.tr.getTableByName(tname).name, tname)
@@ -117,11 +114,18 @@ class TestCSVTableReader(unittest.TestCase):
 
     def test_read(self):
         self._openFile('test_data/test_table-valid.csv')
-        table = self.tr.next()
 
-        for exprow, row in zip(self.testvals, table):
-            for colname in exprow:
-                self.assertEqual(exprow[colname], row[colname])
+        # Test that the data values are correct and that we can read a table more than once.
+        for readcnt in range(2):
+            table = self.tr.getTableByIndex(0)
+            rowcnt = 0
+            for exprow, row in zip(self.testvals, table):
+                rowcnt += 1
+                for colname in exprow:
+                    self.assertEqual(exprow[colname], row[colname])
+
+            # Verify that we actually read data from the table.
+            self.assertEqual(rowcnt, 2)
 
     def test_colnumErrors(self):
         """
@@ -175,6 +179,146 @@ class TestCSVTableReader(unittest.TestCase):
         Tests setting and using default column values.
         """
         self._openFile('test_data/test_table-valid.csv')
+        table = self.tr.next()
+
+        table.setOptionalColumns(['col4', 'col5', 'col6'])
+        table.setDefaultValues({'col4': 'default 1', 'COL5': 'default2'})
+
+        row = table.next()
+
+        # Test explicitly specified defaults, including a test to make sure
+        # that default value column names are not case sensitive.
+        self.assertEqual(row['col4'], 'default 1')
+        self.assertEqual(row['col5'], 'default2')
+
+        # Test the default default value.
+        self.assertEqual(row['col6'], '')
+
+
+class TestODFTableReader(unittest.TestCase):
+    """
+    Tests the ODFTableReader class.
+    """
+    tr = None
+
+    # The expected values from the table test files.  The casing of the column
+    # names varies to test that the returned table rows are not case sensitive.
+    expvals = {
+        'sheet 1': (
+            {'COL1': 'data 1', 'COLUMN 2':'extra whitespace!', 'COL3':'data2'},
+            {'col1': 'the', 'column 2':'last', 'col3':'row'}
+        ),
+        'Sheet2': (
+            {'date val': 'Nov. 24, 2016', 'time val': '01:22:00 PM', 'one more': 'Blah!!'},
+        )
+    }
+
+    # Calculate the expected numbers of tables and total rows.
+    exp_tablecnt = exp_rowcnt = 0
+    for tname in expvals:
+        exp_tablecnt += 1
+        for row in expvals[tname]:
+            exp_rowcnt += 1
+
+    def _openFile(self, filename):
+        self.tr = ODFTableReader(filename)
+
+    def tearDown(self):
+        self.tr.__exit__(None, None, None)
+
+    def test_retrieveTable(self):
+        """
+        Test retrieving tables by index and by name.
+        """
+        self._openFile('test_data/test_table-valid.ods')
+
+        self.assertEqual(self.tr.numtables, self.exp_tablecnt)
+
+        tname = self.tr.getTableByIndex(0).name
+        self.assertEqual(self.tr.getTableByName(tname).name, tname)
+
+    def test_iteration(self):
+        """
+        Test that iteration over tables in a TableReader and rows in a Table
+        behave as expected.
+        """
+        self._openFile('test_data/test_table-valid.ods')
+
+        tablecnt = 0
+        rowcnt = 0
+        for table in self.tr:
+            tablecnt += 1
+            for row in table:
+                rowcnt += 1
+
+        self.assertEqual(tablecnt, self.exp_tablecnt)
+        self.assertEqual(rowcnt, self.exp_rowcnt)
+
+    def test_read(self):
+        """
+        Read all data from the input file, comparing the results to the
+        expected data values.
+        """
+        self._openFile('test_data/test_table-valid.ods')
+
+        for tname in self.expvals:
+            table = self.tr.getTableByName(tname)
+            for exprow, row in zip(self.expvals[tname], table):
+                for colname in exprow:
+                    self.assertEqual(exprow[colname], row[colname])
+
+#    def test_colnumErrors(self):
+#        """
+#        Tests errors caused by the number of columns in a row not being equal
+#        to the number of columns found in the header.
+#        """
+#        self._openFile('test_data/test_table-colnum_error.csv')
+#        table = self.tr.next()
+#
+#        # Read a row that is too short.
+#        with self.assertRaises(RuntimeError):
+#            table.next()
+#
+#        # Read a row that is too long.
+#        with self.assertRaises(RuntimeError):
+#            table.next()
+
+    def test_requiredAndOptional(self):
+        """
+        Tests that required column names are handled properly.
+        """
+        self._openFile('test_data/test_table-valid.ods')
+        table = self.tr.next()
+
+        table.setRequiredColumns(['col1', 'col4', 'COL5'])
+        table.setOptionalColumns(['col6'])
+
+        row = table.next()
+
+        # These should not trigger exceptions.
+        row['col1']
+        row['col6']
+
+        # Reference missing required columns, including a test to make sure
+        # that column specification is not case sensitive.
+        with self.assertRaises(RuntimeError):
+            row['col4']
+        with self.assertRaises(RuntimeError):
+            row['col5']
+
+        # Reference a column that should trigger a warning.
+        with LogCapture() as lc:
+            row['column 7']
+        lc.check((
+            'root', 'WARNING',
+            'The column "column 7" was missing in the table row.'
+        ))
+
+    def test_defaults(self):
+        """
+        Tests setting and using default column values.
+        """
+        self._openFile('test_data/test_table-valid.ods')
         table = self.tr.next()
 
         table.setOptionalColumns(['col4', 'col5', 'col6'])

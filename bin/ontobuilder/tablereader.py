@@ -233,14 +233,18 @@ class _CSVTable(_BaseTable):
             raise RuntimeError('The input CSV file, "' + self.name
                     + '", is empty.')
 
-        # Trim the column names and make sure none are empty.
+        self.rowcnt = 1
+
+        # Trim the column names and make sure they are unique.
+        nameset = set()
         for colnum in range(len(self.colnames)):
             self.colnames[colnum] = self.colnames[colnum].strip()
-            if self.colnames[colnum] == '':
-                raise RuntimeError('The input CSV file, "' + self.name
-                    + '", has one or more empty column names.')
-
-        self.rowcnt = 1
+            if self.colnames[colnum] in nameset:
+                raise RuntimeError('The column name "' + self.colnames[colnum]
+                    + '" is used more than once in the input CSV file, "'
+                    + self.name + '".  All column names must be unique.')
+            else:
+                nameset.add(self.colnames[colnum])
 
     def next(self):
         """
@@ -280,7 +284,8 @@ class CSVTableReader(_BaseTableReader):
 
     def getTableByIndex(self, index):
         if index != 0:
-            raise KeyError('Invalid table index:' + str(index) + '.')
+            raise KeyError('Invalid table index ' + str(index)
+                    + ' for the file "' + self.filename + '".')
 
         self.filein.seek(0)
         self.csvr = csv.reader(self.filein)
@@ -290,13 +295,13 @@ class CSVTableReader(_BaseTableReader):
 
     def getTableByName(self, tablename):
         if tablename != self.tablename:
-            raise KeyError('Invalid table index: ' + str(tablename) + '.')
+            raise KeyError('Invalid table name "' + str(tablename)
+                    + '" for the file "' + self.filename + '".')
 
         return self.getTableByIndex(0)
 
     def __exit__(self, etype, value, traceback):
         self.filein.close()
-
 
 
 class _ODFTable(_BaseTable):
@@ -306,44 +311,72 @@ class _ODFTable(_BaseTable):
     names.  Each subsequent row is returned as a _TableRow object; thus, column
     names are not case sensitive.
     """
-    def __init__(self, csvreader, tablename, required_cols=[], optional_cols=[], default_vals={}):
-        _BaseTable.__init__(self, tablename, required_cols, optional_cols, default_vals)
+    def __init__(self, odfsheet, required_cols=[], optional_cols=[], default_vals={}):
+        _BaseTable.__init__(self, odfsheet.getName(), required_cols, optional_cols, default_vals)
 
-        self.csvr = csvreader
+        self.sheet = odfsheet
 
-        # Get the column names from the input CSV file.
-        try:
-            self.colnames = self.csvr.next()
-        except StopIteration:
-            raise RuntimeError('The input CSV file, "' + self.name
+        # If the spreadsheet includes cells that contain no data, but to which
+        # formatting was applied, then the number of defined rows and/or
+        # columns (as returned, e.g., by self.sheet.getRowCount()) can be much
+        # greater than the range of rows and columns that actually contain
+        # data.  Thus, we use the "used range" rather than the raw row and
+        # column counts to define the number of rows and columns in the
+        # spreadsheet.  The second sheet ("Sheet2") of the valid test data file
+        # is an example of a sheet that has "spurious" rows and column caused
+        # by defining formatting styles with no data.  This sheet is a
+        # worst-case scenario, because *every* cell in the spreadsheet has a
+        # formatting style applied to it, which means the numbers of rows and
+        # columns are as large as possible.
+        usedrange = self.sheet.getUsedRange(False)
+        if usedrange == None:
+            raise RuntimeError('The input ODF spreadsheet, "' + self.name
                     + '", is empty.')
+        self.numrows = usedrange.getEndPoint().y + 1
+        self.numcols = usedrange.getEndPoint().x + 1
+        #print 'RAW ROW COUNT:', self.sheet.getRowCount()
+        #print 'RAW COLUMN COUNT:', self.sheet.getColumnCount()
+        #print 'USED ROW COUNT:', self.numrows
+        #print 'USED COLUMN COUNT:', self.numcols
 
-        # Trim the column names and make sure none are empty.
+        # Get the column names from the sheet.
+        self.colnames = []
+        for colnum in range(self.numcols):
+            self.colnames.append(self.sheet.getImmutableCellAt(colnum, 0).getTextValue())
+        self.rowcnt = 1
+
+        # Trim the column names and make sure they are unique.
+        nameset = set()
         for colnum in range(len(self.colnames)):
             self.colnames[colnum] = self.colnames[colnum].strip()
-            if self.colnames[colnum] == '':
-                raise RuntimeError('The input CSV file, "' + self.name
-                    + '", has one or more empty column names.')
-
-        self.rowcnt = 1
+            if self.colnames[colnum] in nameset:
+                raise RuntimeError('The column name "' + self.colnames[colnum]
+                    + '" is used more than once in the input ODF spreadsheet, "'
+                    + self.name + '".  All column names must be unique.')
+            else:
+                nameset.add(self.colnames[colnum])
 
     def next(self):
         """
-        Allows iteration through each row of the CSV file.
+        Allows iteration through each row of the ODF spreadsheet table. Empty
+        rows are ignored.
         """
-        rowdata = self.csvr.next()
-        self.rowcnt += 1
+        # Find the next non-empty row.  After the loop, self.rowcnt will be one
+        # row beyond the next non-empty row (if the search succeeded).
+        emptyrow = True
+        while (self.rowcnt < self.numrows) and emptyrow:
+            for colnum in range(self.numcols):
+                if self.sheet.getImmutableCellAt(colnum, self.rowcnt).getTextValue() != '':
+                    emptyrow = False
+                    break
+            self.rowcnt += 1
 
-        if len(rowdata) != len(self.colnames):
-            raise RuntimeError(
-                'The number of column names in the header of the CSV file "'
-                + self.name + '" does not match the number of fields in row '
-                + str(self.rowcnt) + '.'
-            )
+        if emptyrow:
+            raise StopIteration()
 
         trow = _TableRow(self.required_cols, self.optional_cols, self.defaultvals)
-        for colnum in range(len(rowdata)):
-            trow[self.colnames[colnum]] = rowdata[colnum]
+        for colnum in range(self.numcols):
+            trow[self.colnames[colnum]] = self.sheet.getImmutableCellAt(colnum, self.rowcnt - 1).getTextValue()
 
         return trow
 
@@ -359,27 +392,24 @@ class ODFTableReader(_BaseTableReader):
         self.filename = filepath
         self.filein = File(filepath)
         self.odfs = SpreadSheet.createFromFile(self.filein)
-
-        for sheetcnt in range(self.odfs.getSheetCount()):
-            sheet = self.odfs.getSheet(sheetcnt)
-            print sheet.getName()
-        # A list of tables in the input source.
-        #self.tables = [_CSVTable(self.csvr, self.filename)]
-        # A dictionary mapping table names to indices in the table list.
-        #self.tablename_map = {self.filename: 0}
+        self.numtables = self.odfs.getSheetCount()
 
     def getTableByIndex(self, index):
-        if index != 0:
-            raise KeyError('Invalid table index:' + str(index) + '.')
+        if (index < 0) or (index >= self.numtables):
+            raise KeyError('Invalid table index:' + str(index)
+                    + '.  No matching sheet could be found in the file "'
+                    + self.filename + '".')
 
-        return self.table
+        return _ODFTable(self.odfs.getSheet(index))
 
     def getTableByName(self, tablename):
-        if tablename != self.tablename:
-            raise KeyError('Invalid table index: ' + str(tablename) + '.')
+        sheet = self.odfs.getSheet(tablename)
+        if sheet == None:
+            raise KeyError('Invalid table name: "' + str(tablename)
+                    + '".  No matching sheet could be found in the file "'
+                    + self.filename + '".')
 
-        return self.table
+        table = _ODFTable(sheet)
 
-    def __exit__(self, etype, value, traceback):
-        self.filein.close()
+        return table
 
