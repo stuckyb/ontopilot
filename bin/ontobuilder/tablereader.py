@@ -326,10 +326,11 @@ class _ODFTable(_BaseTable):
         # column counts to define the number of rows and columns in the
         # spreadsheet.  The second sheet ("Sheet2") of the valid test data file
         # is an example of a sheet that has "spurious" rows and column caused
-        # by defining formatting styles with no data.  This sheet is a
-        # worst-case scenario, because *every* cell in the spreadsheet has a
-        # formatting style applied to it, which means the numbers of rows and
-        # columns are as large as possible.
+        # by defining formatting styles with no data.  This sheet is a near
+        # worst-case scenario, because *every* row in the spreadsheet has a
+        # formatting style applied to it, which means the numbers of rows is as
+        # large as possible.  There are also 8 spurious columns due to
+        # formatting style specifications.
         usedrange = self.sheet.getUsedRange(False)
         if usedrange == None:
             raise RuntimeError('The input ODF spreadsheet "' + self.name
