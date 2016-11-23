@@ -206,21 +206,42 @@ class TestCSVTableReader(_TestTableReader, unittest.TestCase):
     def _openFile(self, filename):
         self.tr = CSVTableReader(filename)
 
-    def test_colnumErrors(self):
+    def test_errors(self):
         """
-        Tests errors caused by the number of columns in a row not being equal
-        to the number of columns found in the header.
+        Tests a variety of error conditions.
         """
-        self._openFile('test_data/test_table-colnum_error.csv')
+        self._openFile('test_data/test_table-colnum_errors.csv')
+
+        # Use an invalid table index and name.
+        with self.assertRaises(KeyError):
+            self.tr.getTableByIndex(1)
+        with self.assertRaises(KeyError):
+            self.tr.getTableByName('nonexistant')
+
+        # Test errors caused by the number of columns in a row not being equal
+        # to the number of columns found in the header.
         table = self.tr.next()
 
         # Read a row that is too short.
-        with self.assertRaises(RuntimeError):
+        with self.assertRaisesRegexp(RuntimeError, 'The number of column names .* does not match'):
             table.next()
 
         # Read a row that is too long.
-        with self.assertRaises(RuntimeError):
+        with self.assertRaisesRegexp(RuntimeError, 'The number of column names .* does not match'):
             table.next()
+
+        # Try loading a table with non-unique column names.  The test data is
+        # such that this also tests that checking for unique column names is
+        # not case sensitive.
+        self._openFile('test_data/test_table-invalid_colnames.csv')
+        with self.assertRaisesRegexp(RuntimeError, 'The column name "col1" is used more than once'):
+            self.tr.next()
+
+        # Try loading a table that is completely empty.
+        self._openFile('test_data/test_table-empty.csv')
+        with self.assertRaisesRegexp(RuntimeError, 'The input CSV file .* is empty.'):
+            self.tr.getTableByIndex(0)
+
 
 
 class TestODFTableReader(_TestTableReader, unittest.TestCase):
