@@ -14,6 +14,29 @@ from java.io import File
 from org.jopendocument.dom.spreadsheet import SpreadSheet
 
 
+class TableReaderFactory:
+    """
+    A factory class that instantiates a TableReader class to match the type of
+    a given input file.  The class instance provides a context manager to
+    manage the lifetime of the instantiated table reader.
+    """
+    def __init__(filepath):
+        pass
+
+    def __enter__(self):
+        """
+        Enter portion of the context manager interface.
+        """
+        return self
+
+    def __exit__(self, etype, value, traceback):
+        """
+        Exit portion of the context manager interface.  Might need to be
+        implemented by child classes.
+        """
+        pass
+
+
 class ColumnNameError(RuntimeError):
     """
     Exception class for missing required columns.
@@ -185,16 +208,10 @@ class _BaseTableReader:
         """
         pass
 
-    def __enter__(self):
+    def close(self):
         """
-        Enter portion of the context manager interface.
-        """
-        return self
-
-    def __exit__(self, etype, value, traceback):
-        """
-        Exit portion of the context manager interface.  Might need to be
-        implemented by child classes.
+        Closes the file associated with this TableReader.  Does nothing by
+        default; so might need to be overriden by child classes.
         """
         pass
 
@@ -317,7 +334,7 @@ class CSVTableReader(_BaseTableReader):
 
         return self.getTableByIndex(0)
 
-    def __exit__(self, etype, value, traceback):
+    def close(self):
         self.filein.close()
 
 

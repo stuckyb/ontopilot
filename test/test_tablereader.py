@@ -89,8 +89,7 @@ class _TestTableReader:
                 self.exp_rowcnt += 1
 
     def tearDown(self):
-        # Call the exit routine of the TableReader's context manager interface.
-        self.tr.__exit__(None, None, None)
+        self.tr.close()
 
     def test_retrieveTable(self):
         """
