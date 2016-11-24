@@ -5,7 +5,7 @@ import os
 import sys
 import logging
 from argparse import ArgumentParser
-from ontobuilder.tablereader import CSVTableReader
+from ontobuilder.tablereader import TableReaderFactory
 from ontobuilder import OWLOntologyBuilder
 
 
@@ -14,7 +14,7 @@ logging.basicConfig(format='\n%(levelname)s: %(message)s\n')
 
 # Define and process the command-line arguments.
 argp = ArgumentParser(description='Compiles an OWL ontology from a base \
-ontology file and one or more CSV term description tables.')
+ontology file and one or more term description tables from source files.')
 argp.add_argument('-b', '--base_ontology', type=str, required=True, help='An \
 OWL ontology file to use as a base for compiling the final ontology.')
 argp.add_argument('-n', '--no_def_expand', action='store_true', help='If this \
@@ -24,8 +24,8 @@ argp.add_argument('-i', '--id', type=str, required=False, default='',
     help='An IRI to use as the ID for the compiled ontology.')
 argp.add_argument('-o', '--output', type=str, required=True, help='A path to \
 use for the compiled ontology file.')
-argp.add_argument('termsfiles', type=str, nargs='*', help='One or more CSV \
-files that contain tables defining the new ontology terms.')
+argp.add_argument('termsfiles', type=str, nargs='*', help='One or more files \
+that contain tables defining the new ontology terms.')
 args = argp.parse_args()
 
 # Verify that the base ontology file exists.
@@ -34,11 +34,11 @@ if not(os.path.isfile(args.base_ontology)):
         'The source ontology could not be found: ' + args.base_ontology + '.'
     )
 
-# Verify that the terms CSV files exist.
+# Verify that the terms files exist.
 for termsfile in args.termsfiles:
     if not(os.path.isfile(termsfile)):
         raise RuntimeError(
-            'The input CSV file could not be found: ' + termsfile + '.'
+            'The input file could not be found: ' + termsfile + '.'
         )
 
 ontbuilder = OWLOntologyBuilder(args.base_ontology)
@@ -51,7 +51,7 @@ OPTIONAL_COLS = ('Comments', 'Subclass of', 'Equivalent to')
 # Preprocess all new term IDs and labels so that forward references to
 # undefined terms can succeed.
 for termsfile in args.termsfiles:
-    with CSVTableReader(termsfile) as reader:
+    with TableReaderFactory(termsfile) as reader:
         for table in reader:
             table.setRequiredColumns(REQUIRED_COLS)
             table.setOptionalColumns(OPTIONAL_COLS)
@@ -72,9 +72,9 @@ for termsfile in args.termsfiles:
                         print
                         sys.exit(1)
 
-# Process each source CSV file.
+# Process each source file.
 for termsfile in args.termsfiles:
-    with CSVTableReader(termsfile) as reader:
+    with TableReaderFactory(termsfile) as reader:
         for table in reader:
             table.setRequiredColumns(REQUIRED_COLS)
             table.setOptionalColumns(OPTIONAL_COLS)

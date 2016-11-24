@@ -4,18 +4,18 @@ import csv
 import os
 import logging
 from argparse import ArgumentParser
-from ontobuilder.tablereader import CSVTableReader
+from ontobuilder.tablereader import TableReaderFactory
 from ontobuilder import ImportModuleBuilder
 
 
 # Set the format for logging output.
 logging.basicConfig(format='\n%(levelname)s: %(message)s\n')
 
-argp = ArgumentParser(description='Processes a single CSV file of \
-terms/entities to extract from a source ontology.  The results are written to \
-an output file in OWL format.')
-argp.add_argument('-i', '--importsfile', type=str, required=True, help='A CSV \
-file containing the set of ontologies to import.')
+argp = ArgumentParser(description='Processes a set of ontologies from which \
+to extract terms as import modules.  The results are written to one or more \
+output files in OWL format.')
+argp.add_argument('-i', '--importsfile', type=str, required=True, help='A \
+file containing a table of ontologies to import.')
 argp.add_argument('-s', '--outputsuffix', type=str, required=True, help='A \
 suffix to use for naming the import module OWL files.')
 argp.add_argument('-b', '--baseIRI', type=str, required=True, help='The base \
@@ -30,11 +30,11 @@ IRI_BASE = args.baseIRI
 
 # Verify that the imports file exists.
 if not(os.path.isfile(args.importsfile)):
-    raise RuntimeError('The imports CSV file could not be found.')
+    raise RuntimeError('The imports file could not be found.')
 
 mbuilder = ImportModuleBuilder(IRI_BASE)
 
-with CSVTableReader(args.importsfile) as ireader:
+with TableReaderFactory(args.importsfile) as ireader:
     for table in ireader:
         table.setRequiredColumns(['Termsfile', 'IRI'])
     
