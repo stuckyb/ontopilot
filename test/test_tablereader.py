@@ -15,9 +15,25 @@
 
 
 from ontobuilder.tablereader import _TableRow, ColumnNameError
+from ontobuilder.tablereader import TableReaderFactory
 from ontobuilder.tablereader import CSVTableReader, ODFTableReader
 import unittest
 from testfixtures import LogCapture
+
+
+class TestTableReaderFactory(unittest.TestCase):
+    """
+    Tests the TableReaderFactory class.
+    """
+    def test_tableReaderFactory(self):
+        with TableReaderFactory('test_data/test_table-valid.csv') as t_reader:
+            self.assertEqual(t_reader.getNumTables(), 1)
+
+        with TableReaderFactory('test_data/test_table-valid.ods') as t_reader:
+            self.assertEqual(t_reader.getNumTables(), 2)
+
+        with self.assertRaisesRegexp(RuntimeError, 'The type of the input file .* could not be determined'):
+            TableReaderFactory('unknown_type.blah').__enter__()
 
 
 class TestTableRow(unittest.TestCase):
@@ -125,6 +141,8 @@ class _TestTableReader:
         expected data values.
         """
         self._openFile(self.valid_input_testfile)
+        
+        self.assertEqual(self.tr.getNumTables(), self.exp_tablecnt)
 
         for tname in self.expvals:
             table = self.tr.getTableByName(tname)

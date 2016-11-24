@@ -2,6 +2,7 @@
 # Python imports.
 import csv
 import logging
+import os
 
 # Java imports.
 # The obvious way to support ODF spreadsheet documents (as produced, e.g., by
@@ -20,21 +21,33 @@ class TableReaderFactory:
     a given input file.  The class instance provides a context manager to
     manage the lifetime of the instantiated table reader.
     """
-    def __init__(filepath):
-        pass
+    def __init__(self, filepath):
+        self.filepath = filepath
+        self.t_reader = None
 
     def __enter__(self):
         """
         Enter portion of the context manager interface.
         """
-        return self
+        # Determine the type of the input file.  This is currently done by
+        # looking at the file extension.  We could add more robust checks of
+        # file type at some point, but it might not be worth the trouble.
+        ext = os.path.splitext(self.filepath)[1]
+        if ext == '.csv':
+            self.t_reader = CSVTableReader(self.filepath)
+        elif ext == '.ods':
+            self.t_reader = ODFTableReader(self.filepath)
+        else:
+            raise RuntimeError('The type of the input file "' + self.filepath
+                    + '" could not be determined or is not supported.')
+
+        return self.t_reader
 
     def __exit__(self, etype, value, traceback):
         """
-        Exit portion of the context manager interface.  Might need to be
-        implemented by child classes.
+        Exit portion of the context manager interface.
         """
-        pass
+        self.t_reader.close()
 
 
 class ColumnNameError(RuntimeError):
@@ -193,6 +206,9 @@ class _BaseTableReader:
     def __init__(self):
         self.numtables = 0
         self.curr_table = -1
+
+    def getNumTables(self):
+        return self.numtables
 
     def getTableByIndex(self, index):
         """
