@@ -371,31 +371,49 @@ class _ODFTable(_BaseTable):
         # formatting was applied, then the number of defined rows and/or
         # columns (as returned, e.g., by self.sheet.getRowCount()) can be much
         # greater than the range of rows and columns that actually contain
-        # data.  Thus, we use the "used range" rather than the raw row and
-        # column counts to define the number of rows and columns in the
-        # spreadsheet.  The second sheet ("Sheet2") of the valid test data file
-        # is an example of a sheet that has "spurious" rows and column caused
-        # by defining formatting styles with no data.  This sheet is a near
-        # worst-case scenario, because *every* row in the spreadsheet has a
-        # formatting style applied to it, which means the numbers of rows is as
-        # large as possible.  There are also 8 spurious columns due to
-        # formatting style specifications.
-        usedrange = self.sheet.getUsedRange(False)
-        if usedrange == None:
-            raise RuntimeError('The input ODF spreadsheet "' + self.name
-                    + '" in the file "' + self.filename + '" is empty.')
-        self.numrows = usedrange.getEndPoint().y + 1
-        self.numcols = usedrange.getEndPoint().x + 1
+        # data.  This could slow things down considerably since a naive
+        # algorithm could be iterating over millions of empty cells.  There are
+        # at least two ways to deal with this.  First is to use the
+        # getUsedRange() method of the Sheet class to get the range of cells
+        # that actually contain data and iterate only over those.  The second
+        # option is to inspect the first table row to infer the number of
+        # data-containing columns, then skipping empty rows assuming no data
+        # are found beyond the used columns in the header row.  I implemented
+        # both of these options and timed each on the valid test data file
+        # running the ODFTableReader unit tests.  The first sheet ("sheet 1")
+        # of this test file is an example of a sheet that has "spurious" rows
+        # and column caused by defining formatting styles with no data.  This
+        # sheet is a worst-case scenario, because *every* row and column in the
+        # spreadsheet has a formatting style applied to it, which means the
+        # numbers of rows and columns are as large as possible (1,024 x
+        # 1,048,576; more than 1 billion cells).  The results are as follows:
+        #
+        #     Option 1 (getUsedRange()): 131.1 s
+        #     Option 2 (infer column count, skip empty rows): 7.0 s
+        #
+        # I went with option 2 for obvious reasons.
+        self.numrows = self.sheet.getRowCount()
+        self.numcols = self.sheet.getColumnCount()
         #print 'RAW ROW COUNT:', self.sheet.getRowCount()
         #print 'RAW COLUMN COUNT:', self.sheet.getColumnCount()
-        #print 'USED ROW COUNT:', self.numrows
-        #print 'USED COLUMN COUNT:', self.numcols
 
-        # Get the column names from the sheet.
+        # Get the column names from the sheet and infer the number of used
+        # columns.  The first empty cell encountered in the first row of the
+        # sheet is considered to mark the end of the used columns.
         self.colnames = []
         for colnum in range(self.numcols):
-            self.colnames.append(self.sheet.getImmutableCellAt(colnum, 0).getTextValue())
+            cellval = self.sheet.getImmutableCellAt(colnum, 0).getTextValue()
+            if cellval == '':
+                break
+            self.colnames.append(cellval)
         self.rowcnt = 1
+        self.numcols = len(self.colnames)
+        #print 'USED COLUMN COUNT:', self.numcols
+
+        if self.numcols == 0:
+            raise RuntimeError('The input ODF spreadsheet "' + self.name
+                    + '" in the file "' + self.filename
+                    + '" appears to be empty.')
 
         # Trim the column names and make sure they are unique.
         nameset = set()

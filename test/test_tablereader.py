@@ -264,7 +264,10 @@ class TestODFTableReader(_TestTableReader, unittest.TestCase):
     """
     Tests the ODFTableReader class.
     """
-    # The expected values from the ODF test file.
+    # The expected values from the ODF test file.  Both sheets in the test file
+    # include a huge number of empty cells that nevertheless count as defined
+    # rows and columns because they have explicit style formatting.  These
+    # should be ignored by the table reader.
     expvals = {
         # Vary the casing of the column names to test that the returned table
         # rows are not case sensitive.  The first sheet in the test file
@@ -274,10 +277,7 @@ class TestODFTableReader(_TestTableReader, unittest.TestCase):
             {'COL1': 'data 1', 'COLUMN 2':'extra whitespace!', 'COL3':'data2'},
             {'col1': 'the', 'column 2':'last', 'col3':'row'}
         ),
-        # The second sheet in the test file includes date and time types as
-        # well as a huge number of empty cells that nevertheless count as
-        # defined rows and columns because they have explicit style formatting.
-        # These should be ignored by the table reader.
+        # The second sheet in the test file includes date and time types.
         'Sheet2': (
             {'date val': 'Nov. 24, 2016', 'time val': '01:22:00 PM', 'one more': 'Blah!!'},
         )
@@ -307,6 +307,6 @@ class TestODFTableReader(_TestTableReader, unittest.TestCase):
             self.tr.next()
 
         # Try loading a table that is completely empty.
-        with self.assertRaisesRegexp(RuntimeError, 'The input ODF spreadsheet .* is empty.'):
+        with self.assertRaisesRegexp(RuntimeError, 'The input ODF spreadsheet .* empty.'):
             self.tr.getTableByIndex(1)
 
