@@ -75,10 +75,11 @@ for termsfile in args.termsfiles:
 # Process each source file.
 for termsfile in args.termsfiles:
     with TableReaderFactory(termsfile) as reader:
+        print 'Parsing ' + termsfile + '...'
         for table in reader:
             table.setRequiredColumns(REQUIRED_COLS)
             table.setOptionalColumns(OPTIONAL_COLS)
-    
+
             rowcnt = 1
             for t_row in table:
                 rowcnt += 1
@@ -112,5 +113,6 @@ if newid != '':
     ontbuilder.getOntology().setOntologyID(newid)
 
 # Write the ontology to the output file.
+print 'Writing compiled ontology to ' + args.output + '...'
 ontbuilder.getOntology().saveOntology(args.output)
 
