@@ -13,6 +13,7 @@ import os
 # Java ODF library.
 from java.io import File
 from org.jopendocument.dom.spreadsheet import SpreadSheet
+from org.jopendocument.dom import ODSingleXMLDocument
 
 
 class TableReaderFactory:
@@ -35,7 +36,7 @@ class TableReaderFactory:
         ext = os.path.splitext(self.filepath)[1]
         if ext == '.csv':
             self.t_reader = CSVTableReader(self.filepath)
-        elif ext == '.ods':
+        elif ext in ('.ods', '.fods'):
             self.t_reader = ODFTableReader(self.filepath)
         else:
             raise RuntimeError('The type of the input file "' + self.filepath
@@ -464,8 +465,19 @@ class ODFTableReader(_BaseTableReader):
         _BaseTableReader.__init__(self)
 
         self.filename = filepath
-        self.filein = File(filepath)
-        self.odfs = SpreadSheet.createFromFile(self.filein)
+        ext = os.path.splitext(self.filename)[1]
+        filein = File(filepath)
+
+        if ext == '.ods':
+            # A "regular" ODF spreadsheet.
+            self.odfs = SpreadSheet.createFromFile(filein)
+        elif ext == '.fods':
+            # A flat XML ODF spreadsheet.
+            odf_xml = ODSingleXMLDocument.createFromFile(filein)
+            self.odfs = odf_xml.getPackage().getSpreadSheet()
+        else:
+            raise RuntimeError('Unrecognized file type: ' + self.filename + '.')
+
         self.numtables = self.odfs.getSheetCount()
 
     def getTableByIndex(self, index):
