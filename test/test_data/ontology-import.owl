@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl#"
+     xml:base="https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl"
+     xmlns:ncbitaxon="http://purl.obolibrary.org/obo/ncbitaxon#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:oboInOwl="http://www.geneontology.org/formats/oboInOwl#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:protege="http://protege.stanford.edu/plugins/owl/protege#"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:obo="http://purl.obolibrary.org/obo/"
+     xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <owl:Ontology rdf:about="https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl">
+        <rdfs:label xml:lang="en">Simple Imported Test Ontology</rdfs:label>
+    </owl:Ontology>
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <!-- http://purl.obolibrary.org/obo/OBITO_0001 -->
+
+    <owl:Class rdf:about="http://purl.obolibrary.org/obo/OBITO_0001">
+        <rdfs:label xml:lang="en">imported test class 1</rdfs:label>
+    </owl:Class>
+
+</rdf:RDF>
