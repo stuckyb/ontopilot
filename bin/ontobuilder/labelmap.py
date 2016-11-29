@@ -23,6 +23,11 @@ class LabelMap:
     associated term IRIs.
     """
     def __init__(self, ontology):
+        """
+        Initializes this LabelMap with an existing ontology.
+
+        ontology: An OWL API OWLOntology object.
+        """
         # Dictionary for the labels lookup table.
         self.lmap = {}
 
@@ -39,6 +44,9 @@ class LabelMap:
         Retrieve the IRI associated with a given term label.  If the label is
         ambiguous (i.e., associated with more than one IRI), an exception is
         thrown.
+
+        label: A label string.
+        Returns: The OWl API IRI object associated with the label.
         """
         if label not in self.ambiglabels:
             return self.lmap[label]
@@ -87,11 +95,12 @@ class LabelMap:
 
     def _makeMap(self, ontology):
         """
-        Creates label lookup table entries for a given ontology that map class
-        labels (i.e., the values of rdfs:label axioms) to their corresponding
-        class IRIs.  This function verifies that none of the labels are
-        ambiguous; that is, that no label is used for more than one IRI.  If an
-        ambiguous label is encountered, a warning is issued.
+        Creates label lookup table entries for a given ontology, including its
+        imports closure, that map class labels (i.e., the values of rdfs:label
+        axioms) to their corresponding class IRIs.  This function verifies that
+        none of the labels are ambiguous; that is, that no label is used for
+        more than one IRI.  If an ambiguous label is encountered, a warning is
+        issued.
         """
         for annotation_axiom in ontology.getAxioms(AxiomType.ANNOTATION_ASSERTION, True):
             avalue = annotation_axiom.getValue()
