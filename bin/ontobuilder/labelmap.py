@@ -39,27 +39,49 @@ class LabelMap:
 
         self._makeMap(ontology)
 
-    def lookupIRI(self, label):
+    def lookupIRI(self, label, IRI_root=''):
         """
-        Retrieve the IRI associated with a given term label.  If the label is
-        ambiguous (i.e., associated with more than one IRI), an exception is
-        thrown.
+        Retrieve the IRI associated with a given term label.  If IRI_root is
+        provided, it will be used to confirm the retrieved IRI and, in the case
+        of ambiguous labels (i.e., labes associated with more than one IRI), it
+        will be used to attempt to disambiguate the label reference.  If the
+        label (possibly with an IRI_root) is ambiguous, an exception is thrown.
 
         label: A label string.
+        IRI_root: A string containing the root of the term IRI.
         Returns: The OWl API IRI object associated with the label.
         """
         if label not in self.ambiglabels:
-            return self.lmap[label]
+            labelIRI = self.lmap[label]
+            if str(labelIRI).startswith(IRI_root):
+                return labelIRI
+            else:
+                raise RuntimeError(
+                    'The provided IRI root, <' + IRI_root
+                    + '>, does not match the IRI associated with the label "'
+                    + label + '" (<' + str(labelIRI) + '>.'
+                )
         else:
-            raise RuntimeError(
-                'Attempted to use an ambiguous label: The label "' + label +
-                '" is used for multiple terms in the ontology <'
-                + str(self.ontology.getOntologyID().getOntologyIRI().get())
-                + '>, including its imports closure.  The label "' + label
-                + '" is associated with the following IRIs: ' + '<'
-                + '>, <'.join([str(labelIRI) for labelIRI in self.ambiglabels[label]])
-                + '>.'
-            )
+            # Check if IRI_root can disambiguate the label reference.
+            lastmatch = None
+            matchcnt = 0
+            for labelIRI in self.ambiglabels[label]:
+                if str(labelIRI).startswith(IRI_root):
+                    lastmatch = labelIRI
+                    matchcnt += 1
+
+            if matchcnt == 1:
+                return lastmatch
+            else:
+                raise RuntimeError(
+                    'Attempted to use an ambiguous label: The label "' + label
+                    + '" is used for multiple terms in the ontology <'
+                    + str(self.ontology.getOntologyID().getOntologyIRI().get())
+                    + '>, including its imports closure.  The label "' + label
+                    + '" is associated with the following IRIs: ' + '<'
+                    + '>, <'.join([str(labelIRI) for labelIRI in self.ambiglabels[label]])
+                    + '>.'
+                )
 
     def _addAmbiguousLabel(self, label, termIRI):
         """

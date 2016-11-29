@@ -36,11 +36,34 @@ class TestLabelMap(unittest.TestCase):
         works as expected.
         """
         # Check all labels in the directly loaded ontology.
-        self.assertEqual(str(self.lm.lookupIRI('test object property 1')), 'http://purl.obolibrary.org/obo/OBTO_0001')
-        self.assertEqual(str(self.lm.lookupIRI('test class 1')), 'http://purl.obolibrary.org/obo/OBTO_0010')
+        self.assertEqual(
+            str(self.lm.lookupIRI('test object property 1')),
+            'http://purl.obolibrary.org/obo/OBTO_0001'
+        )
+        self.assertEqual(
+            str(self.lm.lookupIRI('test class 1')),
+            'http://purl.obolibrary.org/obo/OBTO_0010'
+        )
 
         # Check all labels in the imported OWL file.
-        self.assertEqual(str(self.lm.lookupIRI('imported test class 1')), 'http://purl.obolibrary.org/obo/OBITO_0001')
+        self.assertEqual(
+            str(self.lm.lookupIRI('imported test class 1')),
+            'http://purl.obolibrary.org/obo/OBITO_0001'
+        )
+
+    def test_lookup_with_root(self):
+        """
+        Tests using a root IRI string to check the value of a retrieved IRI.
+        """
+        # Use a matching root IRI string.
+        self.assertEqual(
+            str(self.lm.lookupIRI('test object property 1', 'http://purl.obolibrary.org/obo/OBTO_')),
+            'http://purl.obolibrary.org/obo/OBTO_0001'
+        )
+
+        # Use an incorrect root IRI string.
+        with self.assertRaisesRegexp(RuntimeError, 'The provided IRI root, .*, does not match'):
+            self.lm.lookupIRI('test object property 1', 'http://purl.obolibrary.org/obo/OBLAH_')
 
     def test_ambiguous(self):
         """
@@ -48,7 +71,7 @@ class TestLabelMap(unittest.TestCase):
         """
         # Add an ambiguous label.  This should raise a warning.
         with LogCapture() as lc:
-            self.lm.add('test class 1', IRI.create('http://purl.obolibrary.org/obo/OBTO_0200'))
+            self.lm.add('test class 1', IRI.create('http://purl.obolibrary.org/obo/OBITO_0200'))
 
         # Don't use LogCapture's check() method here becuase it doesn't support
         # substring matching.
@@ -58,4 +81,16 @@ class TestLabelMap(unittest.TestCase):
         # exception.
         with self.assertRaisesRegexp(RuntimeError, 'Attempted to use an ambiguous label'):
             self.lm.lookupIRI('test class 1')
+
+        # Attempt to dereference an ambiguous label with an IRI root string.
+        # This should work without error.
+        self.assertEqual(
+            str(self.lm.lookupIRI('test class 1', 'http://purl.obolibrary.org/obo/OBTO_')),
+            'http://purl.obolibrary.org/obo/OBTO_0010'
+        )
+
+        # Attempt to dereference an ambiguous label with an IRI root string
+        # that is non-unique.  This should raise an exception.
+        with self.assertRaisesRegexp(RuntimeError, 'Attempted to use an ambiguous label'):
+            self.lm.lookupIRI('test class 1', 'http://purl.obolibrary.org/obo/')
 
