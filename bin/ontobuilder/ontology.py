@@ -28,6 +28,12 @@ from org.semanticweb.owlapi.manchestersyntax.renderer import ParserException
 from com.google.common.base import Optional
 
 
+# Constants for defining the types of supported ontology entity objects.
+CLASS_ENTITY = 0
+DATAPROPERTY_ENTITY = 1
+OBJECTPROPERTY_ENTITY = 2
+
+
 class _OntologyClass:
     """
     Provides a high-level interface to the OWL API's ontology object system
@@ -51,6 +57,9 @@ class _OntologyClass:
         self.df = ontology.df
         self.classIRI = classIRI
         self.owlclass = classobj
+
+    def getTypeConst(self):
+        return CLASS_ENTITY
         
     def addDefinition(self, deftxt):
         """
@@ -169,6 +178,9 @@ class _OntologyDataProperty:
         self.df = ontology.df
         self.propIRI = propIRI
         self.propobj = propobj
+        
+    def getTypeConst(self):
+        return DATAPROPERTY_ENTITY
         
     def addDefinition(self, deftxt):
         """
@@ -328,6 +340,9 @@ class _OntologyObjectProperty:
         self.df = ontology.df
         self.propIRI = propIRI
         self.propobj = propobj
+        
+    def getTypeConst(self):
+        return OBJECTPROPERTY_ENTITY
         
     def addDefinition(self, deftxt):
         """
