@@ -48,31 +48,12 @@ REQUIRED_COLS = ('Type', 'ID')
 # Optional columns.
 OPTIONAL_COLS = ('Comments', 'Subclass of', 'Equivalent to')
 
-# Preprocess all new term IDs and labels so that forward references to
-# undefined terms can succeed.
-for termsfile in args.termsfiles:
-    with TableReaderFactory(termsfile) as reader:
-        for table in reader:
-            table.setRequiredColumns(REQUIRED_COLS)
-            table.setOptionalColumns(OPTIONAL_COLS)
-    
-            rowcnt = 1
-            for t_row in table:
-                rowcnt += 1
-                if not(t_row['Ignore'].upper().startswith('Y')):
-                    idstr = t_row['ID']
-                    labelstr = t_row['Label']
-                    try:
-                        if (idstr != '') and (labelstr != ''):
-                            ontbuilder.getOntology().preloadLabelIdPair(labelstr, idstr)
-                    except RuntimeError as err:
-                        print('\nError encountered while processing term label in row '
-                                + str(rowcnt) + ' of "' + termsfile + '":')
-                        print err
-                        print
-                        sys.exit(1)
-
-# Process each source file.
+# Process each source file.  In this step, entities and label annotations are
+# defined, but processing of all other axioms (e.g., text definitions,
+# comments, equivalency axioms, subclass of axioms, etc.) is deferred until
+# after all input files have been read.  This allows forward referencing of
+# labels and term IRIs and means that entity descriptions and source files can
+# be processed in any arbitrary order.
 for termsfile in args.termsfiles:
     with TableReaderFactory(termsfile) as reader:
         print 'Parsing ' + termsfile + '...'
@@ -88,11 +69,11 @@ for termsfile in args.termsfiles:
     
                     try:
                         if typestr == 'class':
-                            ontbuilder.addClass(t_row, not(args.no_def_expand))
+                            ontbuilder.addClass(t_row)
                         elif typestr == 'dataproperty':
-                            ontbuilder.addDataProperty(t_row, not(args.no_def_expand))
+                            ontbuilder.addDataProperty(t_row)
                         elif typestr == 'objectproperty':
-                            ontbuilder.addObjectProperty(t_row, not(args.no_def_expand))
+                            ontbuilder.addObjectProperty(t_row)
                         elif typestr == '':
                             raise RuntimeError(
                                 'The entity type (e.g., "class", "data property") was not specified.'
@@ -106,6 +87,10 @@ for termsfile in args.termsfiles:
                         print err
                         print
                         sys.exit(1)
+
+# Define all deferred axioms from the source entity descriptions.
+print 'Defining all remaining entity axioms...'
+ontbuilder.processDeferredEntityAxioms(not(args.no_def_expand))
 
 # Set the ontology ID, if a new ID was provided.
 newid = args.id.strip()

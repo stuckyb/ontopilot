@@ -9,6 +9,7 @@ import re
 import logging
 from obohelper import termIRIToOboID, oboIDToIRI
 from ontology import Ontology
+from ontology import CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY
 
 # Java imports.
 
@@ -18,11 +19,23 @@ class OWLOntologyBuilder:
     Builds an OWL ontology using _TableRow objects that describe new entities
     to add to an existing "base" ontology.  Typically, the new entity
     descriptions will correspond with rows in an input CSV file or other
-    tabular file format.
+    tabular file format.  In order to allow forward references of term labels,
+    OWLOntologyBuilder uses a 2-stage process for defining new terms.  First,
+    when the various addEntity() methods are called, only the new entity and
+    label annotation axioms are created.  The remainder of the definition is
+    cached along with a reference to the new entity.  The second step happens
+    when the method processDeferredEntityAxioms() is called.  This method adds
+    all remaining axioms for each entity (e.g., text definitions, comments,
+    equivalency axioms, subclass of axioms, etc.).
     """
     def __init__(self, base_ont_path):
         # Load the base ontology.
         self.ontology = Ontology(base_ont_path)
+
+        # A list (used as a stack) for caching information in _TableRow objects
+        # and their associated ontology entity objects.  Each list entry is
+        # stored as a tuple, (ontology entity instance, _TableRow instance).
+        self.entity_trows = []
 
     def getOntology(self):
         """
@@ -30,12 +43,10 @@ class OWLOntologyBuilder:
         """
         return self.ontology
 
-    def addClass(self, classdesc, expanddef=True):
+    def addClass(self, classdesc):
         """
         Adds a new class to the ontology, based on a class description provided
-        as the table row classdesc (i.e., the single explicit argument).  If
-        expanddef is True, then term labels in the text definition for the new
-        class will be expanded to include the terms' OBO IDs.
+        as the table row classdesc (i.e., the single explicit argument).
         """
         # Create the new class.
         newclass = self.ontology.createNewClass(
@@ -47,39 +58,48 @@ class OWLOntologyBuilder:
         if labeltext != '':
             newclass.addLabel(labeltext)
 
+        # Cache the remainder of the class description.
+        self.entity_trows.append((newclass, classdesc))
+
+    def _addClassAxioms(self, classobj, classdesc, expanddef=True):
+        """
+        Adds axioms from a _TableRow class description to an existing class
+        object.  If expanddef is True, then term labels in the text definition
+        for the new class will be expanded to include the terms' OBO IDs.
+        """
         # Add the text definition to the class, if we have one.
         textdef = classdesc['Text definition']
         if textdef != '':
             if expanddef:
                 textdef = self._expandDefinition(textdef)
 
-            newclass.addDefinition(textdef)
+            classobj.addDefinition(textdef)
 
         # Add any comments for the class.
         commenttext = classdesc['Comments']
         if commenttext != '':
-            newclass.addComment(commenttext)
+            classobj.addComment(commenttext)
 
         # Get the IRI object of the parent class and add it as a parent.
         parentIRI = self._getIRIFromDesc(
             classdesc['Parent']
         )
         if parentIRI != None:
-            newclass.addSuperclass(parentIRI)
+            classobj.addSuperclass(parentIRI)
     
         # Add any subclass of axioms (specified as class expressions in
         # Manchester Syntax).
         ms_exp = classdesc['Subclass of']
         if ms_exp != '':
-            newclass.addClassExpression(ms_exp, False)
+            classobj.addClassExpression(ms_exp, False)
  
         # Add any equivalency axioms (specified as class expressions in
         # Manchester Syntax).
         ms_exp = classdesc['Equivalent to']
         if ms_exp != '':
-            newclass.addClassExpression(ms_exp, True)
+            classobj.addClassExpression(ms_exp, True)
  
-    def addDataProperty(self, propdesc, expanddef=True):
+    def addDataProperty(self, propdesc):
         """
         Adds a new data property to the ontology, based on a property
         description provided as the table row propdesc (i.e., the single
@@ -97,51 +117,61 @@ class OWLOntologyBuilder:
         if labeltext != '':
             newprop.addLabel(labeltext)
         
-        # Add the text definition to the class, if we have one.
+        # Cache the remainder of the property description.
+        self.entity_trows.append((newprop, propdesc))
+
+    def _addDataPropertyAxioms(self, propobj, propdesc, expanddef=True):
+        """
+        Adds axioms from a _TableRow data property description to an existing
+        data property object.  If expanddef is True, then term labels in the
+        text definition for the new property will be expanded to include the
+        terms' OBO IDs.
+        """
+        # Add the text definition to the property, if we have one.
         textdef = propdesc['Text definition']
         if textdef != '':
             if expanddef:
                 textdef = self._expandDefinition(textdef)
 
-            newprop.addDefinition(textdef)
+            propobj.addDefinition(textdef)
         
         # Add any comments for the property.
         commenttext = propdesc['Comments']
         if commenttext != '':
-            newprop.addComment(commenttext)
+            propobj.addComment(commenttext)
 
         # Get the IRI object of the parent property and add it as a parent.
         parentIRI = self._getIRIFromDesc(
             propdesc['Parent']
         )
         if parentIRI != None:
-            newprop.addSuperproperty(parentIRI)
+            propobj.addSuperproperty(parentIRI)
 
         # Add the domain, if we have one.
         domainIRI = self._getIRIFromDesc(
             propdesc['Domain']
         )
         if domainIRI != None:
-            newprop.setDomain(domainIRI)
+            propobj.setDomain(domainIRI)
 
         # Add the range, if we have one.
         range_exp = propdesc['Range']
         if range_exp != '':
-            newprop.setRange(range_exp)
+            propobj.setRange(range_exp)
 
         # Add the disjoint with axiom, if we have a disjoint property.
         disjIRI = self._getIRIFromDesc(
             propdesc['Disjoint with']
         )
         if disjIRI != None:
-            newprop.setDisjointWith(disjIRI)
+            propobj.setDisjointWith(disjIRI)
 
         # Add the characteristics, if provided.  The only supported
         # characteristic for data properties is "functional".
         chars_str = propdesc['Characteristics']
         if chars_str != '':
             if chars_str.lower() == 'functional':
-                newprop.makeFunctional()
+                propobj.makeFunctional()
             else:
                 raise RuntimeError(
                     'Unrecognized characteristic(s) for a data property: "'
@@ -149,7 +179,7 @@ class OWLOntologyBuilder:
                     '".  For data properties, "functional" is the only supported characteristic.'
                 )
 
-    def addObjectProperty(self, propdesc, expanddef=True):
+    def addObjectProperty(self, propdesc):
         """
         Adds a new object property to the ontology, based on a property
         description provided as the table row propdesc (i.e., the single
@@ -167,59 +197,69 @@ class OWLOntologyBuilder:
         if labeltext != '':
             newprop.addLabel(labeltext)
         
-        # Add the text definition to the class, if we have one.
+        # Cache the remainder of the property description.
+        self.entity_trows.append((newprop, propdesc))
+
+    def _addObjectPropertyAxioms(self, propobj, propdesc, expanddef=True):
+        """
+        Adds axioms from a _TableRow object property description to an existing
+        object property object.  If expanddef is True, then term labels in the
+        text definition for the new property will be expanded to include the
+        terms' OBO IDs.
+        """
+        # Add the text definition to the property, if we have one.
         textdef = propdesc['Text definition']
         if textdef != '':
             if expanddef:
                 textdef = self._expandDefinition(textdef)
 
-            newprop.addDefinition(textdef)
+            propobj.addDefinition(textdef)
         
         # Add any comments for the property.
         commenttext = propdesc['Comments']
         if commenttext != '':
-            newprop.addComment(commenttext)
+            propobj.addComment(commenttext)
 
         # Get the IRI object of the parent property and add it as a parent.
         parentIRI = self._getIRIFromDesc(
             propdesc['Parent']
         )
         if parentIRI != None:
-            newprop.addSuperproperty(parentIRI)
+            propobj.addSuperproperty(parentIRI)
 
         # Add the domain, if we have one.
         domainIRI = self._getIRIFromDesc(
             propdesc['Domain']
         )
         if domainIRI != None:
-            newprop.setDomain(domainIRI)
+            propobj.setDomain(domainIRI)
 
         # Add the range, if we have one.
         rangeIRI = self._getIRIFromDesc(
             propdesc['Range']
         )
         if rangeIRI != None:
-            newprop.setRange(rangeIRI)
+            propobj.setRange(rangeIRI)
 
         # Add the inverse axiom, if we have an inverse property.
         inverseIRI = self._getIRIFromDesc(
             propdesc['Inverse']
         )
         if inverseIRI != None:
-            newprop.setInverse(inverseIRI)
+            propobj.setInverse(inverseIRI)
 
         # Add the disjoint with axiom, if we have a disjoint property.
         disjIRI = self._getIRIFromDesc(
             propdesc['Disjoint with']
         )
         if disjIRI != None:
-            newprop.setDisjointWith(disjIRI)
+            propobj.setDisjointWith(disjIRI)
 
         # Add the characteristics, if provided.  The only supported
         # characteristic for data properties is "functional".
         chars_str = propdesc['Characteristics']
         if chars_str != '':
-            self._processObjPropCharacteristics(newprop, chars_str)
+            self._processObjPropCharacteristics(propobj, chars_str)
 
     def _processObjPropCharacteristics(self, propobj, chars_str):
         """
@@ -249,6 +289,33 @@ class OWLOntologyBuilder:
                     + char_str + 
                     '".  Supported characteristics for object properties are "functional", "inverse functional", "reflexive", "irreflexive", "symmetric", "asymmetric", and "transitive".'
                 )
+
+    def processDeferredEntityAxioms(self, expanddefs=True):
+        """
+        Processes all cached _TableRow entity descriptions and entity objects
+        by adding all remaining axioms for the entities. (e.g., text
+        definitions, comments, subclass of axioms, etc.).  If expanddefs is
+        True, then term labels in the text definition for the new property will
+        be expanded to include the terms' OBO IDs.
+        """
+        while len(self.entity_trows) > 0:
+            entity, desc = self.entity_trows[-1]
+
+            typeconst = entity.getTypeConst()
+            if typeconst == CLASS_ENTITY:
+                self._addClassAxioms(entity, desc, expanddefs)
+            elif typeconst == DATAPROPERTY_ENTITY:
+                self._addDataPropertyAxioms(entity, desc, expanddefs)
+            elif typeconst == OBJECTPROPERTY_ENTITY:
+                self._addObjectPropertyAxioms(entity, desc, expanddefs)
+            else:
+                raise RuntimeError('Unsupported ontology entity type: '
+                        + str(typeconst) + '.')
+
+            # Putting the pop() operation at the end of the loop ensures that a
+            # description is only removed from the list/stack if it was
+            # processed without an exception being thrown.
+            self.entity_trows.pop()
 
     def _getIRIFromDesc(self, id_desc):
         """
