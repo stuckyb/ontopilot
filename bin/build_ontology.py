@@ -90,7 +90,13 @@ for termsfile in args.termsfiles:
 
 # Define all deferred axioms from the source entity descriptions.
 print 'Defining all remaining entity axioms...'
-ontbuilder.processDeferredEntityAxioms(not(args.no_def_expand))
+try:
+    ontbuilder.processDeferredEntityAxioms(not(args.no_def_expand))
+except RuntimeError as err:
+    print('\nError encountered in term description:')
+    print err
+    print
+    sys.exit(1)
 
 # Set the ontology ID, if a new ID was provided.
 newid = args.id.strip()

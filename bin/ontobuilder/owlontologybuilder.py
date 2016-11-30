@@ -376,7 +376,7 @@ class OWLOntologyBuilder:
         example, if the definition contains the text "A {whole plant} that...",
         it will be converted to "A whole plant (PO:0000003) that...".
         """
-        labelre = re.compile(r'(\{[A-Za-z _]+\})')
+        labelre = re.compile(r'(\{[A-Za-z\- _]+\})')
         defparts = labelre.split(deftext)
 
         newdef = ''
