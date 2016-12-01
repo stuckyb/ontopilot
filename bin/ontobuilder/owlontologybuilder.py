@@ -8,8 +8,8 @@
 import re
 import logging
 from obohelper import termIRIToOboID, oboIDToIRI
-from ontology import Ontology
-from ontology import CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY
+from ontology import Ontology, CLASS_ENTITY, DATAPROPERTY_ENTITY
+from ontology import OBJECTPROPERTY_ENTITY, ANNOTATIONPROPERTY_ENTITY
 
 # Java imports.
 
@@ -290,6 +290,54 @@ class OWLOntologyBuilder:
                     '".  Supported characteristics for object properties are "functional", "inverse functional", "reflexive", "irreflexive", "symmetric", "asymmetric", and "transitive".'
                 )
 
+    def addAnnotationProperty(self, propdesc):
+        """
+        Adds a new annotation property to the ontology, based on a property
+        description provided as the table row propdesc (i.e., the single
+        explicit argument).  If expanddef is True, then term labels in the text
+        definition for the new property will be expanded to include the terms'
+        OBO IDs.
+        """
+        # Create the new annotation property.
+        newprop = self.ontology.createNewAnnotationProperty(
+            oboIDToIRI(propdesc['ID'])
+        )
+        
+        # Make sure we have a label and add it to the new class.
+        labeltext = propdesc['Label']
+        if labeltext != '':
+            newprop.addLabel(labeltext)
+        
+        # Cache the remainder of the property description.
+        self.entity_trows.append((newprop, propdesc))
+
+    def _addAnnotationPropertyAxioms(self, propobj, propdesc, expanddef=True):
+        """
+        Adds axioms from a _TableRow object property description to an existing
+        annotation property object.  If expanddef is True, then term labels in
+        the text definition for the new property will be expanded to include
+        the terms' OBO IDs.
+        """
+        # Add the text definition to the property, if we have one.
+        textdef = propdesc['Text definition']
+        if textdef != '':
+            if expanddef:
+                textdef = self._expandDefinition(textdef)
+
+            propobj.addDefinition(textdef)
+        
+        # Add any comments for the property.
+        commenttext = propdesc['Comments']
+        if commenttext != '':
+            propobj.addComment(commenttext)
+
+        # Get the IRI object of the parent property and add it as a parent.
+        parentIRI = self._getIRIFromDesc(
+            propdesc['Parent']
+        )
+        if parentIRI != None:
+            propobj.addSuperproperty(parentIRI)
+
     def processDeferredEntityAxioms(self, expanddefs=True):
         """
         Processes all cached _TableRow entity descriptions and entity objects
@@ -308,6 +356,8 @@ class OWLOntologyBuilder:
                 self._addDataPropertyAxioms(entity, desc, expanddefs)
             elif typeconst == OBJECTPROPERTY_ENTITY:
                 self._addObjectPropertyAxioms(entity, desc, expanddefs)
+            elif typeconst == ANNOTATIONPROPERTY_ENTITY:
+                self._addAnnotationPropertyAxioms(entity, desc, expanddefs)
             else:
                 raise RuntimeError('Unsupported ontology entity type: '
                         + str(typeconst) + '.')

@@ -74,6 +74,8 @@ for termsfile in args.termsfiles:
                             ontbuilder.addDataProperty(t_row)
                         elif typestr == 'objectproperty':
                             ontbuilder.addObjectProperty(t_row)
+                        elif typestr == 'annotationproperty':
+                            ontbuilder.addAnnotationProperty(t_row)
                         elif typestr == '':
                             raise RuntimeError(
                                 'The entity type (e.g., "class", "data property") was not specified.'

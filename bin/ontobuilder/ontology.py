@@ -32,6 +32,7 @@ from com.google.common.base import Optional
 CLASS_ENTITY = 0
 DATAPROPERTY_ENTITY = 1
 OBJECTPROPERTY_ENTITY = 2
+ANNOTATIONPROPERTY_ENTITY = 3
 
 
 class _OntologyClass:
@@ -537,6 +538,97 @@ class _OntologyObjectProperty:
         self.ontology.addTermAxiom(paxiom)
 
 
+class _OntologyAnnotationProperty:
+    """
+    Provides a high-level interface to the OWL API's ontology object system for
+    OWL annotation properties.  Conceptually, instances of this class represent
+    a single OWL annotation property in an OWL ontology.  This class should not
+    be instantiated directly; instead, instances should be obtained through
+    Ontology's public interface.
+    """
+    # The IRI for the property for definition annotations.
+    DEFINITION_IRI = oboIDToIRI('IAO:0000115')
+
+    def __init__(self, propIRI, propobj, ontology):
+        """
+        Initializes this _OntologyAnnotationProperty.
+
+          class_iri: The IRI object of the property.
+          propobj: The OWL API property object of the property.
+          ontology: The ontology to which this property belongs.
+        """
+        self.ontology = ontology
+        self.df = ontology.df
+        self.propIRI = propIRI
+        self.propobj = propobj
+        
+    def getTypeConst(self):
+        return ANNOTATIONPROPERTY_ENTITY
+        
+    def addDefinition(self, deftxt):
+        """
+        Adds a definition annotation to this property (i.e., adds an annotation
+        for "definition", IAO:0000115).
+        """
+        deftxt = deftxt.strip()
+
+        defannot = self.df.getOWLAnnotation(
+            self.df.getOWLAnnotationProperty(self.DEFINITION_IRI),
+            self.df.getOWLLiteral(deftxt)
+        )
+        annotaxiom = self.df.getOWLAnnotationAssertionAxiom(self.propIRI, defannot)
+
+        self.ontology.addTermAxiom(annotaxiom)
+
+    def addLabel(self, labeltxt):
+        """
+        Adds an rdfs:label for this property.
+        """
+        labeltxt = labeltxt.strip()
+
+        labelannot = self.df.getOWLAnnotation(
+            self.df.getRDFSLabel(), self.df.getOWLLiteral(labeltxt, 'en')
+        )
+        annotaxiom = self.df.getOWLAnnotationAssertionAxiom(self.propIRI, labelannot)
+
+        self.ontology.addTermAxiom(annotaxiom)
+
+    def addComment(self, commenttxt):
+        """
+        Adds an rdfs:comment for this property.
+        """
+        commenttxt = commenttxt.strip()
+
+        commentannot = self.df.getOWLAnnotation(
+            self.df.getRDFSComment(), self.df.getOWLLiteral(commenttxt, 'en')
+        )
+        annotaxiom = self.df.getOWLAnnotationAssertionAxiom(self.propIRI, commentannot)
+
+        self.ontology.addTermAxiom(annotaxiom)
+
+    def addSuperproperty(self, parent_id):
+        """
+        Adds a parent property for this property.
+
+        parent_id: The identifier of the parent property.  Can be either an OWL
+            API IRI object or a string containing: a prefix IRI (i.e., a curie,
+            such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
+            the form "PO:0000003").
+        """
+        parentIRI = self.ontology.expandIdentifier(parent_id)
+
+        # Get the OWL property object of the parent, making sure that it is
+        # actually defined.
+        parentprop = self.ontology.getExistingAnnotationProperty(parentIRI)
+        if parentprop == None:
+            raise RuntimeError('The designated superproperty, ' + str(parent_id)
+                    + ', could not be found in the source ontology.')
+
+        # Add the subproperty axiom to the ontology.
+        newaxiom = self.df.getOWLSubAnnotationPropertyOfAxiom(self.propobj, parentprop)
+        self.ontology.addTermAxiom(newaxiom)
+
+
 class Ontology:
     """
     Provides a high-level interface to the OWL API's ontology object system.
@@ -864,6 +956,25 @@ class Ontology:
         self.ontman.applyChange(AddAxiom(self.ontology, declaxiom))
 
         return _OntologyObjectProperty(propIRI, owloprop, self)
+
+    def createNewAnnotationProperty(self, prop_id):
+        """
+        Creates a new OWL annotation property, adds it to the ontology, and
+        returns an associated _OntologyAnnotationProperty object.
+
+        prop_iri: The identifier for the new property.  Can be either an OWL
+            API IRI object or a string containing: a prefix IRI (i.e., a curie,
+            such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
+            the form "PO:0000003").
+        """
+        propIRI = self.expandIdentifier(prop_id)
+
+        owloprop = self.df.getOWLAnnotationProperty(propIRI)
+
+        declaxiom = self.df.getOWLDeclarationAxiom(owloprop)
+        self.ontman.applyChange(AddAxiom(self.ontology, declaxiom))
+
+        return _OntologyAnnotationProperty(propIRI, owloprop, self)
 
     def preloadLabelIdPair(self, label_str, ent_id):
         """
