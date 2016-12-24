@@ -135,7 +135,9 @@ class TestManchesterSyntaxParserHelper(unittest.TestCase):
         """
         Tests parsing strings that contain multiple MS class expressions.  The
         tests here are currently not very thorough in that they do not actually
-        test the values of the returned OWLClassExpression objects.
+        test the values of the returned OWLClassExpression objects.  This is
+        probably reasonable, though, because the correctness of the returned
+        OWLClassExpression objects depends on the OWLAPI implementation.
         """
         # Test a string containing a single expression.
         exps_str = "'test class 1' AND 'imported test class 1'"

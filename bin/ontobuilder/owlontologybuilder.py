@@ -89,15 +89,15 @@ class OWLOntologyBuilder:
     
         # Add any subclass of axioms (specified as class expressions in
         # Manchester Syntax).
-        ms_exp = classdesc['Subclass of']
-        if ms_exp != '':
-            classobj.addClassExpression(ms_exp, False)
+        ms_exps = classdesc['Subclass of']
+        if ms_exps != '':
+            classobj.addClassExpressions(ms_exps, False)
  
         # Add any equivalency axioms (specified as class expressions in
         # Manchester Syntax).
-        ms_exp = classdesc['Equivalent to']
-        if ms_exp != '':
-            classobj.addClassExpression(ms_exp, True)
+        ms_exps = classdesc['Equivalent to']
+        if ms_exps != '':
+            classobj.addClassExpressions(ms_exps, True)
  
     def addDataProperty(self, propdesc):
         """
