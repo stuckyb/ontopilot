@@ -69,7 +69,10 @@ class _TableRow:
     instantiated directly; rather, instances should be obtained from one of the
     TableReader classes.
     """
-    def __init__(self, required_cols=[], optional_cols=[], default_vals={}):
+    def __init__(self, rownum, filename, required_cols=[], optional_cols=[], default_vals={}):
+        self.rownum = rownum
+        self.filename = filename
+
         # Required columns.
         self.required = required_cols
 
@@ -118,6 +121,12 @@ class _TableRow:
 
     def __contains__(self, colname):
         return colname.lower() in self.data
+
+    def getRowNum(self):
+        return self.rownum
+
+    def getFileName(self):
+        return self.filename
 
 
 class _BaseTable:
@@ -286,12 +295,13 @@ class _CSVTable(_BaseTable):
         Allows iteration through each row of the CSV file.  Empty rows are
         ignored.
         """
-        # Find the next non-empty row.  After the loop, self.rowcnt will be one
-        # row beyond the next non-empty row (if the search succeeded).  Note
-        # that we don't need to check for an end-of-file condition, because if
-        # we reach the end of the file, the CSV reader will raise a
-        # StopIteration exception and we can just let that propagate to the
-        # caller, which will give us the desired behavior.
+        # Find the next non-empty row.  After the loop, self.rowcnt will be
+        # equal to the next non-empty row, assuming row counting starts at 1
+        # (and if the search succeeded).  Note that we don't need to check for
+        # an end-of-file condition, because if we reach the end of the file,
+        # the CSV reader will raise a StopIteration exception and we can just
+        # let that propagate to the caller, which will give us the desired
+        # behavior.
         emptyrow = True
         while emptyrow:
             rowdata = self.csvr.next()
@@ -311,7 +321,10 @@ class _CSVTable(_BaseTable):
                 + str(self.rowcnt) + '.'
             )
 
-        trow = _TableRow(self.required_cols, self.optional_cols, self.defaultvals)
+        trow = _TableRow(
+            self.rowcnt, self.filename,
+            self.required_cols, self.optional_cols, self.defaultvals
+        )
         for colnum in range(len(rowdata)):
             trow[self.colnames[colnum]] = rowdata[colnum]
 
@@ -433,8 +446,9 @@ class _ODFTable(_BaseTable):
         Allows iteration through each row of the ODF spreadsheet table. Empty
         rows are ignored.
         """
-        # Find the next non-empty row.  After the loop, self.rowcnt will be one
-        # row beyond the next non-empty row (if the search succeeded).
+        # Find the next non-empty row.  After the loop, self.rowcnt will be at
+        # the next non-empty row, assuming counting starts at 1 (if the search
+        # succeeded).
         emptyrow = True
         while (self.rowcnt < self.numrows) and emptyrow:
             for colnum in range(self.numcols):
@@ -446,7 +460,10 @@ class _ODFTable(_BaseTable):
         if emptyrow:
             raise StopIteration()
 
-        trow = _TableRow(self.required_cols, self.optional_cols, self.defaultvals)
+        trow = _TableRow(
+            self.rowcnt, self.filename,
+            self.required_cols, self.optional_cols, self.defaultvals
+        )
         for colnum in range(self.numcols):
             # Uncomment the following line to print the ODF value type for each
             # data cell.
