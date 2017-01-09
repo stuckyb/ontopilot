@@ -45,7 +45,7 @@ class TestTableRow(unittest.TestCase):
         self.optional = ['col2', 'col3', 'col4', 'col5']
         self.defaults = {'col3': 'default1', 'col4': 'default2'}
 
-        self.tr = _TableRow(self.required, self.optional, self.defaults)
+        self.tr = _TableRow(1, 'null', self.required, self.optional, self.defaults)
 
     def test_setGetContains(self):
         self.tr['Col1'] = 'testval'
@@ -146,7 +146,11 @@ class _TestTableReader:
 
         for tname in self.expvals:
             table = self.tr.getTableByName(tname)
-            for exprow, row in zip(self.expvals[tname], table):
+            for exprow, row, exp_rownum in zip(self.expvals[tname], table, self.exp_rownums[tname]):
+                # Make sure the file name and row number are correct.
+                self.assertEqual(exp_rownum, row.getRowNum())
+                self.assertEqual(self.valid_input_testfile, row.getFileName())
+                # Make sure the row values are correct.
                 for colname in exprow:
                     self.assertEqual(exprow[colname], row[colname])
 
@@ -218,6 +222,12 @@ class TestCSVTableReader(_TestTableReader, unittest.TestCase):
         )
     }
 
+    # The number of each data-containing row in each table of the test file,
+    # with counting starting at 1.
+    exp_rownums = {
+        'table': (2, 4)
+    }
+
     valid_input_testfile = 'test_data/test_table-valid.csv'
 
     def _openFile(self, filename):
@@ -281,6 +291,13 @@ class TestODFTableReader(_TestTableReader, unittest.TestCase):
         'Sheet2': (
             {'date val': 'Nov. 24, 2016', 'time val': '01:22:00 PM', 'one more': 'Blah!!'},
         )
+    }
+
+    # The number of each data-containing row in each table of the test file,
+    # with counting starting at 1.
+    exp_rownums = {
+        'sheet 1': (2, 4),
+        'Sheet2': (2,)
     }
 
     valid_input_testfile = 'test_data/test_table-valid.ods'
