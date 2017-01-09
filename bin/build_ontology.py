@@ -7,6 +7,7 @@ import logging
 from argparse import ArgumentParser
 from ontobuilder.tablereader import TableReaderFactory
 from ontobuilder import OWLOntologyBuilder
+from ontobuilder.owlontologybuilder import TermDescriptionError
 
 
 # Set the format for logging output.
@@ -61,9 +62,7 @@ for termsfile in args.termsfiles:
             table.setRequiredColumns(REQUIRED_COLS)
             table.setOptionalColumns(OPTIONAL_COLS)
 
-            rowcnt = 1
             for t_row in table:
-                rowcnt += 1
                 if not(t_row['Ignore'].upper().startswith('Y')):
                     typestr = t_row['Type'].lower()
     
@@ -77,27 +76,25 @@ for termsfile in args.termsfiles:
                         elif typestr == 'annotationproperty':
                             ontbuilder.addAnnotationProperty(t_row)
                         elif typestr == '':
-                            raise RuntimeError(
-                                'The entity type (e.g., "class", "data property") was not specified.'
+                            raise TermDescriptionError(
+                                'The entity type (e.g., "class", "data property") was not specified.',
+                                t_row
                             )
                         else:
-                            raise RuntimeError('The entity type "' + t_row['Type']
-                                    + '" is not supported.')
-                    except RuntimeError as err:
-                        print('\nError encountered in term description in row '
-                                + str(rowcnt) + ' of "' + termsfile + '":')
-                        print err
-                        print
+                            raise TermDescriptionError(
+                                'The entity type "' + t_row['Type']
+                                + '" is not supported.', t_row
+                            )
+                    except TermDescriptionError as err:
+                        print '\n', err , '\n'
                         sys.exit(1)
 
 # Define all deferred axioms from the source entity descriptions.
 print 'Defining all remaining entity axioms...'
 try:
     ontbuilder.processDeferredEntityAxioms(not(args.no_def_expand))
-except RuntimeError as err:
-    print('\nError encountered in term description:')
-    print err
-    print
+except TermDescriptionError as err:
+    print '\n', err , '\n'
     sys.exit(1)
 
 # Set the ontology ID, if a new ID was provided.

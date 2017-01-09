@@ -14,6 +14,23 @@ from ontology import OBJECTPROPERTY_ENTITY, ANNOTATIONPROPERTY_ENTITY
 # Java imports.
 
 
+class TermDescriptionError(RuntimeError):
+    """
+    An exception class for errors encountered in term descriptions in rows from
+    input files.
+    """
+    def __init__(self, error_msg, tablerow):
+        self.tablerow = tablerow
+
+        new_msg = (
+            'Error encountered in term description in row '
+            + str(tablerow.getRowNum()) + ' of a table in "'
+            + tablerow.getFileName() + '":\n' + error_msg
+        )
+
+        RuntimeError.__init__(self, new_msg)
+
+
 class OWLOntologyBuilder:
     """
     Builds an OWL ontology using _TableRow objects that describe new entities
@@ -48,15 +65,18 @@ class OWLOntologyBuilder:
         Adds a new class to the ontology, based on a class description provided
         as the table row classdesc (i.e., the single explicit argument).
         """
-        # Create the new class.
-        newclass = self.ontology.createNewClass(
-            oboIDToIRI(classdesc['ID'])
-        )
-        
-        # Make sure we have a label and add it to the new class.
-        labeltext = classdesc['Label']
-        if labeltext != '':
-            newclass.addLabel(labeltext)
+        try:
+            # Create the new class.
+            newclass = self.ontology.createNewClass(
+                oboIDToIRI(classdesc['ID'])
+            )
+            
+            # Make sure we have a label and add it to the new class.
+            labeltext = classdesc['Label']
+            if labeltext != '':
+                newclass.addLabel(labeltext)
+        except RuntimeError as err:
+            raise TermDescriptionError(str(err), classdesc)
 
         # Cache the remainder of the class description.
         self.entity_trows.append((newclass, classdesc))
@@ -107,15 +127,18 @@ class OWLOntologyBuilder:
         definition for the new property will be expanded to include the terms'
         OBO IDs.
         """
-        # Create the new data property.
-        newprop = self.ontology.createNewDataProperty(
-            oboIDToIRI(propdesc['ID'])
-        )
-        
-        # Make sure we have a label and add it to the new class.
-        labeltext = propdesc['Label']
-        if labeltext != '':
-            newprop.addLabel(labeltext)
+        try:
+            # Create the new data property.
+            newprop = self.ontology.createNewDataProperty(
+                oboIDToIRI(propdesc['ID'])
+            )
+            
+            # Make sure we have a label and add it to the new class.
+            labeltext = propdesc['Label']
+            if labeltext != '':
+                newprop.addLabel(labeltext)
+        except RuntimeError as err:
+            raise TermDescriptionError(str(err), propdesc)
         
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
@@ -187,15 +210,18 @@ class OWLOntologyBuilder:
         definition for the new property will be expanded to include the terms'
         OBO IDs.
         """
-        # Create the new object property.
-        newprop = self.ontology.createNewObjectProperty(
-            oboIDToIRI(propdesc['ID'])
-        )
-        
-        # Make sure we have a label and add it to the new class.
-        labeltext = propdesc['Label']
-        if labeltext != '':
-            newprop.addLabel(labeltext)
+        try:
+            # Create the new object property.
+            newprop = self.ontology.createNewObjectProperty(
+                oboIDToIRI(propdesc['ID'])
+            )
+            
+            # Make sure we have a label and add it to the new class.
+            labeltext = propdesc['Label']
+            if labeltext != '':
+                newprop.addLabel(labeltext)
+        except RuntimeError as err:
+            raise TermDescriptionError(str(err), propdesc)
         
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
@@ -298,15 +324,18 @@ class OWLOntologyBuilder:
         definition for the new property will be expanded to include the terms'
         OBO IDs.
         """
-        # Create the new annotation property.
-        newprop = self.ontology.createNewAnnotationProperty(
-            oboIDToIRI(propdesc['ID'])
-        )
-        
-        # Make sure we have a label and add it to the new class.
-        labeltext = propdesc['Label']
-        if labeltext != '':
-            newprop.addLabel(labeltext)
+        try:
+            # Create the new annotation property.
+            newprop = self.ontology.createNewAnnotationProperty(
+                oboIDToIRI(propdesc['ID'])
+            )
+            
+            # Make sure we have a label and add it to the new class.
+            labeltext = propdesc['Label']
+            if labeltext != '':
+                newprop.addLabel(labeltext)
+        except RuntimeError as err:
+            raise TermDescriptionError(str(err), propdesc)
         
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
@@ -349,18 +378,21 @@ class OWLOntologyBuilder:
         while len(self.entity_trows) > 0:
             entity, desc = self.entity_trows[-1]
 
-            typeconst = entity.getTypeConst()
-            if typeconst == CLASS_ENTITY:
-                self._addClassAxioms(entity, desc, expanddefs)
-            elif typeconst == DATAPROPERTY_ENTITY:
-                self._addDataPropertyAxioms(entity, desc, expanddefs)
-            elif typeconst == OBJECTPROPERTY_ENTITY:
-                self._addObjectPropertyAxioms(entity, desc, expanddefs)
-            elif typeconst == ANNOTATIONPROPERTY_ENTITY:
-                self._addAnnotationPropertyAxioms(entity, desc, expanddefs)
-            else:
-                raise RuntimeError('Unsupported ontology entity type: '
-                        + str(typeconst) + '.')
+            try:
+                typeconst = entity.getTypeConst()
+                if typeconst == CLASS_ENTITY:
+                    self._addClassAxioms(entity, desc, expanddefs)
+                elif typeconst == DATAPROPERTY_ENTITY:
+                    self._addDataPropertyAxioms(entity, desc, expanddefs)
+                elif typeconst == OBJECTPROPERTY_ENTITY:
+                    self._addObjectPropertyAxioms(entity, desc, expanddefs)
+                elif typeconst == ANNOTATIONPROPERTY_ENTITY:
+                    self._addAnnotationPropertyAxioms(entity, desc, expanddefs)
+                else:
+                    raise RuntimeError('Unsupported ontology entity type: '
+                            + str(typeconst) + '.')
+            except RuntimeError as err:
+                raise TermDescriptionError(str(err), desc)
 
             # Putting the pop() operation at the end of the loop ensures that a
             # description is only removed from the list/stack if it was
