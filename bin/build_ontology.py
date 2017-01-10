@@ -47,7 +47,7 @@ ontbuilder = OWLOntologyBuilder(args.base_ontology)
 # Required columns.
 REQUIRED_COLS = ('Type', 'ID')
 # Optional columns.
-OPTIONAL_COLS = ('Comments', 'Parent', 'Subclass of', 'Equivalent to')
+OPTIONAL_COLS = ('Comments', 'Parent', 'Subclass of', 'Equivalent to', 'Disjoint with')
 
 # Process each source file.  In this step, entities and label annotations are
 # defined, but processing of all other axioms (e.g., text definitions,

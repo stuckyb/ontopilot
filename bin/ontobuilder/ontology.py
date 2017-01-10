@@ -57,7 +57,7 @@ class _OntologyClass:
         self.ontology = ontology
         self.df = ontology.df
         self.classIRI = classIRI
-        self.owlclass = classobj
+        self.classobj = classobj
 
     def getTypeConst(self):
         return CLASS_ENTITY
@@ -122,41 +122,78 @@ class _OntologyClass:
                     + ', could not be found in the source ontology.')
         
         # Add the subclass axiom to the ontology.
-        newaxiom = self.df.getOWLSubClassOfAxiom(self.owlclass, parentclass)
+        newaxiom = self.df.getOWLSubClassOfAxiom(self.classobj, parentclass)
         self.ontology.addTermAxiom(newaxiom)
 
-    def addClassExpressions(self, manchester_exps, is_equivalency=True):
+    def _getClassExpressions(self, manchester_exps):
         """
-        Adds one or more class expressions as either an equivalency axiom (the
-        default) or a subclass axiom.  The class expressions should be written
-        in Manchester Syntax (MS), and if there is more than one class
-        expression, the expressions should be separated by blank lines
-        containing a semicolon.
+        Given a string containing one or more class expressions in Manchester
+        Syntax, returns a list containing corresponding OWL API class
+        expression objects.
 
         manchester_exps: A string containing MS "description" productions.
-        is_equivalency: If True, process the MS expressions as equivalency
-            axioms; otherwise, parse them as subclass of axioms.
+        """
+        try:
+            #self.ontology.mparser = ManchesterSyntaxTool(self.ontology.ontology)
+            #cexp = self.ontology.mparser.parseManchesterExpression(formaldef)
+            parser = ManchesterSyntaxParserHelper(self.ontology)
+            cexps = parser.parseClassExpressions(manchester_exps);
+        except ParserException as err:
+            print err
+            raise RuntimeError('Error parsing "' + err.getCurrentToken()
+                    + '" at line ' + str(err.getLineNumber()) + ', column '
+                    + str(err.getColumnNumber())
+                    + ' of the class expression (Manchester Syntax expected).')
+
+        return cexps
+
+    def addSubclassOf(self, manchester_exps):
+        """
+        Adds one or more class expressions as "subclass of" axioms.  The class
+        expressions should be written in Manchester Syntax (MS), and if there
+        is more than one class expression, the expressions should be separated
+        by blank lines containing a semicolon.
+
+        manchester_exps: A string containing MS "description" productions.
         """
         if manchester_exps != '':
-            try:
-                #self.ontology.mparser = ManchesterSyntaxTool(self.ontology.ontology)
-                #cexp = self.ontology.mparser.parseManchesterExpression(formaldef)
-                parser = ManchesterSyntaxParserHelper(self.ontology)
-                cexps = parser.parseClassExpressions(manchester_exps);
-            except ParserException as err:
-                print err
-                raise RuntimeError('Error parsing "' + err.getCurrentToken()
-                        + '" at line ' + str(err.getLineNumber()) + ', column '
-                        + str(err.getColumnNumber())
-                        + ' of the class expression (Manchester Syntax expected).')
+            cexps = self._getClassExpressions(manchester_exps)
 
             for cexp in cexps:
-                if is_equivalency:
-                    eaxiom = self.df.getOWLEquivalentClassesAxiom(cexp, self.owlclass)
-                else:
-                    eaxiom = self.df.getOWLSubClassOfAxiom(self.owlclass, cexp)
-
+                eaxiom = self.df.getOWLSubClassOfAxiom(self.classobj, cexp)
                 self.ontology.addTermAxiom(eaxiom)
+
+    def addEquivalentTo(self, manchester_exps):
+        """
+        Adds one or more class expressions as equivalency axioms.  The class
+        expressions should be written in Manchester Syntax (MS), and if there
+        is more than one class expression, the expressions should be separated
+        by blank lines containing a semicolon.
+
+        manchester_exps: A string containing MS "description" productions.
+        """
+        if manchester_exps != '':
+            cexps = self._getClassExpressions(manchester_exps)
+
+            for cexp in cexps:
+                eaxiom = self.df.getOWLEquivalentClassesAxiom(self.classobj, cexp)
+                self.ontology.addTermAxiom(eaxiom)
+
+    def addDisjointWith(self, manchester_exps):
+        """
+        Adds one or more class expressions as "disjoint with" axioms.  The
+        class expressions should be written in Manchester Syntax (MS), and if
+        there is more than one class expression, the expressions should be
+        separated by blank lines containing a semicolon.
+
+        manchester_exps: A string containing MS "description" productions.
+        """
+        if manchester_exps != '':
+            cexps = self._getClassExpressions(manchester_exps)
+
+            for cexp in cexps:
+                axiom = self.df.getOWLDisjointClassesAxiom(self.classobj, cexp)
+                self.ontology.addTermAxiom(axiom)
 
 
 class _OntologyDataProperty:
@@ -175,7 +212,7 @@ class _OntologyDataProperty:
         Initializes this _OntologyDataProperty.
 
           class_iri: The IRI object of the property.
-          classobj: The OWL API class object of the property.
+          propobj: The OWL API property object of the property.
           ontology: The ontology to which this property belongs.
         """
         self.ontology = ontology

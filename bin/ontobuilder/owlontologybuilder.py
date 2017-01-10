@@ -111,13 +111,19 @@ class OWLOntologyBuilder:
         # Manchester Syntax).
         ms_exps = classdesc['Subclass of']
         if ms_exps != '':
-            classobj.addClassExpressions(ms_exps, False)
+            classobj.addSubclassOf(ms_exps)
  
         # Add any equivalency axioms (specified as class expressions in
         # Manchester Syntax).
         ms_exps = classdesc['Equivalent to']
         if ms_exps != '':
-            classobj.addClassExpressions(ms_exps, True)
+            classobj.addEquivalentTo(ms_exps)
+
+        # Add any disjoint with axioms (specified as class expressions in
+        # Manchester Syntax).
+        ms_exps = classdesc['Disjoint with']
+        if ms_exps != '':
+            classobj.addDisjointWith(ms_exps)
  
     def addDataProperty(self, propdesc):
         """
