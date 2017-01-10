@@ -1,9 +1,10 @@
 #
 # This package initialization script does three things:
 #
-#   1. Adds all required java library jar files to the classpath.
-#   2. Adds classes in package modules to the package's top-level scope.
-#   3. Initializes a logger object for printing status messages.
+#   1. Set the logging level for SLF4J's SimpleLogger.
+#   2. Adds all required java library jar files to the classpath.
+#   3. Adds classes in package modules to the package's top-level scope.
+#   4. Initializes a Python logger object for printing status messages.
 #
 # The directory "../../javalib" contains all of the java libraries on which the
 # OWL API depends.  The easiest way to get all of these library jar files is to
@@ -15,9 +16,20 @@
 # jar file is also in the "javalib" folder.
 #
 
+# Python imports.
 import os, glob, sys
 import logging
 
+# Java imports.
+from java.lang import System
+
+
+# Set the default logging level for the SLF4J SimpleLogger to suppress all
+# messages below the "WARN" level so that the console doesn't fill up with
+# "INFO" messages.  In testing, it appears that this system property needs to
+# be set before the SLF4J packages are added to the classpath.  The key string
+# for this property can be obtained from SimpleLogger.DEFAULT_LOG_LEVEL_KEY.
+System.setProperty('org.slf4j.simpleLogger.defaultLogLevel', 'WARN')
 
 # Get the paths to all of the java libraries needed by the OWL API and add them
 # to the classpath.
