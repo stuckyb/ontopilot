@@ -27,47 +27,50 @@ import unittest
 from org.semanticweb.owlapi.model import IRI
 
 
-class Test_OntologyClass(unittest.TestCase):
+class _TestOntologyEntity:
     """
-    Tests _OntologyClass.
+    Defines tests that apply to all ontology entities.  This class should not
+    be instantiated directly; only its subclasses that target specific ontology
+    entities should be run.  To help reinforce this, _TestOntologyEntity does
+    not inherit from unittest.TestCase.  All subclasses of _TestOntologyEntity
+    should inherit from unittest.TestCase and treat _TestOntologyEntity as a
+    sort of "mixin" class that provides standard testing routines.
     """
     def setUp(self):
         self.test_ont = Ontology('test_data/ontology.owl')
         self.owlont = self.test_ont.getOWLOntology()
-        self.tclass = self.test_ont.createNewClass(
-                'http://purl.obolibrary.org/obo/OBTO_0011'
-        )
 
-    def _checkAnnotation(self, propIRI, valuestr):
+        # A test entity instance and IRI should be provided by child classes.
+        self.t_ent = None
+        self.t_entIRI = None
+
+    def _checkAnnotation(self, annot_propIRI, valuestr):
         """
-        Checks that the test class is the subject of an annotation axiom with
+        Checks that the test entity is the subject of an annotation axiom with
         the specified property and value.
         """
-        # Check that the class has the required annotation and that the text
+        # Check that the entity has the required annotation and that the text
         # value is correct.
         found_annot = False
-        for annot_ax in self.owlont.getAnnotationAssertionAxioms(self.tclass.classIRI):
-            if annot_ax.getProperty().getIRI().equals(propIRI):
-                found_annot = True
-                self.assertEqual(valuestr, annot_ax.getValue().getLiteral())
+        for annot_ax in self.owlont.getAnnotationAssertionAxioms(self.t_entIRI):
+            if annot_ax.getProperty().getIRI().equals(annot_propIRI):
+                if annot_ax.getValue().getLiteral() == valuestr:
+                    found_annot = True
 
         self.assertTrue(found_annot)
-
-    def test_getTypeConst(self):
-        self.assertEqual(CLASS_ENTITY, self.tclass.getTypeConst())
 
     def test_addDefinition(self):
         defstr = 'A new definition.'
 
-        self.tclass.addDefinition(defstr)
+        self.t_ent.addDefinition(defstr)
 
         # Test that the definition annotation exists and has the correct value.
-        self._checkAnnotation(self.tclass.DEFINITION_IRI, defstr)
+        self._checkAnnotation(self.t_ent.DEFINITION_IRI, defstr)
 
     def test_addLabel(self):
         labelstr = 'term label!'
 
-        self.tclass.addLabel(labelstr)
+        self.t_ent.addLabel(labelstr)
 
         # Test that the label annotation exists and has the correct value.
         self._checkAnnotation(
@@ -77,7 +80,7 @@ class Test_OntologyClass(unittest.TestCase):
     def test_addComment(self):
         commentstr = 'A useful comment.'
 
-        self.tclass.addComment(commentstr)
+        self.t_ent.addComment(commentstr)
 
         # Test that the comment annotation exists and has the correct value.
         self._checkAnnotation(
@@ -85,15 +88,31 @@ class Test_OntologyClass(unittest.TestCase):
             commentstr
         )
 
+
+class Test_OntologyClass(_TestOntologyEntity, unittest.TestCase):
+    """
+    Tests _OntologyClass.
+    """
+    def setUp(self):
+        _TestOntologyEntity.setUp(self)
+
+        self.t_ent = self.test_ont.createNewClass(
+                'http://purl.obolibrary.org/obo/OBTO_0011'
+        )
+        self.t_entIRI = self.t_ent.classIRI
+
+    def test_getTypeConst(self):
+        self.assertEqual(CLASS_ENTITY, self.t_ent.getTypeConst())
+
     def test_addSubclassOf(self):
         superclassIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
 
         # Test a simple class expression that is only a class label.
-        self.tclass.addSubclassOf("'test class 1'")
+        self.t_ent.addSubclassOf("'test class 1'")
 
         # Check that the class has the correct superclass.
         found_superclass = False
-        for axiom in self.owlont.getSubClassAxiomsForSubClass(self.tclass.classobj):
+        for axiom in self.owlont.getSubClassAxiomsForSubClass(self.t_ent.classobj):
             if axiom.getSuperClass().getIRI().equals(superclassIRI):
                 found_superclass = True
 
@@ -103,11 +122,11 @@ class Test_OntologyClass(unittest.TestCase):
         equivclassIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
 
         # Test a simple class expression that is only a class label.
-        self.tclass.addEquivalentTo("'test class 1'")
+        self.t_ent.addEquivalentTo("'test class 1'")
 
         # Check that the class has the correct equivalency relationship.
         found_eqclass = False
-        for axiom in self.owlont.getEquivalentClassesAxioms(self.tclass.classobj):
+        for axiom in self.owlont.getEquivalentClassesAxioms(self.t_ent.classobj):
             for eqclass in axiom.getNamedClasses():
                 if eqclass.getIRI().equals(equivclassIRI):
                     found_eqclass = True
@@ -118,11 +137,11 @@ class Test_OntologyClass(unittest.TestCase):
         classIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
 
         # Test a simple class expression that is only a class label.
-        self.tclass.addDisjointWith("'test class 1'")
+        self.t_ent.addDisjointWith("'test class 1'")
 
         # Check that the class has the correct disjointness relationship.
         found_class = False
-        for axiom in self.owlont.getDisjointClassesAxioms(self.tclass.classobj):
+        for axiom in self.owlont.getDisjointClassesAxioms(self.t_ent.classobj):
             for cl_exp in axiom.getClassExpressions():
                 if not(cl_exp.isAnonymous()):
                     if cl_exp.asOWLClass().getIRI().equals(classIRI):
@@ -131,73 +150,30 @@ class Test_OntologyClass(unittest.TestCase):
         self.assertTrue(found_class)
 
 
-class Test_OntologyDataProperty(unittest.TestCase):
+class Test_OntologyDataProperty(_TestOntologyEntity, unittest.TestCase):
     """
     Tests _OntologyDataProperty.
     """
     def setUp(self):
-        self.test_ont = Ontology('test_data/ontology.owl')
-        self.owlont = self.test_ont.getOWLOntology()
-        self.tprop = self.test_ont.createNewDataProperty(
+        _TestOntologyEntity.setUp(self)
+
+        self.t_ent = self.test_ont.createNewDataProperty(
                 'http://purl.obolibrary.org/obo/OBTO_0011'
         )
-
-    def _checkAnnotation(self, annot_propIRI, valuestr):
-        """
-        Checks that the test class is the subject of an annotation axiom with
-        the specified property and value.
-        """
-        # Check that the class has the required annotation and that the text
-        # value is correct.
-        found_annot = False
-        for annot_ax in self.owlont.getAnnotationAssertionAxioms(self.tprop.propIRI):
-            if annot_ax.getProperty().getIRI().equals(annot_propIRI):
-                found_annot = True
-                self.assertEqual(valuestr, annot_ax.getValue().getLiteral())
-
-        self.assertTrue(found_annot)
+        self.t_entIRI = self.t_ent.propIRI
 
     def test_getTypeConst(self):
-        self.assertEqual(DATAPROPERTY_ENTITY, self.tprop.getTypeConst())
-
-    def test_addDefinition(self):
-        defstr = 'A new definition.'
-
-        self.tprop.addDefinition(defstr)
-
-        # Test that the definition annotation exists and has the correct value.
-        self._checkAnnotation(self.tprop.DEFINITION_IRI, defstr)
-
-    def test_addLabel(self):
-        labelstr = 'term label!'
-
-        self.tprop.addLabel(labelstr)
-
-        # Test that the label annotation exists and has the correct value.
-        self._checkAnnotation(
-            IRI.create('http://www.w3.org/2000/01/rdf-schema#label'), labelstr
-        )
-
-    def test_addComment(self):
-        commentstr = 'A useful comment.'
-
-        self.tprop.addComment(commentstr)
-
-        # Test that the comment annotation exists and has the correct value.
-        self._checkAnnotation(
-            IRI.create('http://www.w3.org/2000/01/rdf-schema#comment'),
-            commentstr
-        )
+        self.assertEqual(DATAPROPERTY_ENTITY, self.t_ent.getTypeConst())
 
     def test_addSuperproperty(self):
         newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
         newprop = self.test_ont.createNewDataProperty(newpropIRI)
 
-        self.tprop.addSuperproperty('http://purl.obolibrary.org/obo/OBTO_0012')
+        self.t_ent.addSuperproperty('http://purl.obolibrary.org/obo/OBTO_0012')
 
         # Check that the property has the correct superproperty.
         found_prop = False
-        for axiom in self.owlont.getDataSubPropertyAxiomsForSubProperty(self.tprop.propobj):
+        for axiom in self.owlont.getDataSubPropertyAxiomsForSubProperty(self.t_ent.propobj):
             if axiom.getSuperProperty().getIRI().equals(newpropIRI):
                 found_prop = True
 
@@ -206,11 +182,11 @@ class Test_OntologyDataProperty(unittest.TestCase):
     def test_addDomain(self):
         classIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
 
-        self.tprop.addDomain('http://purl.obolibrary.org/obo/OBTO_0010')
+        self.t_ent.addDomain('http://purl.obolibrary.org/obo/OBTO_0010')
 
         # Check that the property has the correct domain.
         found_class = False
-        for axiom in self.owlont.getDataPropertyDomainAxioms(self.tprop.propobj):
+        for axiom in self.owlont.getDataPropertyDomainAxioms(self.t_ent.propobj):
             cl_exp = axiom.getDomain()
             if not(cl_exp.isAnonymous()):
                 if cl_exp.asOWLClass().getIRI().equals(classIRI):
@@ -222,11 +198,11 @@ class Test_OntologyDataProperty(unittest.TestCase):
         classIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
 
         # Test a simple datatype data range.
-        self.tprop.addRange('xsd:float')
+        self.t_ent.addRange('xsd:float')
 
         # Check that the property has the correct range.
         found_drange = False
-        for axiom in self.owlont.getDataPropertyRangeAxioms(self.tprop.propobj):
+        for axiom in self.owlont.getDataPropertyRangeAxioms(self.t_ent.propobj):
             drange = axiom.getRange()
             if drange.isDatatype():
                 if drange.asOWLDatatype().isFloat():
@@ -238,11 +214,11 @@ class Test_OntologyDataProperty(unittest.TestCase):
         newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
         newprop = self.test_ont.createNewDataProperty(newpropIRI)
 
-        self.tprop.addDisjointWith('http://purl.obolibrary.org/obo/OBTO_0012')
+        self.t_ent.addDisjointWith('http://purl.obolibrary.org/obo/OBTO_0012')
 
         # Check that the property has the correct disjointness relationship.
         found_prop = False
-        for axiom in self.owlont.getDisjointDataPropertiesAxioms(self.tprop.propobj):
+        for axiom in self.owlont.getDisjointDataPropertiesAxioms(self.t_ent.propobj):
             for dprop in axiom.getProperties():
                 if dprop.getIRI().equals(newpropIRI):
                     found_prop = True
@@ -251,11 +227,11 @@ class Test_OntologyDataProperty(unittest.TestCase):
 
     def test_makeFunctional(self):
         # Verify that the property is not functional by default.
-        axioms = self.owlont.getFunctionalDataPropertyAxioms(self.tprop.propobj)
+        axioms = self.owlont.getFunctionalDataPropertyAxioms(self.t_ent.propobj)
         self.assertTrue(axioms.isEmpty())
 
         # Make the property functional and check the result.
-        self.tprop.makeFunctional()
-        axioms = self.owlont.getFunctionalDataPropertyAxioms(self.tprop.propobj)
+        self.t_ent.makeFunctional()
+        axioms = self.owlont.getFunctionalDataPropertyAxioms(self.t_ent.propobj)
         self.assertEqual(1, axioms.size())
 
