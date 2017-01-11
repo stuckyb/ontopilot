@@ -99,7 +99,7 @@ class Test_OntologyClass(_TestOntologyEntity, unittest.TestCase):
         self.t_ent = self.test_ont.createNewClass(
                 'http://purl.obolibrary.org/obo/OBTO_0011'
         )
-        self.t_entIRI = self.t_ent.classIRI
+        self.t_entIRI = self.t_ent.entityIRI
 
     def test_getTypeConst(self):
         self.assertEqual(CLASS_ENTITY, self.t_ent.getTypeConst())
@@ -160,7 +160,7 @@ class Test_OntologyDataProperty(_TestOntologyEntity, unittest.TestCase):
         self.t_ent = self.test_ont.createNewDataProperty(
                 'http://purl.obolibrary.org/obo/OBTO_0011'
         )
-        self.t_entIRI = self.t_ent.propIRI
+        self.t_entIRI = self.t_ent.entityIRI
 
     def test_getTypeConst(self):
         self.assertEqual(DATAPROPERTY_ENTITY, self.t_ent.getTypeConst())
@@ -244,7 +244,7 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
         self.t_ent = self.test_ont.createNewObjectProperty(
                 'http://purl.obolibrary.org/obo/OBTO_0011'
         )
-        self.t_entIRI = self.t_ent.propIRI
+        self.t_entIRI = self.t_ent.entityIRI
 
     def test_getTypeConst(self):
         self.assertEqual(OBJECTPROPERTY_ENTITY, self.t_ent.getTypeConst())
@@ -405,7 +405,7 @@ class Test_OntologyAnnotationProperty(_TestOntologyEntity, unittest.TestCase):
         self.t_ent = self.test_ont.createNewAnnotationProperty(
                 'http://purl.obolibrary.org/obo/OBTO_0011'
         )
-        self.t_entIRI = self.t_ent.propIRI
+        self.t_entIRI = self.t_ent.entityIRI
 
     def test_getTypeConst(self):
         self.assertEqual(ANNOTATIONPROPERTY_ENTITY, self.t_ent.getTypeConst())
