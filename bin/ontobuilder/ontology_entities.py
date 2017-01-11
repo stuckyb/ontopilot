@@ -271,9 +271,9 @@ class _OntologyDataProperty:
         newaxiom = self.df.getOWLSubDataPropertyOfAxiom(self.propobj, parentprop)
         self.ontology.addTermAxiom(newaxiom)
 
-    def setDomain(self, domain_id):
+    def addDomain(self, domain_id):
         """
-        Sets the domain of this data property.
+        Creates a domain axiom for this data property.
 
         domain_id: The identifier of a class.  Can be either an OWL API IRI
             object or a string containing: a prefix IRI (i.e., a curie, such as
@@ -291,9 +291,9 @@ class _OntologyDataProperty:
         daxiom = self.df.getOWLDataPropertyDomainAxiom(self.propobj, classobj)
         self.ontology.addTermAxiom(daxiom)
 
-    def setRange(self, datarange_exp):
+    def addRange(self, datarange_exp):
         """
-        Sets the range for this data property.
+        Creates a range axiom for this data property.
 
         datarange_exp: A text string containing a valid Manchester Syntax
             "dataRange" production.
@@ -315,7 +315,7 @@ class _OntologyDataProperty:
             raxiom = self.df.getOWLDataPropertyRangeAxiom(self.propobj, datarange)
             self.ontology.addTermAxiom(raxiom)
 
-    def setDisjointWith(self, prop_id):
+    def addDisjointWith(self, prop_id):
         """
         Sets this property as disjoint with another property.
 

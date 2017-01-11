@@ -130,3 +130,132 @@ class Test_OntologyClass(unittest.TestCase):
 
         self.assertTrue(found_class)
 
+
+class Test_OntologyDataProperty(unittest.TestCase):
+    """
+    Tests _OntologyDataProperty.
+    """
+    def setUp(self):
+        self.test_ont = Ontology('test_data/ontology.owl')
+        self.owlont = self.test_ont.getOWLOntology()
+        self.tprop = self.test_ont.createNewDataProperty(
+                'http://purl.obolibrary.org/obo/OBTO_0011'
+        )
+
+    def _checkAnnotation(self, annot_propIRI, valuestr):
+        """
+        Checks that the test class is the subject of an annotation axiom with
+        the specified property and value.
+        """
+        # Check that the class has the required annotation and that the text
+        # value is correct.
+        found_annot = False
+        for annot_ax in self.owlont.getAnnotationAssertionAxioms(self.tprop.propIRI):
+            if annot_ax.getProperty().getIRI().equals(annot_propIRI):
+                found_annot = True
+                self.assertEqual(valuestr, annot_ax.getValue().getLiteral())
+
+        self.assertTrue(found_annot)
+
+    def test_getTypeConst(self):
+        self.assertEqual(DATAPROPERTY_ENTITY, self.tprop.getTypeConst())
+
+    def test_addDefinition(self):
+        defstr = 'A new definition.'
+
+        self.tprop.addDefinition(defstr)
+
+        # Test that the definition annotation exists and has the correct value.
+        self._checkAnnotation(self.tprop.DEFINITION_IRI, defstr)
+
+    def test_addLabel(self):
+        labelstr = 'term label!'
+
+        self.tprop.addLabel(labelstr)
+
+        # Test that the label annotation exists and has the correct value.
+        self._checkAnnotation(
+            IRI.create('http://www.w3.org/2000/01/rdf-schema#label'), labelstr
+        )
+
+    def test_addComment(self):
+        commentstr = 'A useful comment.'
+
+        self.tprop.addComment(commentstr)
+
+        # Test that the comment annotation exists and has the correct value.
+        self._checkAnnotation(
+            IRI.create('http://www.w3.org/2000/01/rdf-schema#comment'),
+            commentstr
+        )
+
+    def test_addSuperproperty(self):
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
+        newprop = self.test_ont.createNewDataProperty(newpropIRI)
+
+        self.tprop.addSuperproperty('http://purl.obolibrary.org/obo/OBTO_0012')
+
+        # Check that the property has the correct superproperty.
+        found_prop = False
+        for axiom in self.owlont.getDataSubPropertyAxiomsForSubProperty(self.tprop.propobj):
+            if axiom.getSuperProperty().getIRI().equals(newpropIRI):
+                found_prop = True
+
+        self.assertTrue(found_prop)
+
+    def test_addDomain(self):
+        classIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
+
+        self.tprop.addDomain('http://purl.obolibrary.org/obo/OBTO_0010')
+
+        # Check that the property has the correct domain.
+        found_class = False
+        for axiom in self.owlont.getDataPropertyDomainAxioms(self.tprop.propobj):
+            cl_exp = axiom.getDomain()
+            if not(cl_exp.isAnonymous()):
+                if cl_exp.asOWLClass().getIRI().equals(classIRI):
+                    found_class = True
+
+        self.assertTrue(found_class)
+
+    def test_addRange(self):
+        classIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
+
+        # Test a simple datatype data range.
+        self.tprop.addRange('xsd:float')
+
+        # Check that the property has the correct range.
+        found_drange = False
+        for axiom in self.owlont.getDataPropertyRangeAxioms(self.tprop.propobj):
+            drange = axiom.getRange()
+            if drange.isDatatype():
+                if drange.asOWLDatatype().isFloat():
+                    found_drange = True
+
+        self.assertTrue(found_drange)
+
+    def test_addDisjointWith(self):
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
+        newprop = self.test_ont.createNewDataProperty(newpropIRI)
+
+        self.tprop.addDisjointWith('http://purl.obolibrary.org/obo/OBTO_0012')
+
+        # Check that the property has the correct disjointness relationship.
+        found_prop = False
+        for axiom in self.owlont.getDisjointDataPropertiesAxioms(self.tprop.propobj):
+            for dprop in axiom.getProperties():
+                if dprop.getIRI().equals(newpropIRI):
+                    found_prop = True
+
+        self.assertTrue(found_prop)
+
+    def test_makeFunctional(self):
+        # Verify that the property is not functional by default.
+        axioms = self.owlont.getFunctionalDataPropertyAxioms(self.tprop.propobj)
+        self.assertTrue(axioms.isEmpty())
+
+        # Make the property functional and check the result.
+        self.tprop.makeFunctional()
+        axioms = self.owlont.getFunctionalDataPropertyAxioms(self.tprop.propobj)
+        self.assertEqual(1, axioms.size())
+
