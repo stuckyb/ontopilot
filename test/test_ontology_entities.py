@@ -394,3 +394,33 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
         axioms = self.owlont.getTransitiveObjectPropertyAxioms(self.t_ent.propobj)
         self.assertEqual(1, axioms.size())
 
+
+class Test_OntologyAnnotationProperty(_TestOntologyEntity, unittest.TestCase):
+    """
+    Tests _OntologyAnnotationProperty.
+    """
+    def setUp(self):
+        _TestOntologyEntity.setUp(self)
+
+        self.t_ent = self.test_ont.createNewAnnotationProperty(
+                'http://purl.obolibrary.org/obo/OBTO_0011'
+        )
+        self.t_entIRI = self.t_ent.propIRI
+
+    def test_getTypeConst(self):
+        self.assertEqual(ANNOTATIONPROPERTY_ENTITY, self.t_ent.getTypeConst())
+
+    def test_addSuperproperty(self):
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
+        newprop = self.test_ont.createNewAnnotationProperty(newpropIRI)
+
+        self.t_ent.addSuperproperty('http://purl.obolibrary.org/obo/OBTO_0012')
+
+        # Check that the property has the correct superproperty.
+        found_prop = False
+        for axiom in self.owlont.getSubAnnotationPropertyOfAxioms(self.t_ent.propobj):
+            if axiom.getSuperProperty().getIRI().equals(newpropIRI):
+                found_prop = True
+
+        self.assertTrue(found_prop)
+
