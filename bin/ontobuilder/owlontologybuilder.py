@@ -8,8 +8,11 @@
 import re
 import logging
 from obohelper import termIRIToOboID, oboIDToIRI
-from ontology import Ontology, CLASS_ENTITY, DATAPROPERTY_ENTITY
-from ontology import OBJECTPROPERTY_ENTITY, ANNOTATIONPROPERTY_ENTITY
+from ontology import Ontology
+from ontology_entities import (
+    CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,
+    ANNOTATIONPROPERTY_ENTITY
+)
 
 # Java imports.
 

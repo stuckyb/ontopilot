@@ -16,8 +16,10 @@
 
 # Python imports.
 from ontobuilder.ontology import Ontology
-from ontobuilder.ontology import CLASS_ENTITY, DATAPROPERTY_ENTITY
-from ontobuilder.ontology import OBJECTPROPERTY_ENTITY, ANNOTATIONPROPERTY_ENTITY
+from ontobuilder.ontology_entities import (
+    CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,
+    ANNOTATIONPROPERTY_ENTITY
+)
 import unittest
 #from testfixtures import LogCapture
 

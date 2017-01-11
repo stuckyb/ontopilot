@@ -36,7 +36,10 @@ sys.path.append(ontobuilder_dir)
 # are very easy to run on any platform without needing to install additional
 # packages.
 
-test_modules = ['test_labelmap', 'test_tablereader', 'test_mshelper', 'test_ontology']
+test_modules = [
+    'test_labelmap', 'test_tablereader', 'test_mshelper',
+    'test_ontology_entities'
+]
 
 successful = True
 total = 0
