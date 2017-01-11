@@ -433,9 +433,9 @@ class _OntologyObjectProperty:
         newaxiom = self.df.getOWLSubObjectPropertyOfAxiom(self.propobj, parentprop)
         self.ontology.addTermAxiom(newaxiom)
 
-    def setDomain(self, domain_id):
+    def addDomain(self, domain_id):
         """
-        Sets the domain of this property.
+        Creates a domain axiom for this property.
 
         domain_id: The identifier of a class.  Can be either an OWL API IRI
             object or a string containing: a prefix IRI (i.e., a curie, such as
@@ -453,9 +453,9 @@ class _OntologyObjectProperty:
         daxiom = self.df.getOWLObjectPropertyDomainAxiom(self.propobj, classobj)
         self.ontology.addTermAxiom(daxiom)
 
-    def setRange(self, range_id):
+    def addRange(self, range_id):
         """
-        Sets the range for this property.
+        Creates a range axiom for this property.
 
         range_id: The identifier of a class.  Can be either an OWL API IRI
             object or a string containing: a prefix IRI (i.e., a curie, such as
@@ -473,9 +473,9 @@ class _OntologyObjectProperty:
         raxiom = self.df.getOWLObjectPropertyRangeAxiom(self.propobj, classobj)
         self.ontology.addTermAxiom(raxiom)
 
-    def setInverse(self, inverse_id):
+    def addInverse(self, inverse_id):
         """
-        Sets the inverse of this property.
+        Creates an inverse axiom for this property.
 
         inverse_id: The identifier of an object property.  Can be either an OWL
             API IRI object or a string containing: a prefix IRI (i.e., a curie,
@@ -493,7 +493,7 @@ class _OntologyObjectProperty:
         iaxiom = self.df.getOWLInverseObjectPropertiesAxiom(self.propobj, inv_propobj)
         self.ontology.addTermAxiom(iaxiom)
 
-    def setDisjointWith(self, prop_id):
+    def addDisjointWith(self, prop_id):
         """
         Sets this property as disjoint with another property.
 

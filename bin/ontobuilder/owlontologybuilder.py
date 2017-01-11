@@ -267,28 +267,28 @@ class OWLOntologyBuilder:
             propdesc['Domain']
         )
         if domainIRI != None:
-            propobj.setDomain(domainIRI)
+            propobj.addDomain(domainIRI)
 
         # Add the range, if we have one.
         rangeIRI = self._getIRIFromDesc(
             propdesc['Range']
         )
         if rangeIRI != None:
-            propobj.setRange(rangeIRI)
+            propobj.addRange(rangeIRI)
 
         # Add the inverse axiom, if we have an inverse property.
         inverseIRI = self._getIRIFromDesc(
             propdesc['Inverse']
         )
         if inverseIRI != None:
-            propobj.setInverse(inverseIRI)
+            propobj.addInverse(inverseIRI)
 
         # Add the disjoint with axiom, if we have a disjoint property.
         disjIRI = self._getIRIFromDesc(
             propdesc['Disjoint with']
         )
         if disjIRI != None:
-            propobj.setDisjointWith(disjIRI)
+            propobj.addDisjointWith(disjIRI)
 
         # Add the characteristics, if provided.  The only supported
         # characteristic for data properties is "functional".
