@@ -141,9 +141,7 @@ class Ontology:
             curie, such as "owl:Thing"), a relative IRI, a full IRI, or an OBO
             ID (e.g., a string of the form "PO:0000003").
         """
-        print "BLAH!!!:", class_id
         classIRI = self.expandIdentifier(class_id)
-        print classIRI
 
         classobj = self.df.getOWLClass(classIRI)
 
@@ -257,8 +255,8 @@ class Ontology:
         
         ent_id: The identifier of the entity.  Can be either an OWL API IRI
             object or a string containing: a prefix IRI (i.e., a curie, such as
-            "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of the form
-            "PO:0000003").
+            "owl:Thing"), a full IRI, a relative IRI, or an OBO ID (e.g., a
+            string of the form "PO:0000003").
         """
         eIRI = self.expandIdentifier(ent_id)
 
@@ -276,10 +274,10 @@ class Ontology:
         transitive imports closure, an OWL API object representing the
         individual is returned.  Otherwise, None is returned.
 
-        prop_id: The identifier of the individual to search for.  Can be either
+        indv_id: The identifier of the individual to search for.  Can be either
             an OWL API IRI object or a string containing: a prefix IRI (i.e., a
-            curie, such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a
-            string of the form "PO:0000003").
+            curie, such as "owl:Thing"), a full IRI, a relative IRI, or an OBO
+            ID (e.g., a string of the form "PO:0000003").
         """
         indvIRI = self.expandIdentifier(indv_id)
 
@@ -299,8 +297,8 @@ class Ontology:
 
         class_id: The identifier for the new class.  Can be either an OWL API
             IRI object or a string containing: a prefix IRI (i.e., a curie,
-            such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
-            the form "PO:0000003").
+            such as "owl:Thing"), a full IRI, a relative IRI, or an OBO ID
+            (e.g., a string of the form "PO:0000003").
         """
         classIRI = self.expandIdentifier(class_id)
 
@@ -395,16 +393,16 @@ class Ontology:
         Removes an entity from the ontology (including its imports closure).
         Optionally, any annotations referencing the deleted entity can also be
         removed (this is the default behavior).
+
+        entity: An OWL API entity object.
+        remove_annotations: If True, annotations referencing the entity will
+            also be removed.
         """
         ontset = self.ontology.getImportsClosure()
         for ont in ontset:
             for axiom in ont.getAxioms():
-                # See if this axiom includes the target entity (e.g., a
-                # declaration axiom for the target entity).
-                if axiom.getSignature().contains(entity):
-                    self.ontman.removeAxiom(ont, axiom)
                 # See if this axiom is an annotation axiom.
-                elif axiom.getAxiomType() == AxiomType.ANNOTATION_ASSERTION:
+                if axiom.getAxiomType() == AxiomType.ANNOTATION_ASSERTION:
                     if remove_annotations:
                         # Check if this annotation axiom refers to the target
                         # entity.
@@ -412,6 +410,10 @@ class Ontology:
                         if isinstance(asubject, IRI):
                             if asubject.equals(entity.getIRI()):
                                 self.ontman.removeAxiom(ont, axiom)
+                # See if this axiom includes the target entity (e.g., a
+                # declaration axiom for the target entity).
+                elif axiom.getSignature().contains(entity):
+                    self.ontman.removeAxiom(ont, axiom)
 
     def setOntologyID(self, ont_iri):
         """
