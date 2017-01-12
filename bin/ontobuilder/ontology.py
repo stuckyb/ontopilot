@@ -8,6 +8,7 @@ from labelmap import LabelMap
 from obohelper import isOboID, oboIDToIRI
 from ontology_entities import _OntologyClass, _OntologyDataProperty
 from ontology_entities import _OntologyObjectProperty, _OntologyAnnotationProperty
+from rfc3987 import rfc3987
 
 # Java imports.
 from java.io import File, FileOutputStream
@@ -76,18 +77,25 @@ class Ontology:
 
     def expandIRI(self, iri):
         """
-        If iri is a prefix IRI (i.e. a curie, such as "owl:Thing"), iri will be
-        expanded using the prefixes defined in the ontology.  If the string is
-        not a prefix IRI, then it is assumed to be a full IRI.
+        Expands an IRI string into a full IRI and returns a corresponding OWL
+        API IRI object.  Also accepts OWL API IRI objects, in which case they
+        are returned unaltered.  IRI strings can be either full IRIs, prefix
+        IRIs (i.e. curies, such as "owl:Thing"), or relative IRIs (e.g.,
+        "term_name").  If the IRI string is a prefix IRI or relative IRI, it
+        will be expanded using the prefixes or base defined in the ontology.
+        If the string is not a prefix IRI or relative IRI, then it is assumed
+        to be a full IRI.
 
         iri: The IRI to expand.  Can be either a string or an OWL API IRI
             object.  In the latter case, iri is returned as is.
-
-        TODO: Could use the "rfc3987" package to further validate IRI strings.
         """
         prefix_df = self.ontman.getOntologyFormat(self.ontology).asPrefixOWLOntologyFormat()
 
         if isinstance(iri, basestring):
+            # Verify that we have a valid IRI string.
+            if rfc3987.match(iri, rule='IRI_reference') == None:
+                raise RuntimeError('Invalid IRI string: "' + iri + '".')
+
             try:
                 # If iri is not a prefix IRI, the OWL API will throw an
                 # OWLRuntimeException.
@@ -153,7 +161,9 @@ class Ontology:
             curie, such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a
             string of the form "PO:0000003").
         """
+        print "BLAH!!!:", class_id
         classIRI = self.expandIdentifier(class_id)
+        print classIRI
 
         classobj = self.df.getOWLClass(classIRI)
 
