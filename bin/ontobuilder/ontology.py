@@ -113,9 +113,9 @@ class Ontology:
         """
         Converts an object representing an identifier into a fully expanded
         IRI.  The argument id_obj can be either an OWL API IRI object or a
-        string containing: a prefix IRI (i.e., a curie, such as "owl:Thing"),
-        a full IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
-        Returns an OWL API IRI object.
+        string containing: a prefix IRI (i.e., a curie, such as "owl:Thing"), a
+        relative IRI, a full IRI, or an OBO ID (e.g., a string of the form
+        "PO:0000003").  Returns an OWL API IRI object.
         """
         if isinstance(id_obj, basestring):
             if isOboID(id_obj):
@@ -129,26 +129,6 @@ class Ontology:
 
         return IRIobj
 
-    def getEntityByID(self, ent_id):
-        """
-        Searches for an entity in the ontology using an identifier.  The entity
-        is assumed to be either a class, object property, data property, or
-        annotation property.  Both the main ontology and its imports closure
-        searched for the target entity.
-        
-        ent_id: The identifier of the entity.  Can be either an OWL API IRI
-            object or a string containing: a prefix IRI (i.e., a curie, such as
-            "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of the form
-            "PO:0000003").
-        """
-        eIRI = self.expandIdentifier(ent_id)
-
-        entity = self.getExistingClass(eIRI)
-        if entity == None:
-            entity = self.getExistingProperty(eIRI)
-
-        return entity
-
     def getExistingClass(self, class_id):
         """
         Searches for an existing class in the ontology.  If the class is
@@ -158,8 +138,8 @@ class Ontology:
 
         class_id: The identifier of the class to search for.  Can be either an
             OWL API IRI object or a string containing: a prefix IRI (i.e., a
-            curie, such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a
-            string of the form "PO:0000003").
+            curie, such as "owl:Thing"), a relative IRI, a full IRI, or an OBO
+            ID (e.g., a string of the form "PO:0000003").
         """
         print "BLAH!!!:", class_id
         classIRI = self.expandIdentifier(class_id)
@@ -174,37 +154,6 @@ class Ontology:
 
         return None
 
-    def getExistingProperty(self, prop_id):
-        """
-        Searches for an existing property in the ontology.  If the property is
-        declared either directly in the ontology or is declared in its
-        transitive imports closure, an OWL API object representing the property
-        is returned.  Otherwise, None is returned.  Object properties, data
-        properties, and annotation properties are all considered; ontology
-        properties are not.
-
-        prop_iri: The identifier of the property to search for.  Can be either
-            an OWL API IRI object or a string containing: a prefix IRI (i.e., a
-            curie, such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a
-            string of the form "PO:0000003").
-        """
-        propIRI = self.expandIdentifier(prop_id)
-
-        obj_prop = self.df.getOWLObjectProperty(propIRI)
-        annot_prop = self.df.getOWLAnnotationProperty(propIRI)
-        data_prop = self.df.getOWLDataProperty(propIRI)
-
-        ontset = self.ontology.getImportsClosure()
-        for ont in ontset:
-            if ont.getDeclarationAxioms(obj_prop).size() > 0:
-                return obj_prop
-            elif ont.getDeclarationAxioms(annot_prop).size() > 0:
-                return annot_prop
-            elif ont.getDeclarationAxioms(data_prop).size() > 0:
-                return data_prop
-
-        return None
-
     def getExistingDataProperty(self, prop_id):
         """
         Searches for an existing data property in the ontology.  If the
@@ -214,8 +163,8 @@ class Ontology:
 
         prop_id: The identifier of the property to search for.  Can be either
             an OWL API IRI object or a string containing: a prefix IRI (i.e., a
-            curie, such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a
-            string of the form "PO:0000003").
+            curie, such as "owl:Thing"), a full IRI, a relative IRI, or an OBO
+            ID (e.g., a string of the form "PO:0000003").
         """
         propIRI = self.expandIdentifier(prop_id)
 
@@ -237,8 +186,8 @@ class Ontology:
 
         prop_id: The identifier of the property to search for.  Can be either
             an OWL API IRI object or a string containing: a prefix IRI (i.e., a
-            curie, such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a
-            string of the form "PO:0000003").
+            curie, such as "owl:Thing"), a full IRI, a relative IRI, or an OBO
+            ID (e.g., a string of the form "PO:0000003").
         """
         propIRI = self.expandIdentifier(prop_id)
 
@@ -260,8 +209,8 @@ class Ontology:
 
         prop_id: The identifier of the property to search for.  Can be either
             an OWL API IRI object or a string containing: a prefix IRI (i.e., a
-            curie, such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a
-            string of the form "PO:0000003").
+            curie, such as "owl:Thing"), a full IRI, a relative IRI, or an OBO
+            ID (e.g., a string of the form "PO:0000003").
         """
         propIRI = self.expandIdentifier(prop_id)
 
@@ -273,6 +222,52 @@ class Ontology:
                 return propobj
 
         return None
+
+    def getExistingProperty(self, prop_id):
+        """
+        Searches for an existing property in the ontology.  If the property is
+        declared either directly in the ontology or is declared in its
+        transitive imports closure, an OWL API object representing the property
+        is returned.  Otherwise, None is returned.  Object properties, data
+        properties, and annotation properties are all considered; ontology
+        properties are not.
+
+        prop_id: The identifier of the property to search for.  Can be either
+            an OWL API IRI object or a string containing: a prefix IRI (i.e., a
+            curie, such as "owl:Thing"), a full IRI, a relative IRI, or an OBO
+            ID (e.g., a string of the form "PO:0000003").
+        """
+        propIRI = self.expandIdentifier(prop_id)
+
+        prop = self.getExistingObjectProperty(propIRI)
+        if prop == None:
+            prop = self.getExistingAnnotationProperty(propIRI)
+        if prop == None:
+            prop = self.getExistingDataProperty(propIRI)
+
+        # If no matching data property was found, prop == None.
+        return prop
+
+    def getExistingEntity(self, ent_id):
+        """
+        Searches for an entity in the ontology using an identifier.  The entity
+        is assumed to be either a class, object property, data property, or
+        annotation property.  Both the main ontology and its imports closure
+        are searched for the target entity.
+        
+        ent_id: The identifier of the entity.  Can be either an OWL API IRI
+            object or a string containing: a prefix IRI (i.e., a curie, such as
+            "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of the form
+            "PO:0000003").
+        """
+        eIRI = self.expandIdentifier(ent_id)
+
+        entity = self.getExistingClass(eIRI)
+        if entity == None:
+            entity = self.getExistingProperty(eIRI)
+
+        # If no matching data property was found, entity == None.
+        return entity
 
     def getExistingIndividual(self, indv_id):
         """
