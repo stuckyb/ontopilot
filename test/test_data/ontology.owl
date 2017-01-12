@@ -76,4 +76,20 @@
         <rdfs:label xml:lang="en">test class 1</rdfs:label>
     </owl:Class>
 
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <!-- individual_001 -->
+
+    <owl:NamedIndividual rdf:ID="individual_001">
+        <rdf:type rdf:resource="http://purl.obolibrary.org/obo/OBTO_0010"/>
+        <rdfs:label xml:lang="en">test individual 1</rdfs:label>
+    </owl:NamedIndividual>
+
 </rdf:RDF>
