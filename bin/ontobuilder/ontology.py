@@ -56,13 +56,6 @@ class Ontology:
         # entities and looking up existing entities.
         self.df = OWLManager.getOWLDataFactory()
 
-    def __del__(self):
-        """
-        A class "destructor" that disposes the Manchester Syntax parser when
-        this Ontology instance is no longer needed.
-        """
-        self.mparser.dispose()
-
     def getOWLOntology(self):
         """
         Returns the OWL API ontology object contained by this Ontology object.
