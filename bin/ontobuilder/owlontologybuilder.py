@@ -84,24 +84,33 @@ class OWLOntologyBuilder:
         # Cache the remainder of the class description.
         self.entity_trows.append((newclass, classdesc))
 
+    def _addGenericAxioms(self, entobj, entdesc, expanddef=True):
+        """
+        Adds generic axioms (i.e., axioms that all entities have in common)
+        from a _TableRow entity description to an existing entity object.  If
+        expanddef is True, then term labels in the text definition for the new
+        entity will be expanded to include the terms' OBO IDs.
+        """
+        # Add the text definition for the entity, if we have one.
+        textdef = entdesc['Text definition']
+        if textdef != '':
+            if expanddef:
+                textdef = self._expandDefinition(textdef)
+
+            entobj.addDefinition(textdef)
+
+        # Add any comments for the entity.
+        commenttext = entdesc['Comments']
+        if commenttext != '':
+            entobj.addComment(commenttext)
+
     def _addClassAxioms(self, classobj, classdesc, expanddef=True):
         """
         Adds axioms from a _TableRow class description to an existing class
         object.  If expanddef is True, then term labels in the text definition
         for the new class will be expanded to include the terms' OBO IDs.
         """
-        # Add the text definition to the class, if we have one.
-        textdef = classdesc['Text definition']
-        if textdef != '':
-            if expanddef:
-                textdef = self._expandDefinition(textdef)
-
-            classobj.addDefinition(textdef)
-
-        # Add any comments for the class.
-        commenttext = classdesc['Comments']
-        if commenttext != '':
-            classobj.addComment(commenttext)
+        self._addGenericAxioms(classobj, classdesc, expanddef)
 
         # Get the IRI object of the parent class and add it as a parent.
         parentIRI = self._getIRIFromDesc(
@@ -159,18 +168,7 @@ class OWLOntologyBuilder:
         text definition for the new property will be expanded to include the
         terms' OBO IDs.
         """
-        # Add the text definition to the property, if we have one.
-        textdef = propdesc['Text definition']
-        if textdef != '':
-            if expanddef:
-                textdef = self._expandDefinition(textdef)
-
-            propobj.addDefinition(textdef)
-        
-        # Add any comments for the property.
-        commenttext = propdesc['Comments']
-        if commenttext != '':
-            propobj.addComment(commenttext)
+        self._addGenericAxioms(propobj, propdesc, expanddef)
 
         # Get the IRI object of the parent property and add it as a parent.
         parentIRI = self._getIRIFromDesc(
@@ -242,18 +240,7 @@ class OWLOntologyBuilder:
         text definition for the new property will be expanded to include the
         terms' OBO IDs.
         """
-        # Add the text definition to the property, if we have one.
-        textdef = propdesc['Text definition']
-        if textdef != '':
-            if expanddef:
-                textdef = self._expandDefinition(textdef)
-
-            propobj.addDefinition(textdef)
-        
-        # Add any comments for the property.
-        commenttext = propdesc['Comments']
-        if commenttext != '':
-            propobj.addComment(commenttext)
+        self._addGenericAxioms(propobj, propdesc, expanddef)
 
         # Get the IRI object of the parent property and add it as a parent.
         parentIRI = self._getIRIFromDesc(
@@ -356,18 +343,7 @@ class OWLOntologyBuilder:
         the text definition for the new property will be expanded to include
         the terms' OBO IDs.
         """
-        # Add the text definition to the property, if we have one.
-        textdef = propdesc['Text definition']
-        if textdef != '':
-            if expanddef:
-                textdef = self._expandDefinition(textdef)
-
-            propobj.addDefinition(textdef)
-        
-        # Add any comments for the property.
-        commenttext = propdesc['Comments']
-        if commenttext != '':
-            propobj.addComment(commenttext)
+        self._addGenericAxioms(propobj, propdesc, expanddef)
 
         # Get the IRI object of the parent property and add it as a parent.
         parentIRI = self._getIRIFromDesc(
