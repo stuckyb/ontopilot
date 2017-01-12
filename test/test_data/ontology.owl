@@ -32,7 +32,35 @@
     </owl:ObjectProperty>
     
 
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Datatype Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
 
+    <!-- http://purl.obolibrary.org/obo/OBTO_0020 -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.obolibrary.org/obo/OBTO_0020">
+        <rdfs:label xml:lang="en">test data property 1</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Annotation Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <!-- http://purl.obolibrary.org/obo/OBTO_0030 -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.obolibrary.org/obo/OBTO_0030">
+        <rdfs:label xml:lang="en">annotation property 1</rdfs:label>
+    </owl:AnnotationProperty>
+    
 
     <!-- 
     ///////////////////////////////////////////////////////////////////////////////////////
