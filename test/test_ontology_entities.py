@@ -40,9 +40,16 @@ class _TestOntologyEntity:
         self.test_ont = Ontology('test_data/ontology.owl')
         self.owlont = self.test_ont.getOWLOntology()
 
-        # A test entity instance and IRI should be provided by child classes.
+        # A test entity instance, OWL API object, and IRI should be provided by
+        # child classes by calling _setEntityObject().
         self.t_ent = None
+        self.t_owlapiobj = None
         self.t_entIRI = None
+
+    def _setEntityObject(self, entityobj):
+        self.t_ent = entityobj
+        self.t_owlapiobj = self.t_ent.getOWLAPIObj()
+        self.t_entIRI = self.t_ent.getIRI()
 
     def _checkAnnotation(self, annot_propIRI, valuestr):
         """
@@ -96,10 +103,11 @@ class Test_OntologyClass(_TestOntologyEntity, unittest.TestCase):
     def setUp(self):
         _TestOntologyEntity.setUp(self)
 
-        self.t_ent = self.test_ont.createNewClass(
+        t_ent = self.test_ont.createNewClass(
                 'http://purl.obolibrary.org/obo/OBTO_0011'
         )
-        self.t_entIRI = self.t_ent.entityIRI
+
+        self._setEntityObject(t_ent)
 
     def test_getTypeConst(self):
         self.assertEqual(CLASS_ENTITY, self.t_ent.getTypeConst())
@@ -112,7 +120,7 @@ class Test_OntologyClass(_TestOntologyEntity, unittest.TestCase):
 
         # Check that the class has the correct superclass.
         found_superclass = False
-        for axiom in self.owlont.getSubClassAxiomsForSubClass(self.t_ent.classobj):
+        for axiom in self.owlont.getSubClassAxiomsForSubClass(self.t_owlapiobj):
             if axiom.getSuperClass().getIRI().equals(superclassIRI):
                 found_superclass = True
 
@@ -126,7 +134,7 @@ class Test_OntologyClass(_TestOntologyEntity, unittest.TestCase):
 
         # Check that the class has the correct equivalency relationship.
         found_eqclass = False
-        for axiom in self.owlont.getEquivalentClassesAxioms(self.t_ent.classobj):
+        for axiom in self.owlont.getEquivalentClassesAxioms(self.t_owlapiobj):
             for eqclass in axiom.getNamedClasses():
                 if eqclass.getIRI().equals(equivclassIRI):
                     found_eqclass = True
@@ -141,7 +149,7 @@ class Test_OntologyClass(_TestOntologyEntity, unittest.TestCase):
 
         # Check that the class has the correct disjointness relationship.
         found_class = False
-        for axiom in self.owlont.getDisjointClassesAxioms(self.t_ent.classobj):
+        for axiom in self.owlont.getDisjointClassesAxioms(self.t_owlapiobj):
             for cl_exp in axiom.getClassExpressions():
                 if not(cl_exp.isAnonymous()):
                     if cl_exp.asOWLClass().getIRI().equals(classIRI):
@@ -157,10 +165,11 @@ class Test_OntologyDataProperty(_TestOntologyEntity, unittest.TestCase):
     def setUp(self):
         _TestOntologyEntity.setUp(self)
 
-        self.t_ent = self.test_ont.createNewDataProperty(
+        t_ent = self.test_ont.createNewDataProperty(
                 'http://purl.obolibrary.org/obo/OBTO_0011'
         )
-        self.t_entIRI = self.t_ent.entityIRI
+
+        self._setEntityObject(t_ent)
 
     def test_getTypeConst(self):
         self.assertEqual(DATAPROPERTY_ENTITY, self.t_ent.getTypeConst())
@@ -173,7 +182,7 @@ class Test_OntologyDataProperty(_TestOntologyEntity, unittest.TestCase):
 
         # Check that the property has the correct superproperty.
         found_prop = False
-        for axiom in self.owlont.getDataSubPropertyAxiomsForSubProperty(self.t_ent.propobj):
+        for axiom in self.owlont.getDataSubPropertyAxiomsForSubProperty(self.t_owlapiobj):
             if axiom.getSuperProperty().getIRI().equals(newpropIRI):
                 found_prop = True
 
@@ -186,7 +195,7 @@ class Test_OntologyDataProperty(_TestOntologyEntity, unittest.TestCase):
 
         # Check that the property has the correct domain.
         found_class = False
-        for axiom in self.owlont.getDataPropertyDomainAxioms(self.t_ent.propobj):
+        for axiom in self.owlont.getDataPropertyDomainAxioms(self.t_owlapiobj):
             cl_exp = axiom.getDomain()
             if not(cl_exp.isAnonymous()):
                 if cl_exp.asOWLClass().getIRI().equals(classIRI):
@@ -200,7 +209,7 @@ class Test_OntologyDataProperty(_TestOntologyEntity, unittest.TestCase):
 
         # Check that the property has the correct range.
         found_drange = False
-        for axiom in self.owlont.getDataPropertyRangeAxioms(self.t_ent.propobj):
+        for axiom in self.owlont.getDataPropertyRangeAxioms(self.t_owlapiobj):
             drange = axiom.getRange()
             if drange.isDatatype():
                 if drange.asOWLDatatype().isFloat():
@@ -216,7 +225,7 @@ class Test_OntologyDataProperty(_TestOntologyEntity, unittest.TestCase):
 
         # Check that the property has the correct disjointness relationship.
         found_prop = False
-        for axiom in self.owlont.getDisjointDataPropertiesAxioms(self.t_ent.propobj):
+        for axiom in self.owlont.getDisjointDataPropertiesAxioms(self.t_owlapiobj):
             for dprop in axiom.getProperties():
                 if dprop.getIRI().equals(newpropIRI):
                     found_prop = True
@@ -225,12 +234,12 @@ class Test_OntologyDataProperty(_TestOntologyEntity, unittest.TestCase):
 
     def test_makeFunctional(self):
         # Verify that the property is not functional by default.
-        axioms = self.owlont.getFunctionalDataPropertyAxioms(self.t_ent.propobj)
+        axioms = self.owlont.getFunctionalDataPropertyAxioms(self.t_owlapiobj)
         self.assertTrue(axioms.isEmpty())
 
         # Make the property functional and check the result.
         self.t_ent.makeFunctional()
-        axioms = self.owlont.getFunctionalDataPropertyAxioms(self.t_ent.propobj)
+        axioms = self.owlont.getFunctionalDataPropertyAxioms(self.t_owlapiobj)
         self.assertEqual(1, axioms.size())
 
 
@@ -241,10 +250,11 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
     def setUp(self):
         _TestOntologyEntity.setUp(self)
 
-        self.t_ent = self.test_ont.createNewObjectProperty(
+        t_ent = self.test_ont.createNewObjectProperty(
                 'http://purl.obolibrary.org/obo/OBTO_0011'
         )
-        self.t_entIRI = self.t_ent.entityIRI
+
+        self._setEntityObject(t_ent)
 
     def test_getTypeConst(self):
         self.assertEqual(OBJECTPROPERTY_ENTITY, self.t_ent.getTypeConst())
@@ -257,7 +267,7 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
 
         # Check that the property has the correct superproperty.
         found_prop = False
-        for axiom in self.owlont.getObjectSubPropertyAxiomsForSubProperty(self.t_ent.propobj):
+        for axiom in self.owlont.getObjectSubPropertyAxiomsForSubProperty(self.t_owlapiobj):
             if axiom.getSuperProperty().getIRI().equals(newpropIRI):
                 found_prop = True
 
@@ -270,7 +280,7 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
 
         # Check that the property has the correct domain.
         found_class = False
-        for axiom in self.owlont.getObjectPropertyDomainAxioms(self.t_ent.propobj):
+        for axiom in self.owlont.getObjectPropertyDomainAxioms(self.t_owlapiobj):
             cl_exp = axiom.getDomain()
             if not(cl_exp.isAnonymous()):
                 if cl_exp.asOWLClass().getIRI().equals(classIRI):
@@ -285,7 +295,7 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
 
         # Check that the property has the correct range.
         found_class = False
-        for axiom in self.owlont.getObjectPropertyRangeAxioms(self.t_ent.propobj):
+        for axiom in self.owlont.getObjectPropertyRangeAxioms(self.t_owlapiobj):
             cl_exp = axiom.getRange()
             if not(cl_exp.isAnonymous()):
                 if cl_exp.asOWLClass().getIRI().equals(classIRI):
@@ -301,7 +311,7 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
 
         # Check that the property has the correct inverse.
         found_prop = False
-        for axiom in self.owlont.getInverseObjectPropertyAxioms(self.t_ent.propobj):
+        for axiom in self.owlont.getInverseObjectPropertyAxioms(self.t_owlapiobj):
             for dprop in axiom.getProperties():
                 if dprop.getIRI().equals(newpropIRI):
                     found_prop = True
@@ -317,7 +327,7 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
 
         # Check that the property has the correct disjointness relationship.
         found_prop = False
-        for axiom in self.owlont.getDisjointObjectPropertiesAxioms(self.t_ent.propobj):
+        for axiom in self.owlont.getDisjointObjectPropertiesAxioms(self.t_owlapiobj):
             for dprop in axiom.getProperties():
                 if dprop.getIRI().equals(newpropIRI):
                     found_prop = True
@@ -326,72 +336,72 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
 
     def test_makeFunctional(self):
         # Verify that the property is not functional by default.
-        axioms = self.owlont.getFunctionalObjectPropertyAxioms(self.t_ent.propobj)
+        axioms = self.owlont.getFunctionalObjectPropertyAxioms(self.t_owlapiobj)
         self.assertTrue(axioms.isEmpty())
 
         # Make the property functional and check the result.
         self.t_ent.makeFunctional()
-        axioms = self.owlont.getFunctionalObjectPropertyAxioms(self.t_ent.propobj)
+        axioms = self.owlont.getFunctionalObjectPropertyAxioms(self.t_owlapiobj)
         self.assertEqual(1, axioms.size())
 
     def test_makeInverseFunctional(self):
-        # Verify that the property is not functional by default.
-        axioms = self.owlont.getInverseFunctionalObjectPropertyAxioms(self.t_ent.propobj)
+        # Verify that the property is not inverse functional by default.
+        axioms = self.owlont.getInverseFunctionalObjectPropertyAxioms(self.t_owlapiobj)
         self.assertTrue(axioms.isEmpty())
 
         # Make the property inverse functional and check the result.
         self.t_ent.makeInverseFunctional()
-        axioms = self.owlont.getInverseFunctionalObjectPropertyAxioms(self.t_ent.propobj)
+        axioms = self.owlont.getInverseFunctionalObjectPropertyAxioms(self.t_owlapiobj)
         self.assertEqual(1, axioms.size())
 
     def test_makeReflexive(self):
-        # Verify that the property is not functional by default.
-        axioms = self.owlont.getReflexiveObjectPropertyAxioms(self.t_ent.propobj)
+        # Verify that the property is not reflexive by default.
+        axioms = self.owlont.getReflexiveObjectPropertyAxioms(self.t_owlapiobj)
         self.assertTrue(axioms.isEmpty())
 
-        # Make the property functional and check the result.
+        # Make the property reflexive and check the result.
         self.t_ent.makeReflexive()
-        axioms = self.owlont.getReflexiveObjectPropertyAxioms(self.t_ent.propobj)
+        axioms = self.owlont.getReflexiveObjectPropertyAxioms(self.t_owlapiobj)
         self.assertEqual(1, axioms.size())
 
     def test_makeIrreflexive(self):
-        # Verify that the property is not functional by default.
-        axioms = self.owlont.getIrreflexiveObjectPropertyAxioms(self.t_ent.propobj)
+        # Verify that the property is not irreflexive by default.
+        axioms = self.owlont.getIrreflexiveObjectPropertyAxioms(self.t_owlapiobj)
         self.assertTrue(axioms.isEmpty())
 
-        # Make the property functional and check the result.
+        # Make the property irreflexive and check the result.
         self.t_ent.makeIrreflexive()
-        axioms = self.owlont.getIrreflexiveObjectPropertyAxioms(self.t_ent.propobj)
+        axioms = self.owlont.getIrreflexiveObjectPropertyAxioms(self.t_owlapiobj)
         self.assertEqual(1, axioms.size())
 
     def test_makeSymmetric(self):
-        # Verify that the property is not functional by default.
-        axioms = self.owlont.getSymmetricObjectPropertyAxioms(self.t_ent.propobj)
+        # Verify that the property is not symmetric by default.
+        axioms = self.owlont.getSymmetricObjectPropertyAxioms(self.t_owlapiobj)
         self.assertTrue(axioms.isEmpty())
 
-        # Make the property functional and check the result.
+        # Make the property symmetric and check the result.
         self.t_ent.makeSymmetric()
-        axioms = self.owlont.getSymmetricObjectPropertyAxioms(self.t_ent.propobj)
+        axioms = self.owlont.getSymmetricObjectPropertyAxioms(self.t_owlapiobj)
         self.assertEqual(1, axioms.size())
 
     def test_makeAsymmetric(self):
-        # Verify that the property is not functional by default.
-        axioms = self.owlont.getAsymmetricObjectPropertyAxioms(self.t_ent.propobj)
+        # Verify that the property is not asymmetric by default.
+        axioms = self.owlont.getAsymmetricObjectPropertyAxioms(self.t_owlapiobj)
         self.assertTrue(axioms.isEmpty())
 
-        # Make the property functional and check the result.
+        # Make the property asymmetric and check the result.
         self.t_ent.makeAsymmetric()
-        axioms = self.owlont.getAsymmetricObjectPropertyAxioms(self.t_ent.propobj)
+        axioms = self.owlont.getAsymmetricObjectPropertyAxioms(self.t_owlapiobj)
         self.assertEqual(1, axioms.size())
 
     def test_makeTransitive(self):
-        # Verify that the property is not functional by default.
-        axioms = self.owlont.getTransitiveObjectPropertyAxioms(self.t_ent.propobj)
+        # Verify that the property is not transitive by default.
+        axioms = self.owlont.getTransitiveObjectPropertyAxioms(self.t_owlapiobj)
         self.assertTrue(axioms.isEmpty())
 
-        # Make the property functional and check the result.
+        # Make the property transitive and check the result.
         self.t_ent.makeTransitive()
-        axioms = self.owlont.getTransitiveObjectPropertyAxioms(self.t_ent.propobj)
+        axioms = self.owlont.getTransitiveObjectPropertyAxioms(self.t_owlapiobj)
         self.assertEqual(1, axioms.size())
 
 
@@ -402,10 +412,11 @@ class Test_OntologyAnnotationProperty(_TestOntologyEntity, unittest.TestCase):
     def setUp(self):
         _TestOntologyEntity.setUp(self)
 
-        self.t_ent = self.test_ont.createNewAnnotationProperty(
+        t_ent = self.test_ont.createNewAnnotationProperty(
                 'http://purl.obolibrary.org/obo/OBTO_0011'
         )
-        self.t_entIRI = self.t_ent.entityIRI
+
+        self._setEntityObject(t_ent)
 
     def test_getTypeConst(self):
         self.assertEqual(ANNOTATIONPROPERTY_ENTITY, self.t_ent.getTypeConst())
@@ -418,7 +429,7 @@ class Test_OntologyAnnotationProperty(_TestOntologyEntity, unittest.TestCase):
 
         # Check that the property has the correct superproperty.
         found_prop = False
-        for axiom in self.owlont.getSubAnnotationPropertyOfAxioms(self.t_ent.propobj):
+        for axiom in self.owlont.getSubAnnotationPropertyOfAxioms(self.t_owlapiobj):
             if axiom.getSuperProperty().getIRI().equals(newpropIRI):
                 found_prop = True
 

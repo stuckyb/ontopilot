@@ -27,16 +27,27 @@ class _OntologyEntity:
     # The IRI for the property for definition annotations.
     DEFINITION_IRI = oboIDToIRI('IAO:0000115')
 
-    def __init__(self, entityIRI, ontology):
+    def __init__(self, entityIRI, entityobj, ontology):
         """
         Initializes this _OntologyEntity.
 
           entityIRI: The IRI object of the entity.
+          entityobj: The OWL API object of the entity.
           ontology: The ontology to which this entity belongs.
         """
         self.ontology = ontology
         self.df = ontology.df
         self.entityIRI = entityIRI
+        self.entityobj = entityobj
+
+    def getIRI(self):
+        return self.entityIRI
+    
+    def getOWLAPIObj(self):
+        """
+        Returns the OWL API object wrapped by this entity object.
+        """
+        return self.entityobj
 
     def addDefinition(self, deftxt):
         """
@@ -96,8 +107,7 @@ class _OntologyClass(_OntologyEntity):
           classobj: The OWL API class object of the class.
           ontology: The ontology to which this class belongs.
         """
-        _OntologyEntity.__init__(self, classIRI, ontology)
-        self.classobj = classobj
+        _OntologyEntity.__init__(self, classIRI, classobj, ontology)
 
     def getTypeConst(self):
         return CLASS_ENTITY
@@ -121,7 +131,7 @@ class _OntologyClass(_OntologyEntity):
                     + ', could not be found in the source ontology.')
         
         # Add the subclass axiom to the ontology.
-        newaxiom = self.df.getOWLSubClassOfAxiom(self.classobj, parentclass)
+        newaxiom = self.df.getOWLSubClassOfAxiom(self.entityobj, parentclass)
         self.ontology.addTermAxiom(newaxiom)
 
     def _getClassExpressions(self, manchester_exps):
@@ -159,7 +169,7 @@ class _OntologyClass(_OntologyEntity):
             cexps = self._getClassExpressions(manchester_exps)
 
             for cexp in cexps:
-                eaxiom = self.df.getOWLSubClassOfAxiom(self.classobj, cexp)
+                eaxiom = self.df.getOWLSubClassOfAxiom(self.entityobj, cexp)
                 self.ontology.addTermAxiom(eaxiom)
 
     def addEquivalentTo(self, manchester_exps):
@@ -175,7 +185,7 @@ class _OntologyClass(_OntologyEntity):
             cexps = self._getClassExpressions(manchester_exps)
 
             for cexp in cexps:
-                eaxiom = self.df.getOWLEquivalentClassesAxiom(self.classobj, cexp)
+                eaxiom = self.df.getOWLEquivalentClassesAxiom(self.entityobj, cexp)
                 self.ontology.addTermAxiom(eaxiom)
 
     def addDisjointWith(self, manchester_exps):
@@ -191,7 +201,7 @@ class _OntologyClass(_OntologyEntity):
             cexps = self._getClassExpressions(manchester_exps)
 
             for cexp in cexps:
-                axiom = self.df.getOWLDisjointClassesAxiom(self.classobj, cexp)
+                axiom = self.df.getOWLDisjointClassesAxiom(self.entityobj, cexp)
                 self.ontology.addTermAxiom(axiom)
 
 
@@ -211,8 +221,7 @@ class _OntologyDataProperty(_OntologyEntity):
           propobj: The OWL API property object of the property.
           ontology: The ontology to which this property belongs.
         """
-        _OntologyEntity.__init__(self, propIRI, ontology)
-        self.propobj = propobj
+        _OntologyEntity.__init__(self, propIRI, propobj, ontology)
         
     def getTypeConst(self):
         return DATAPROPERTY_ENTITY
@@ -236,7 +245,7 @@ class _OntologyDataProperty(_OntologyEntity):
                     + ', could not be found in the source ontology.')
 
         # Add the subproperty axiom to the ontology.
-        newaxiom = self.df.getOWLSubDataPropertyOfAxiom(self.propobj, parentprop)
+        newaxiom = self.df.getOWLSubDataPropertyOfAxiom(self.entityobj, parentprop)
         self.ontology.addTermAxiom(newaxiom)
 
     def addDomain(self, domain_id):
@@ -256,7 +265,7 @@ class _OntologyDataProperty(_OntologyEntity):
         classobj = self.df.getOWLClass(domainIRI)
 
         # Add the declaration axiom.
-        daxiom = self.df.getOWLDataPropertyDomainAxiom(self.propobj, classobj)
+        daxiom = self.df.getOWLDataPropertyDomainAxiom(self.entityobj, classobj)
         self.ontology.addTermAxiom(daxiom)
 
     def addRange(self, datarange_exp):
@@ -280,7 +289,7 @@ class _OntologyDataProperty(_OntologyEntity):
                         + ' of the data property range (Manchester Syntax expected).')
 
             # Add the range declaration axiom.
-            raxiom = self.df.getOWLDataPropertyRangeAxiom(self.propobj, datarange)
+            raxiom = self.df.getOWLDataPropertyRangeAxiom(self.entityobj, datarange)
             self.ontology.addTermAxiom(raxiom)
 
     def addDisjointWith(self, prop_id):
@@ -300,14 +309,14 @@ class _OntologyDataProperty(_OntologyEntity):
         dpropobj = self.df.getOWLDataProperty(propIRI)
 
         # Add the "disjoint with" axiom.
-        daxiom = self.df.getOWLDisjointDataPropertiesAxiom(self.propobj, dpropobj)
+        daxiom = self.df.getOWLDisjointDataPropertiesAxiom(self.entityobj, dpropobj)
         self.ontology.addTermAxiom(daxiom)
 
     def makeFunctional(self):
         """
         Makes this data property a functional property.
         """
-        faxiom = self.df.getOWLFunctionalDataPropertyAxiom(self.propobj)
+        faxiom = self.df.getOWLFunctionalDataPropertyAxiom(self.entityobj)
         self.ontology.addTermAxiom(faxiom)
 
 
@@ -327,8 +336,7 @@ class _OntologyObjectProperty(_OntologyEntity):
           classobj: The OWL API class object of the property.
           ontology: The ontology to which this property belongs.
         """
-        _OntologyEntity.__init__(self, propIRI, ontology)
-        self.propobj = propobj
+        _OntologyEntity.__init__(self, propIRI, propobj, ontology)
         
     def getTypeConst(self):
         return OBJECTPROPERTY_ENTITY
@@ -352,7 +360,7 @@ class _OntologyObjectProperty(_OntologyEntity):
                     + ', could not be found in the source ontology.')
 
         # Add the subproperty axiom to the ontology.
-        newaxiom = self.df.getOWLSubObjectPropertyOfAxiom(self.propobj, parentprop)
+        newaxiom = self.df.getOWLSubObjectPropertyOfAxiom(self.entityobj, parentprop)
         self.ontology.addTermAxiom(newaxiom)
 
     def addDomain(self, domain_id):
@@ -372,7 +380,7 @@ class _OntologyObjectProperty(_OntologyEntity):
         classobj = self.df.getOWLClass(domainIRI)
 
         # Add the declaration axiom.
-        daxiom = self.df.getOWLObjectPropertyDomainAxiom(self.propobj, classobj)
+        daxiom = self.df.getOWLObjectPropertyDomainAxiom(self.entityobj, classobj)
         self.ontology.addTermAxiom(daxiom)
 
     def addRange(self, range_id):
@@ -392,7 +400,7 @@ class _OntologyObjectProperty(_OntologyEntity):
         classobj = self.df.getOWLClass(rangeIRI)
 
         # Add the range declaration axiom.
-        raxiom = self.df.getOWLObjectPropertyRangeAxiom(self.propobj, classobj)
+        raxiom = self.df.getOWLObjectPropertyRangeAxiom(self.entityobj, classobj)
         self.ontology.addTermAxiom(raxiom)
 
     def addInverse(self, inverse_id):
@@ -412,7 +420,7 @@ class _OntologyObjectProperty(_OntologyEntity):
         inv_propobj = self.df.getOWLObjectProperty(inverseIRI)
 
         # Add the "inverse of" axiom.
-        iaxiom = self.df.getOWLInverseObjectPropertiesAxiom(self.propobj, inv_propobj)
+        iaxiom = self.df.getOWLInverseObjectPropertiesAxiom(self.entityobj, inv_propobj)
         self.ontology.addTermAxiom(iaxiom)
 
     def addDisjointWith(self, prop_id):
@@ -432,56 +440,56 @@ class _OntologyObjectProperty(_OntologyEntity):
         dpropobj = self.df.getOWLObjectProperty(propIRI)
 
         # Add the "disjoint with" axiom.
-        daxiom = self.df.getOWLDisjointObjectPropertiesAxiom(self.propobj, dpropobj)
+        daxiom = self.df.getOWLDisjointObjectPropertiesAxiom(self.entityobj, dpropobj)
         self.ontology.addTermAxiom(daxiom)
 
     def makeFunctional(self):
         """
         Makes this property a functional property.
         """
-        paxiom = self.df.getOWLFunctionalObjectPropertyAxiom(self.propobj)
+        paxiom = self.df.getOWLFunctionalObjectPropertyAxiom(self.entityobj)
         self.ontology.addTermAxiom(paxiom)
 
     def makeInverseFunctional(self):
         """
         Makes this property an inverse functional property.
         """
-        paxiom = self.df.getOWLInverseFunctionalObjectPropertyAxiom(self.propobj)
+        paxiom = self.df.getOWLInverseFunctionalObjectPropertyAxiom(self.entityobj)
         self.ontology.addTermAxiom(paxiom)
 
     def makeReflexive(self):
         """
         Makes this property a reflexive property.
         """
-        paxiom = self.df.getOWLReflexiveObjectPropertyAxiom(self.propobj)
+        paxiom = self.df.getOWLReflexiveObjectPropertyAxiom(self.entityobj)
         self.ontology.addTermAxiom(paxiom)
 
     def makeIrreflexive(self):
         """
         Makes this property an irreflexive property.
         """
-        paxiom = self.df.getOWLIrreflexiveObjectPropertyAxiom(self.propobj)
+        paxiom = self.df.getOWLIrreflexiveObjectPropertyAxiom(self.entityobj)
         self.ontology.addTermAxiom(paxiom)
 
     def makeSymmetric(self):
         """
         Makes this property a symmetric property.
         """
-        paxiom = self.df.getOWLSymmetricObjectPropertyAxiom(self.propobj)
+        paxiom = self.df.getOWLSymmetricObjectPropertyAxiom(self.entityobj)
         self.ontology.addTermAxiom(paxiom)
 
     def makeAsymmetric(self):
         """
         Makes this property an asymmetric property.
         """
-        paxiom = self.df.getOWLAsymmetricObjectPropertyAxiom(self.propobj)
+        paxiom = self.df.getOWLAsymmetricObjectPropertyAxiom(self.entityobj)
         self.ontology.addTermAxiom(paxiom)
 
     def makeTransitive(self):
         """
         Makes this property a transitive property.
         """
-        paxiom = self.df.getOWLTransitiveObjectPropertyAxiom(self.propobj)
+        paxiom = self.df.getOWLTransitiveObjectPropertyAxiom(self.entityobj)
         self.ontology.addTermAxiom(paxiom)
 
 
@@ -501,8 +509,7 @@ class _OntologyAnnotationProperty(_OntologyEntity):
           propobj: The OWL API property object of the property.
           ontology: The ontology to which this property belongs.
         """
-        _OntologyEntity.__init__(self, propIRI, ontology)
-        self.propobj = propobj
+        _OntologyEntity.__init__(self, propIRI, propobj, ontology)
         
     def getTypeConst(self):
         return ANNOTATIONPROPERTY_ENTITY
@@ -526,6 +533,6 @@ class _OntologyAnnotationProperty(_OntologyEntity):
                     + ', could not be found in the source ontology.')
 
         # Add the subproperty axiom to the ontology.
-        newaxiom = self.df.getOWLSubAnnotationPropertyOfAxiom(self.propobj, parentprop)
+        newaxiom = self.df.getOWLSubAnnotationPropertyOfAxiom(self.entityobj, parentprop)
         self.ontology.addTermAxiom(newaxiom)
 
