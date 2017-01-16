@@ -133,8 +133,8 @@ class Ontology:
         """
         Searches for an existing class in the ontology.  If the class is
         declared either directly in the ontology or is declared in its
-        transitive imports closure, an OWL API object representing the class is
-        returned.  Otherwise, None is returned.
+        transitive imports closure, an _OntologyEntity object representing the
+        class is returned.  Otherwise, None is returned.
 
         class_id: The identifier of the class to search for.  Can be either an
             OWL API IRI object or a string containing: a prefix IRI (i.e., a
@@ -148,7 +148,7 @@ class Ontology:
         ontset = self.ontology.getImportsClosure()
         for ont in ontset:
             if ont.getDeclarationAxioms(classobj).size() > 0:
-                return classobj
+                return _OntologyClass(classIRI, classobj, self)
 
         return None
 
@@ -156,8 +156,8 @@ class Ontology:
         """
         Searches for an existing data property in the ontology.  If the
         property is declared either directly in the ontology or is declared in
-        its transitive imports closure, an OWL API object representing the
-        property is returned.  Otherwise, None is returned.
+        its transitive imports closure, an _OntologyDataProperty object
+        representing the property is returned.  Otherwise, None is returned.
 
         prop_id: The identifier of the property to search for.  Can be either
             an OWL API IRI object or a string containing: a prefix IRI (i.e., a
@@ -171,7 +171,7 @@ class Ontology:
         ontset = self.ontology.getImportsClosure()
         for ont in ontset:
             if ont.getDeclarationAxioms(propobj).size() > 0:
-                return propobj
+                return _OntologyDataProperty(propIRI, propobj, self)
 
         return None
 
@@ -179,8 +179,8 @@ class Ontology:
         """
         Searches for an existing object property in the ontology.  If the
         property is declared either directly in the ontology or is declared in
-        its transitive imports closure, an OWL API object representing the
-        property is returned.  Otherwise, None is returned.
+        its transitive imports closure, an _OntologyObjectProperty object
+        representing the property is returned.  Otherwise, None is returned.
 
         prop_id: The identifier of the property to search for.  Can be either
             an OWL API IRI object or a string containing: a prefix IRI (i.e., a
@@ -194,7 +194,7 @@ class Ontology:
         ontset = self.ontology.getImportsClosure()
         for ont in ontset:
             if ont.getDeclarationAxioms(propobj).size() > 0:
-                return propobj
+                return _OntologyObjectProperty(propIRI, propobj, self)
 
         return None
 
@@ -202,8 +202,8 @@ class Ontology:
         """
         Searches for an existing annotation property in the ontology.  If the
         property is declared either directly in the ontology or is declared in
-        its transitive imports closure, an OWL API object representing the
-        property is returned.  Otherwise, None is returned.
+        its transitive imports closure, an _OntologyAnnotationProperty object
+        representing the property is returned.  Otherwise, None is returned.
 
         prop_id: The identifier of the property to search for.  Can be either
             an OWL API IRI object or a string containing: a prefix IRI (i.e., a
@@ -217,7 +217,7 @@ class Ontology:
         ontset = self.ontology.getImportsClosure()
         for ont in ontset:
             if ont.getDeclarationAxioms(propobj).size() > 0:
-                return propobj
+                return _OntologyAnnotationProperty(propIRI, propobj, self)
 
         return None
 
@@ -225,9 +225,9 @@ class Ontology:
         """
         Searches for an existing property in the ontology.  If the property is
         declared either directly in the ontology or is declared in its
-        transitive imports closure, an OWL API object representing the property
-        is returned.  Otherwise, None is returned.  Object properties, data
-        properties, and annotation properties are all considered; ontology
+        transitive imports closure, an _OntologyEntity object representing the
+        property is returned.  Otherwise, None is returned.  Object properties,
+        data properties, and annotation properties are all considered; ontology
         properties are not.
 
         prop_id: The identifier of the property to search for.  Can be either
@@ -251,7 +251,9 @@ class Ontology:
         Searches for an entity in the ontology using an identifier.  The entity
         is assumed to be either a class, object property, data property, or
         annotation property.  Both the main ontology and its imports closure
-        are searched for the target entity.
+        are searched for the target entity.  If the entity is found, an
+        _OntologyEntity object representing the entity is returned.  Otherwise,
+        None is returned.
         
         ent_id: The identifier of the entity.  Can be either an OWL API IRI
             object or a string containing: a prefix IRI (i.e., a curie, such as

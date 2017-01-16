@@ -33,7 +33,9 @@ class _OntologyEntity:
 
           entityIRI: The IRI object of the entity.
           entityobj: The OWL API object of the entity.
-          ontology: The ontology to which this entity belongs.
+          ontology: The ontology to which this class belongs.  This should be
+            an instance of the local Ontology class (i.e., not an instance of
+            the OWL API ontology object.)
         """
         self.ontology = ontology
         self.df = ontology.df
@@ -105,7 +107,9 @@ class _OntologyClass(_OntologyEntity):
 
           class_iri: The IRI object of the class.
           classobj: The OWL API class object of the class.
-          ontology: The ontology to which this class belongs.
+          ontology: The ontology to which this class belongs.  This should be
+            an instance of the local Ontology class (i.e., not an instance of
+            the OWL API ontology object.)
         """
         _OntologyEntity.__init__(self, classIRI, classobj, ontology)
 
@@ -125,7 +129,7 @@ class _OntologyClass(_OntologyEntity):
 
         # Get the OWLClass object of the parent class, making sure that it is
         # actually defined.
-        parentclass = self.ontology.getExistingClass(parentIRI)
+        parentclass = self.ontology.getExistingClass(parentIRI).getOWLAPIObj()
         if parentclass == None:
             raise RuntimeError('The designated superclass, ' + str(parent_id)
                     + ', could not be found in the source ontology.')
@@ -219,7 +223,9 @@ class _OntologyDataProperty(_OntologyEntity):
 
           class_iri: The IRI object of the property.
           propobj: The OWL API property object of the property.
-          ontology: The ontology to which this property belongs.
+          ontology: The ontology to which this class belongs.  This should be
+            an instance of the local Ontology class (i.e., not an instance of
+            the OWL API ontology object.)
         """
         _OntologyEntity.__init__(self, propIRI, propobj, ontology)
         
@@ -239,7 +245,7 @@ class _OntologyDataProperty(_OntologyEntity):
 
         # Get the OWL property object of the parent, making sure that it is
         # actually defined.
-        parentprop = self.ontology.getExistingDataProperty(parentIRI)
+        parentprop = self.ontology.getExistingDataProperty(parentIRI).getOWLAPIObj()
         if parentprop == None:
             raise RuntimeError('The designated superproperty, ' + str(parent_id)
                     + ', could not be found in the source ontology.')
@@ -334,7 +340,9 @@ class _OntologyObjectProperty(_OntologyEntity):
 
           class_iri: The IRI object of the property.
           classobj: The OWL API class object of the property.
-          ontology: The ontology to which this property belongs.
+          ontology: The ontology to which this class belongs.  This should be
+            an instance of the local Ontology class (i.e., not an instance of
+            the OWL API ontology object.)
         """
         _OntologyEntity.__init__(self, propIRI, propobj, ontology)
         
@@ -354,7 +362,7 @@ class _OntologyObjectProperty(_OntologyEntity):
 
         # Get the OWL property object of the parent, making sure that it is
         # actually defined.
-        parentprop = self.ontology.getExistingObjectProperty(parentIRI)
+        parentprop = self.ontology.getExistingObjectProperty(parentIRI).getOWLAPIObj()
         if parentprop == None:
             raise RuntimeError('The designated superproperty, ' + str(parent_id)
                     + ', could not be found in the source ontology.')
@@ -507,7 +515,9 @@ class _OntologyAnnotationProperty(_OntologyEntity):
 
           class_iri: The IRI object of the property.
           propobj: The OWL API property object of the property.
-          ontology: The ontology to which this property belongs.
+          ontology: The ontology to which this class belongs.  This should be
+            an instance of the local Ontology class (i.e., not an instance of
+            the OWL API ontology object.)
         """
         _OntologyEntity.__init__(self, propIRI, propobj, ontology)
         
@@ -527,7 +537,7 @@ class _OntologyAnnotationProperty(_OntologyEntity):
 
         # Get the OWL property object of the parent, making sure that it is
         # actually defined.
-        parentprop = self.ontology.getExistingAnnotationProperty(parentIRI)
+        parentprop = self.ontology.getExistingAnnotationProperty(parentIRI).getOWLAPIObj()
         if parentprop == None:
             raise RuntimeError('The designated superproperty, ' + str(parent_id)
                     + ', could not be found in the source ontology.')

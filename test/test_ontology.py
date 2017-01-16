@@ -250,10 +250,11 @@ class Test_Ontology(unittest.TestCase):
         self.assertIsNotNone(classobj)
 
         # First, delete the class but not its annotations.
-        self.ont.removeEntity(classobj, False)
+        self.ont.removeEntity(classobj.getOWLAPIObj(), False)
 
+        # Make sure the class has been deleted.
         self.assertIsNone(
-            self.ont.getExistingIndividual(self.CLASS_IRI)
+            self.ont.getExistingClass(self.CLASS_IRI)
         )
 
         # Make sure annotations for the target entity have not been deleted.
@@ -262,7 +263,7 @@ class Test_Ontology(unittest.TestCase):
         self.assertEqual(1, annot_ax_set.size())
 
         # Run the deletion command again, this time deleting annotations.
-        self.ont.removeEntity(classobj, True)
+        self.ont.removeEntity(classobj.getOWLAPIObj(), True)
 
         # Make sure annotations for the target entity have been deleted.
         IRIobj = IRI.create(self.CLASS_IRI)

@@ -105,7 +105,10 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
             termIRI = self._resolveName(name)
             classobj = self.ontology.getExistingClass(termIRI)
 
-        return classobj
+        if classobj != None:
+            return classobj.getOWLAPIObj()
+        else:
+            return None
 
     def getOWLObjectProperty(self, name):
         propobj = self.sf_checker.getOWLObjectProperty(name)
@@ -113,7 +116,10 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
             termIRI = self._resolveName(name)
             propobj = self.ontology.getExistingObjectProperty(termIRI)
 
-        return propobj
+        if propobj != None:
+            return propobj.getOWLAPIObj()
+        else:
+            return None
 
     def getOWLDataProperty(self, name):
         propobj = self.sf_checker.getOWLDataProperty(name)
@@ -121,7 +127,10 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
             termIRI = self._resolveName(name)
             propobj = self.ontology.getExistingDataProperty(termIRI)
 
-        return propobj
+        if propobj != None:
+            return propobj.getOWLAPIObj()
+        else:
+            return None
 
     def getOWLAnnotationProperty(self, name):
         propobj = self.sf_checker.getOWLAnnotationProperty(name)
@@ -129,7 +138,10 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
             termIRI = self._resolveName(name)
             propobj = self.ontology.getExistingAnnotationProperty(termIRI)
 
-        return propobj
+        if propobj != None:
+            return propobj.getOWLAPIObj()
+        else:
+            return None
 
     def getOWLDatatype(self, name):
         return self.sf_checker.getOWLDatatype(name)

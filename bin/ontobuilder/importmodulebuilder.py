@@ -155,7 +155,7 @@ class ImportModuleBuilder:
                 for row in table:
                     idstr = row['ID']
                     ontobuilder.logger.info('Processing entity ' + idstr + '.')
-                    owlent = sourceont.getExistingEntity(idstr)
+                    owlent = sourceont.getExistingEntity(idstr).getOWLAPIObj()
                     if owlent == None:
                         raise RuntimeError(idstr + ' could not be found in the source ontology')
     
