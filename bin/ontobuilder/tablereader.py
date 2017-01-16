@@ -122,6 +122,13 @@ class _TableRow:
     def __contains__(self, colname):
         return colname.lower() in self.data
 
+    def __str__(self):
+        metadata = 'row {0} in "{1}":\n'.format(
+            self.getRowNum(), self.getFileName()
+        )
+
+        return metadata + str(self.data)
+
     def getRowNum(self):
         return self.rownum
 
