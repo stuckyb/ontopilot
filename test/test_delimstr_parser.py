@@ -15,18 +15,18 @@
 
 
 # Python imports.
-from ontobuilder.csstr_parser import CSStrParser
+from ontobuilder.delimstr_parser import DelimStrParser
 import unittest
 
 # Java imports.
 
 
-class Test_CSStrParser(unittest.TestCase):
+class Test_DelimtrParser(unittest.TestCase):
     """
-    Tests CSStrParser.
+    Tests the delimiter-separated string parser.
     """
     def setUp(self):
-        self.parser = CSStrParser()
+        self.parser = DelimStrParser(';')
 
     def test_parseString(self):
         """
@@ -36,19 +36,19 @@ class Test_CSStrParser(unittest.TestCase):
         testvals = (
             (' ', []),
             ('', []),
-            (',', []),
+            (';', []),
             (r'\"', ['"']),
             ('test string!!', ['test string!!']),
             (r'test \string\"!!', [r'test \string"!!']),
-            (',,multiple string,, , values,', ['multiple string', 'values']),
+            (';;multiple string;; ; values;', ['multiple string', 'values']),
             ('""', []),
             ('"test string!!"', ['test string!!']),
             (r'"test \string\"!!"', [r'test \string"!!']),
             ('te"st" "string!!"', ['test string!!']),
-            ('a "string, with" commas', ['a string, with commas']),
-            ('a "string, with" , commas', ['a string, with', 'commas']),
-            (r'"with,,commas",\""and \" escapes"', ['with,,commas', '"and " escapes']),
-            ('"includes\ncarriage",\n,\nret-\nurns', ['includes\ncarriage', 'ret-\nurns'])
+            ('a "string; with" delimiters', ['a string; with delimiters']),
+            ('a "string; with" ; delimiters', ['a string; with', 'delimiters']),
+            (r'"with;;delimiters\"";\""and \" escapes"', ['with;;delimiters"', '"and " escapes']),
+            ('"includes\ncarriage";\n;\nret-\nurns', ['includes\ncarriage', 'ret-\nurns'])
         )
 
         for testval in testvals:
@@ -62,5 +62,5 @@ class Test_CSStrParser(unittest.TestCase):
         """
         # Verify that unbalanced quotes are correctly detected.
         with self.assertRaisesRegexp(RuntimeError, 'Closing quote missing in input string'):
-            self.parser.parseString('"unbalanced", "quotes')
+            self.parser.parseString('"unbalanced"; "quotes')
 
