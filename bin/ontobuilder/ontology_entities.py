@@ -152,19 +152,18 @@ class _OntologyClass(_OntologyEntity):
         newaxiom = self.df.getOWLSubClassOfAxiom(self.entityobj, parentclass)
         self.ontology.addTermAxiom(newaxiom)
 
-    def _getClassExpressions(self, manchester_exps):
+    def _getClassExpression(self, manchester_exp):
         """
-        Given a string containing one or more class expressions in Manchester
-        Syntax, returns a list containing corresponding OWL API class
-        expression objects.
+        Given a string containing a class expression in Manchester Syntax,
+        returns a corresponding OWL API class expression object.
 
-        manchester_exps: A string containing MS "description" productions.
+        manchester_exps: A string containing an MS "description" production.
         """
         try:
             #self.ontology.mparser = ManchesterSyntaxTool(self.ontology.ontology)
             #cexp = self.ontology.mparser.parseManchesterExpression(formaldef)
             parser = ManchesterSyntaxParserHelper(self.ontology)
-            cexps = parser.parseClassExpressions(manchester_exps);
+            cexps = parser.parseClassExpression(manchester_exp);
         except ParserException as err:
             print err
             raise RuntimeError('Error parsing "' + err.getCurrentToken()
@@ -174,53 +173,41 @@ class _OntologyClass(_OntologyEntity):
 
         return cexps
 
-    def addSubclassOf(self, manchester_exps):
+    def addSubclassOf(self, manchester_exp):
         """
-        Adds one or more class expressions as "subclass of" axioms.  The class
-        expressions should be written in Manchester Syntax (MS), and if there
-        is more than one class expression, the expressions should be separated
-        by blank lines containing a semicolon.
+        Adds a class expression as a "subclass of" axiom.  The class expression
+        should be written in Manchester Syntax (MS).
 
-        manchester_exps: A string containing MS "description" productions.
+        manchester_exp: A string containing an MS "description" production.
         """
-        if manchester_exps != '':
-            cexps = self._getClassExpressions(manchester_exps)
+        if manchester_exp != '':
+            cexp = self._getClassExpression(manchester_exp)
+            eaxiom = self.df.getOWLSubClassOfAxiom(self.entityobj, cexp)
+            self.ontology.addTermAxiom(eaxiom)
 
-            for cexp in cexps:
-                eaxiom = self.df.getOWLSubClassOfAxiom(self.entityobj, cexp)
-                self.ontology.addTermAxiom(eaxiom)
-
-    def addEquivalentTo(self, manchester_exps):
+    def addEquivalentTo(self, manchester_exp):
         """
-        Adds one or more class expressions as equivalency axioms.  The class
-        expressions should be written in Manchester Syntax (MS), and if there
-        is more than one class expression, the expressions should be separated
-        by blank lines containing a semicolon.
+        Adds a class expression as an equivalency axiom.  The class expressions
+        should be written in Manchester Syntax (MS).
 
-        manchester_exps: A string containing MS "description" productions.
+        manchester_exp: A string containing an MS "description" production.
         """
-        if manchester_exps != '':
-            cexps = self._getClassExpressions(manchester_exps)
+        if manchester_exp != '':
+            cexp = self._getClassExpression(manchester_exp)
+            eaxiom = self.df.getOWLEquivalentClassesAxiom(self.entityobj, cexp)
+            self.ontology.addTermAxiom(eaxiom)
 
-            for cexp in cexps:
-                eaxiom = self.df.getOWLEquivalentClassesAxiom(self.entityobj, cexp)
-                self.ontology.addTermAxiom(eaxiom)
-
-    def addDisjointWith(self, manchester_exps):
+    def addDisjointWith(self, manchester_exp):
         """
-        Adds one or more class expressions as "disjoint with" axioms.  The
-        class expressions should be written in Manchester Syntax (MS), and if
-        there is more than one class expression, the expressions should be
-        separated by blank lines containing a semicolon.
+        Adds a class expression as a "disjoint with" axioms.  The class
+        expressions should be written in Manchester Syntax (MS).
 
-        manchester_exps: A string containing MS "description" productions.
+        manchester_exp: A string containing an MS "description" production.
         """
-        if manchester_exps != '':
-            cexps = self._getClassExpressions(manchester_exps)
-
-            for cexp in cexps:
-                axiom = self.df.getOWLDisjointClassesAxiom(self.entityobj, cexp)
-                self.ontology.addTermAxiom(axiom)
+        if manchester_exp != '':
+            cexp = self._getClassExpression(manchester_exp)
+            axiom = self.df.getOWLDisjointClassesAxiom(self.entityobj, cexp)
+            self.ontology.addTermAxiom(axiom)
 
 
 class _OntologyDataProperty(_OntologyEntity):
