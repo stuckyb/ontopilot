@@ -86,8 +86,8 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
         """
         Attempts to resolve an entity name in a Manchester Syntax statement to
         a valid IRI.  Entity names must be one of the following: rdfs:label
-        (enclosed in single quotes), full IRI, "short form" IRI (no prefix),
-        prefix IRI, or OBO ID.
+        (enclosed in single quotes), full IRI, relative IRI, "short form" IRI
+        (no prefix), prefix IRI, or OBO ID.
         """
         if (name[0] == "'") and (name[-1] == "'"):
             # Handle rdfs:labels.
@@ -96,7 +96,7 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
             # Handle full IRIs.
             return IRI.create(name[1:-1])
         else:
-            # Handle everything else (prefix IRIs, OBO IDs).
+            # Handle everything else (prefix IRIs, OBO IDs, etc.).
             return self.ontology.expandIdentifier(name)
 
     def getOWLClass(self, name):

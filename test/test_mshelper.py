@@ -16,12 +16,28 @@
 
 # Python imports.
 from ontobuilder import Ontology
-from ontobuilder.mshelper import ManchesterSyntaxParserHelper
+from ontobuilder.mshelper import (
+    ManchesterSyntaxParserHelper, _BasicShortFormProvider
+)
 import unittest
 #from testfixtures import LogCapture
 
 # Java imports.
 #from org.semanticweb.owlapi.model import IRI
+
+
+class Test_BasicShortFormProvider(unittest.TestCase):
+    """
+    Tests the _BasicShortFormProvider "private" helper class.
+    """
+    def setUp(self):
+        self.test_ont = Ontology('test_data/ontology.owl')
+        self.bsfp = _BasicShortFormProvider()
+
+    def test_getShortForm(self):
+        entity = self.test_ont.getExistingClass('OBTO:0010').getOWLAPIObj()
+
+        self.assertEqual('OBTO_0010', self.bsfp.getShortForm(entity))
 
 
 class TestManchesterSyntaxParserHelper(unittest.TestCase):
@@ -37,16 +53,20 @@ class TestManchesterSyntaxParserHelper(unittest.TestCase):
         """
         Tests parsing strings that contain MS class expressions.
         """
-        # Test strings containing simple, single-class expressions.
+        # Test strings containing simple, single-class expressions that all
+        # refer to the same class.
         test_exps = [
             "'test class 1'",
             'obo:OBTO_0010',
-            'http://purl.obolibrary.org/obo/OBTO_0010'
+            'http://purl.obolibrary.org/obo/OBTO_0010',
+            '<http://purl.obolibrary.org/obo/OBTO_0010>',
+            'OBTO:0010'
         ]
         expIRI = self.test_ont.getExistingClass('OBTO:0010').getIRI()
 
         for test_exp in test_exps:
             cl_exp = self.msph.parseClassExpression(test_exp)
+            # Make sure the returned class expression is correct.
             self.assertFalse(cl_exp.isAnonymous())
             self.assertTrue(cl_exp.asOWLClass().getIRI().equals(expIRI))
 
