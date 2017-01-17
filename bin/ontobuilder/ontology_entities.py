@@ -164,10 +164,11 @@ class _OntologyClass(_OntologyEntity):
 
         # Get the OWLClass object of the parent class, making sure that it is
         # actually defined.
-        parentclass = self.ontology.getExistingClass(parentIRI).getOWLAPIObj()
+        parentclass = self.ontology.getExistingClass(parentIRI)
         if parentclass == None:
             raise RuntimeError('The designated superclass, ' + str(parent_id)
                     + ', could not be found in the source ontology.')
+        parentclass = parentclass.getOWLAPIObj()
         
         # Add the subclass axiom to the ontology.
         newaxiom = self.df.getOWLSubClassOfAxiom(self.entityobj, parentclass)
@@ -246,10 +247,11 @@ class _OntologyDataProperty(_OntologyEntity):
 
         # Get the OWL property object of the parent, making sure that it is
         # actually defined.
-        parentprop = self.ontology.getExistingDataProperty(parentIRI).getOWLAPIObj()
+        parentprop = self.ontology.getExistingDataProperty(parentIRI)
         if parentprop == None:
             raise RuntimeError('The designated superproperty, ' + str(parent_id)
                     + ', could not be found in the source ontology.')
+        parentprop = parentprop.getOWLAPIObj()
 
         # Add the subproperty axiom to the ontology.
         newaxiom = self.df.getOWLSubDataPropertyOfAxiom(self.entityobj, parentprop)
@@ -357,10 +359,11 @@ class _OntologyObjectProperty(_OntologyEntity):
 
         # Get the OWL property object of the parent, making sure that it is
         # actually defined.
-        parentprop = self.ontology.getExistingObjectProperty(parentIRI).getOWLAPIObj()
+        parentprop = self.ontology.getExistingObjectProperty(parentIRI)
         if parentprop == None:
             raise RuntimeError('The designated superproperty, ' + str(parent_id)
                     + ', could not be found in the source ontology.')
+        parentprop = parentprop.getOWLAPIObj()
 
         # Add the subproperty axiom to the ontology.
         newaxiom = self.df.getOWLSubObjectPropertyOfAxiom(self.entityobj, parentprop)
@@ -520,10 +523,11 @@ class _OntologyAnnotationProperty(_OntologyEntity):
 
         # Get the OWL property object of the parent, making sure that it is
         # actually defined.
-        parentprop = self.ontology.getExistingAnnotationProperty(parentIRI).getOWLAPIObj()
+        parentprop = self.ontology.getExistingAnnotationProperty(parentIRI)
         if parentprop == None:
             raise RuntimeError('The designated superproperty, ' + str(parent_id)
                     + ', could not be found in the source ontology.')
+        parentprop = parentprop.getOWLAPIObj()
 
         # Add the subproperty axiom to the ontology.
         newaxiom = self.df.getOWLSubAnnotationPropertyOfAxiom(self.entityobj, parentprop)
