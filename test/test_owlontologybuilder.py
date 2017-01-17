@@ -329,8 +329,15 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         self.assertEqual(expIRIs, actualIRIs)
 
     def test_expandDefinition(self):
-        sourcestr = 'A {test class 1} example definition.'
-        expstr = 'A test class 1 (OBTO:0010) example definition.'
+        # Test an expansion that includes the label text.
+        sourcestr = 'An example definition for {test class 1}.'
+        expstr = 'An example definition for test class 1 (OBTO:0010).'
+
+        self.assertEqual(expstr, self.oob._expandDefinition(sourcestr))
+
+        # Test an expansion for which the label text is suppressed.
+        sourcestr = 'An example definition for {$test class 1}.'
+        expstr = 'An example definition for (OBTO:0010).'
 
         self.assertEqual(expstr, self.oob._expandDefinition(sourcestr))
 

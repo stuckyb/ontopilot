@@ -428,9 +428,12 @@ class OWLOntologyBuilder:
         Modifies a text definition for an ontology term by adding OBO IDs for
         all term labels in braces ('{' and '}') in the definition.  For
         example, if the definition contains the text "A {whole plant} that...",
-        it will be converted to "A whole plant (PO:0000003) that...".
+        it will be converted to "A whole plant (PO:0000003) that...".  It there
+        is a dollar sign ('$') at the beginning of the label, then output of
+        the label will be suppressed (i.e., only the OBO ID will be included in
+        the expanded definition).
         """
-        labelre = re.compile(r'(\{[A-Za-z0-9\- _]+\})')
+        labelre = re.compile(r'(\{[$A-Za-z0-9\- _]+\})')
         defparts = labelre.split(deftext)
 
         newdef = ''
@@ -438,11 +441,19 @@ class OWLOntologyBuilder:
             if labelre.match(defpart) != None:
                 label = defpart.strip("{}")
 
-                # Get the class IRI associated with this label.
-                labelIRI = self.ontology.labelToIRI(label)
+                id_only = False
+                if label[0] == '$':
+                    label = label[1:]
+                    id_only = True
 
+                # Get the class IRI and OBO ID associated with this label.
+                labelIRI = self.ontology.labelToIRI(label)
                 labelID = termIRIToOboID(labelIRI)
-                newdef += label + ' (' + labelID + ')'
+
+                if not(id_only):
+                    newdef += label + ' '
+
+                newdef += '(' + labelID + ')'
             else:
                 newdef += defpart
 
