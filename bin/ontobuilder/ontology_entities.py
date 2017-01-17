@@ -106,6 +106,27 @@ class _OntologyEntity:
 
         return annotvals
 
+    def _getClassExpression(self, manchester_exp):
+        """
+        Given a string containing a class expression in Manchester Syntax,
+        returns a corresponding OWL API class expression object.
+
+        manchester_exps: A string containing an MS "description" production.
+        """
+        try:
+            #self.ontology.mparser = ManchesterSyntaxTool(self.ontology.ontology)
+            #cexp = self.ontology.mparser.parseManchesterExpression(formaldef)
+            parser = ManchesterSyntaxParserHelper(self.ontology)
+            cexps = parser.parseClassExpression(manchester_exp);
+        except ParserException as err:
+            print err
+            raise RuntimeError('Error parsing "' + err.getCurrentToken()
+                    + '" at line ' + str(err.getLineNumber()) + ', column '
+                    + str(err.getColumnNumber())
+                    + ' of the class expression (Manchester Syntax expected).')
+
+        return cexps
+
 
 class _OntologyClass(_OntologyEntity):
     """
@@ -151,27 +172,6 @@ class _OntologyClass(_OntologyEntity):
         # Add the subclass axiom to the ontology.
         newaxiom = self.df.getOWLSubClassOfAxiom(self.entityobj, parentclass)
         self.ontology.addTermAxiom(newaxiom)
-
-    def _getClassExpression(self, manchester_exp):
-        """
-        Given a string containing a class expression in Manchester Syntax,
-        returns a corresponding OWL API class expression object.
-
-        manchester_exps: A string containing an MS "description" production.
-        """
-        try:
-            #self.ontology.mparser = ManchesterSyntaxTool(self.ontology.ontology)
-            #cexp = self.ontology.mparser.parseManchesterExpression(formaldef)
-            parser = ManchesterSyntaxParserHelper(self.ontology)
-            cexps = parser.parseClassExpression(manchester_exp);
-        except ParserException as err:
-            print err
-            raise RuntimeError('Error parsing "' + err.getCurrentToken()
-                    + '" at line ' + str(err.getLineNumber()) + ', column '
-                    + str(err.getColumnNumber())
-                    + ' of the class expression (Manchester Syntax expected).')
-
-        return cexps
 
     def addSubclassOf(self, manchester_exp):
         """
@@ -255,25 +255,19 @@ class _OntologyDataProperty(_OntologyEntity):
         newaxiom = self.df.getOWLSubDataPropertyOfAxiom(self.entityobj, parentprop)
         self.ontology.addTermAxiom(newaxiom)
 
-    def addDomain(self, domain_id):
+    def addDomain(self, manchester_exp):
         """
-        Creates a domain axiom for this data property.
+        Adds a class expression as a domain for this data property.  The class
+        expression should be written in Manchester Syntax (MS).
 
-        domain_id: The identifier of a class.  Can be either an OWL API IRI
-            object or a string containing: a prefix IRI (i.e., a curie, such as
-            "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of the form
-            "PO:0000003").
+        manchester_exp: A string containing an MS "description" production.
         """
-        domainIRI = self.ontology.expandIdentifier(domain_id)
+        if manchester_exp != '':
+            cexp = self._getClassExpression(manchester_exp)
 
-        # Get the class object for the domain.  We do not require that the
-        # class is already declared, because properties might have to be
-        # declared before the classes to which they apply.
-        classobj = self.df.getOWLClass(domainIRI)
-
-        # Add the declaration axiom.
-        daxiom = self.df.getOWLDataPropertyDomainAxiom(self.entityobj, classobj)
-        self.ontology.addTermAxiom(daxiom)
+            # Add the domain axiom.
+            daxiom = self.df.getOWLDataPropertyDomainAxiom(self.entityobj, cexp)
+            self.ontology.addTermAxiom(daxiom)
 
     def addRange(self, datarange_exp):
         """
@@ -295,7 +289,7 @@ class _OntologyDataProperty(_OntologyEntity):
                         + str(err.getColumnNumber())
                         + ' of the data property range (Manchester Syntax expected).')
 
-            # Add the range declaration axiom.
+            # Add the range axiom.
             raxiom = self.df.getOWLDataPropertyRangeAxiom(self.entityobj, datarange)
             self.ontology.addTermAxiom(raxiom)
 
@@ -372,45 +366,33 @@ class _OntologyObjectProperty(_OntologyEntity):
         newaxiom = self.df.getOWLSubObjectPropertyOfAxiom(self.entityobj, parentprop)
         self.ontology.addTermAxiom(newaxiom)
 
-    def addDomain(self, domain_id):
+    def addDomain(self, manchester_exp):
         """
-        Creates a domain axiom for this property.
+        Adds a class expression as a domain for this object property.  The
+        class expression should be written in Manchester Syntax (MS).
 
-        domain_id: The identifier of a class.  Can be either an OWL API IRI
-            object or a string containing: a prefix IRI (i.e., a curie, such as
-            "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of the form
-            "PO:0000003").
+        manchester_exp: A string containing an MS "description" production.
         """
-        domainIRI = self.ontology.expandIdentifier(domain_id)
+        if manchester_exp != '':
+            cexp = self._getClassExpression(manchester_exp)
 
-        # Get the class object for the domain.  We do not require that the
-        # class is already declared, because properties might have to be
-        # declared before the classes to which they apply.
-        classobj = self.df.getOWLClass(domainIRI)
+            # Add the domain axiom.
+            daxiom = self.df.getOWLObjectPropertyDomainAxiom(self.entityobj, cexp)
+            self.ontology.addTermAxiom(daxiom)
 
-        # Add the declaration axiom.
-        daxiom = self.df.getOWLObjectPropertyDomainAxiom(self.entityobj, classobj)
-        self.ontology.addTermAxiom(daxiom)
-
-    def addRange(self, range_id):
+    def addRange(self, manchester_exp):
         """
-        Creates a range axiom for this property.
+        Adds a class expression as a range for this object property.  The class
+        expression should be written in Manchester Syntax (MS).
 
-        range_id: The identifier of a class.  Can be either an OWL API IRI
-            object or a string containing: a prefix IRI (i.e., a curie, such as
-            "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of the form
-            "PO:0000003").
+        manchester_exp: A string containing an MS "description" production.
         """
-        rangeIRI = self.ontology.expandIdentifier(range_id)
+        if manchester_exp != '':
+            cexp = self._getClassExpression(manchester_exp)
 
-        # Get the class object for the range.  We do not require that the
-        # class is already declared, because properties might have to be
-        # declared before the classes to which they apply.
-        classobj = self.df.getOWLClass(rangeIRI)
-
-        # Add the range declaration axiom.
-        raxiom = self.df.getOWLObjectPropertyRangeAxiom(self.entityobj, classobj)
-        self.ontology.addTermAxiom(raxiom)
+            # Add the range axiom.
+            raxiom = self.df.getOWLObjectPropertyRangeAxiom(self.entityobj, cexp)
+            self.ontology.addTermAxiom(raxiom)
 
     def addInverse(self, inverse_id):
         """
