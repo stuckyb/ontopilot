@@ -92,6 +92,20 @@ class _OntologyEntity:
 
         self.ontology.addTermAxiom(annotaxiom)
 
+    def getAnnotationValues(self, annotpropIRI):
+        """
+        Returns a list containing the string values of all annotation axioms
+        for this entity of the specified annotation type.
+        """
+        annotvals = []
+
+        owlont = self.ontology.getOWLOntology()
+        for annot_ax in owlont.getAnnotationAssertionAxioms(self.entityIRI):
+            if annot_ax.getProperty().getIRI().equals(annotpropIRI):
+                annotvals.append(annot_ax.getValue().getLiteral())
+
+        return annotvals
+
 
 class _OntologyClass(_OntologyEntity):
     """

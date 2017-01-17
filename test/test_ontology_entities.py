@@ -36,6 +36,10 @@ class _TestOntologyEntity:
     should inherit from unittest.TestCase and treat _TestOntologyEntity as a
     sort of "mixin" class that provides standard testing routines.
     """
+    # Annotation IRIs.
+    LABEL_IRI = IRI.create('http://www.w3.org/2000/01/rdf-schema#label')
+    COMMENT_IRI = IRI.create('http://www.w3.org/2000/01/rdf-schema#comment')
+
     def setUp(self):
         self.test_ont = Ontology('test_data/ontology.owl')
         self.owlont = self.test_ont.getOWLOntology()
@@ -58,13 +62,8 @@ class _TestOntologyEntity:
         """
         # Check that the entity has the required annotation and that the text
         # value is correct.
-        found_annot = False
-        for annot_ax in self.owlont.getAnnotationAssertionAxioms(self.t_entIRI):
-            if annot_ax.getProperty().getIRI().equals(annot_propIRI):
-                if annot_ax.getValue().getLiteral() == valuestr:
-                    found_annot = True
-
-        self.assertTrue(found_annot)
+        annotvals = self.t_ent.getAnnotationValues(annot_propIRI)
+        self.assertEqual([valuestr], annotvals)
 
     def test_addDefinition(self):
         defstr = 'A new definition.'
@@ -80,9 +79,7 @@ class _TestOntologyEntity:
         self.t_ent.addLabel(labelstr)
 
         # Test that the label annotation exists and has the correct value.
-        self._checkAnnotation(
-            IRI.create('http://www.w3.org/2000/01/rdf-schema#label'), labelstr
-        )
+        self._checkAnnotation(self.LABEL_IRI, labelstr)
 
     def test_addComment(self):
         commentstr = 'A useful comment.'
@@ -90,10 +87,26 @@ class _TestOntologyEntity:
         self.t_ent.addComment(commentstr)
 
         # Test that the comment annotation exists and has the correct value.
-        self._checkAnnotation(
-            IRI.create('http://www.w3.org/2000/01/rdf-schema#comment'),
-            commentstr
+        self._checkAnnotation(self.COMMENT_IRI, commentstr)
+
+    def test_getAnnotationValues(self):
+        # Test the case of no annotations.
+        self.assertEqual(
+            0, len(self.t_ent.getAnnotationValues(self.LABEL_IRI))
         )
+
+        # Test a single annotation value.
+        self.t_ent.addLabel('A label!!')
+        annotvals = self.t_ent.getAnnotationValues(self.LABEL_IRI)
+        self.assertEqual(['A label!!'], annotvals)
+
+        # Test multiple annotation values.
+        commentvals = ['Comment 1', 'Comment 2']
+        for commentval in commentvals:
+            self.t_ent.addComment(commentval)
+
+        annotvals = self.t_ent.getAnnotationValues(self.COMMENT_IRI)
+        self.assertEqual(sorted(commentvals), sorted(annotvals))
 
 
 class Test_OntologyClass(_TestOntologyEntity, unittest.TestCase):
