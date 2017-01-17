@@ -29,127 +29,32 @@ class TestManchesterSyntaxParserHelper(unittest.TestCase):
     Tests the ManchesterSyntaxParserHelper class.
     """
     def setUp(self):
-        test_ont = Ontology('test_data/ontology.owl')
+        self.test_ont = Ontology('test_data/ontology.owl')
 
-        self.msph = ManchesterSyntaxParserHelper(test_ont)
-
-    def _checkMultiExpStr(self, exps_str, expected):
-        """
-        Checks the result of parsing a string that potentially contains one or
-        more MS class expressions.  This method is used by
-        test_splitClassExpressions().
-        """
-        actual = self.msph._splitClassExpressions(exps_str)
-
-        self.assertEqual(len(actual), len(expected))
-        for cnt in range(len(expected)):
-            self.assertEqual(actual[cnt], expected[cnt])
-
-    def test_splitClassExpressions(self):
-        """
-        Tests splitting strings that contain multiple MS class expressions.
-        """
-        # Test an empty string.
-        exps_str = ""
-        expected = []
-        self._checkMultiExpStr(exps_str, expected)
-
-        # Test a string with only whitespace.
-        exps_str = "   \t  "
-        expected = []
-        self._checkMultiExpStr(exps_str, expected)
-
-        # Test a string with multiple lines of only whitespace.
-        exps_str = """   \t  
-\t
-   \t 
-"""
-        expected = []
-        self._checkMultiExpStr(exps_str, expected)
-
-        # Test a string with only a semicolon (the MS class expression
-        # separator character).
-        exps_str = ";"
-        expected = []
-        self._checkMultiExpStr(exps_str, expected)
-
-        # Test a string with multiple lines, semicolon separators, and
-        # whitespace.
-        exps_str = """;
-  \t  \t
-;
-  ;
-\t  
-;
-   \t
-"""
-        expected = []
-        self._checkMultiExpStr(exps_str, expected)
-
-        # Test a string containing a single expression.
-        exps_str = "'test class 1' AND 'imported test class 1'"
-        expected = [
-                "'test class 1' AND 'imported test class 1'"
-        ]
-        self._checkMultiExpStr(exps_str, expected)
-
-        # Test a string containing a single expression with multiple lines,
-        # extra blank lines, semicolon separators, and white space.
-        exps_str = """
-;
-   'test class 1' AND
- 'imported test class 1'    
- 
-;
-
-\t  
-
- """
-        expected = [
-            """'test class 1' AND
- 'imported test class 1'"""
-        ]
-        self._checkMultiExpStr(exps_str, expected)
-
-        # Test a string containing multiple expressions with multiple lines,
-        # extra blank lines, semicolon separators, and white space.
-        exps_str = """
-;
-   'test class 1' AND
- 'imported test class 1'    
- 
-;
-
-\t  
-'test class 1'
-;
- """
-        expected = [
-            """'test class 1' AND
- 'imported test class 1'""",
-            """'test class 1'"""
-        ]
-        self._checkMultiExpStr(exps_str, expected)
+        self.msph = ManchesterSyntaxParserHelper(self.test_ont)
 
     def test_parseClassExpressions(self):
         """
-        Tests parsing strings that contain multiple MS class expressions.  The
-        tests here are currently not very thorough in that they do not actually
-        test the values of the returned OWLClassExpression objects.  This is
-        probably reasonable, though, because the correctness of the returned
-        OWLClassExpression objects depends on the OWLAPI implementation.
+        Tests parsing strings that contain MS class expressions.
         """
-        # Test a string containing a single expression.
-        exps_str = "'test class 1' AND 'imported test class 1'"
-        actual = self.msph.parseClassExpressions(exps_str)
-        self.assertEqual(len(actual), 1)
+        # Test strings containing simple, single-class expressions.
+        test_exps = [
+            "'test class 1'",
+            'obo:OBTO_0010',
+            'http://purl.obolibrary.org/obo/OBTO_0010'
+        ]
+        expIRI = self.test_ont.getExistingClass('OBTO:0010').getIRI()
 
-        # Test a string containing multiple expressions.
-        exps_str = """'test class 1' AND
-'imported test class 1'    
-;
-'test class 1'
- """
-        actual = self.msph.parseClassExpressions(exps_str)
-        self.assertEqual(len(actual), 2)
+        for test_exp in test_exps:
+            cl_exp = self.msph.parseClassExpression(test_exp)
+            self.assertFalse(cl_exp.isAnonymous())
+            self.assertTrue(cl_exp.asOWLClass().getIRI().equals(expIRI))
+
+        # Test a more complex expression.  In this case, we just verify that
+        # the call completes and returns a value.  The check could be more
+        # thorough at some point, but that is probably not necessary for now
+        # since the correctness of the return value depends on the OWL API.
+        exps_str = "'test class 1' AND 'imported test class 1'"
+        actual = self.msph.parseClassExpression(exps_str)
+        self.assertIsNotNone(actual)
 

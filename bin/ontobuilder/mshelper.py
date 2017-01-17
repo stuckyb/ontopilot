@@ -167,31 +167,6 @@ class ManchesterSyntaxParserHelper:
         )
         self.parser.setOWLEntityChecker(_MoreAdvancedEntityChecker(self.ontology))
 
-    def _splitClassExpressions(self, exps_str):
-        """
-        Parses a string containing multiple MS class expressions (i.e.,
-        "description" productions of MS) and returns a list containing each
-        class expression in the original string.  The original string should
-        have class expressions separated by a semicolon on a line by itself.
-        """
-        exps = []
-
-        currexp = ''
-        for line in exps_str.splitlines(True):
-            if line.strip() != ';':
-                currexp += line
-            else:
-                currexp = currexp.strip()
-                if currexp != '':
-                    exps.append(currexp.strip())
-                currexp = ''
-
-        currexp = currexp.strip()
-        if currexp != '':
-            exps.append(currexp.strip())
-
-        return exps
-    
     def parseDataRange(self, datarange_ms_exp):
         """
         Parses the "dataRange" production of Manchester Syntax.
@@ -202,21 +177,10 @@ class ManchesterSyntaxParserHelper:
 
     def parseClassExpression(self, manchester_exp):
         """
-        Parses the "description" production of Manchester Syntax.
+        Parses the "description" production of Manchester Syntax.  Returns OWL
+        API class expression objects.
         """
         self.parser.setStringToParse(manchester_exp);
 
         return self.parser.parseClassExpression()
-
-    def parseClassExpressions(self, exps_str):
-        """
-        Parses a string that contains one or more class expressions in
-        Manchester Syntax.  Returns a list of OWLClassExpression objects.
-        """
-        class_exps = self._splitClassExpressions(exps_str)
-        parsed = []
-        for class_exp in class_exps:
-            parsed.append(self.parseClassExpression(class_exp))
-
-        return parsed
 

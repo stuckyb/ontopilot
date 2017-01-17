@@ -34,9 +34,20 @@ class Test_DelimtrParser(unittest.TestCase):
         character combinations all parse correctly.
         """
         testvals = (
-            (' ', []),
             ('', []),
+            (' ', []),
+            ('   \t   ', []),
+            ( """   \t  
+\t
+   \t """, []),
             (';', []),
+            (""";
+  \t  \t
+;
+  ;
+\t  
+;
+   \t""", []),
             (r'\"', ['"']),
             ('test string!!', ['test string!!']),
             (r'test \string\"!!', [r'test \string"!!']),
@@ -48,7 +59,38 @@ class Test_DelimtrParser(unittest.TestCase):
             ('a "string; with" delimiters', ['a string; with delimiters']),
             ('a "string; with" ; delimiters', ['a string; with', 'delimiters']),
             (r'"with;;delimiters\"";\""and \" escapes"', ['with;;delimiters"', '"and " escapes']),
-            ('"includes\ncarriage";\n;\nret-\nurns', ['includes\ncarriage', 'ret-\nurns'])
+            ('"includes\ncarriage";\n;\nret-\nurns', ['includes\ncarriage', 'ret-\nurns']),
+
+            # Also include a variety of test cases for parsing Manchester
+            # Syntax class expressions.
+            ("'test class 1' AND 'imported test class 1'", ["'test class 1' AND 'imported test class 1'"]),
+            # A single expression with multiple lines, extra blank lines,
+            # semicolon separators, and white space.
+            ("""
+;
+   'test class 1' AND
+ 'imported test class 1'    
+ 
+;
+
+\t  
+
+ """, ["""'test class 1' AND
+ 'imported test class 1'"""]),
+            # Multiple expressions with multiple lines, extra blank lines,
+            # semicolon separators, and white space.
+            ("""
+;
+   'test class 1' AND
+ 'imported test class 1'    
+ 
+;
+
+\t  
+'test class 1'
+;
+ """, ["""'test class 1' AND
+ 'imported test class 1'""", "'test class 1'"])
         )
 
         for testval in testvals:
