@@ -13,6 +13,7 @@ from ontology_entities import (
     CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,
     ANNOTATIONPROPERTY_ENTITY
 )
+from delimstr_parser import DelimStrParser
 
 # Java imports.
 
@@ -57,6 +58,8 @@ class OWLOntologyBuilder:
         # stored as a tuple, (ontology entity instance, _TableRow instance).
         self.entity_trows = []
 
+        self.dsparser = DelimStrParser(';')
+
     def getOntology(self):
         """
         Returns the Ontology object contained by this OWLOntologyBuilder.
@@ -70,9 +73,7 @@ class OWLOntologyBuilder:
         """
         try:
             # Create the new class.
-            newclass = self.ontology.createNewClass(
-                oboIDToIRI(classdesc['ID'])
-            )
+            newclass = self.ontology.createNewClass(classdesc['ID'])
             
             # Make sure we have a label and add it to the new class.
             labeltext = classdesc['Label']
@@ -88,20 +89,19 @@ class OWLOntologyBuilder:
         """
         Adds generic axioms (i.e., axioms that all entities have in common)
         from a _TableRow entity description to an existing entity object.  If
-        expanddef is True, then term labels in the text definition for the new
-        entity will be expanded to include the terms' OBO IDs.
+        expanddef is True, then term labels in the text definition(s) for the
+        new entity will be expanded to include the terms' OBO IDs.
         """
-        # Add the text definition for the entity, if we have one.
-        textdef = entdesc['Text definition']
-        if textdef != '':
+        # Add any text definitions for the entity.
+        textdefs = self.dsparser.parseString(entdesc['Text definition'])
+        for textdef in textdefs:
             if expanddef:
                 textdef = self._expandDefinition(textdef)
-
             entobj.addDefinition(textdef)
 
         # Add any comments for the entity.
-        commenttext = entdesc['Comments']
-        if commenttext != '':
+        commenttexts = self.dsparser.parseString(entdesc['Comments'])
+        for commenttext in commenttexts:
             entobj.addComment(commenttext)
 
     def _addClassAxioms(self, classobj, classdesc, expanddef=True):
@@ -112,30 +112,29 @@ class OWLOntologyBuilder:
         """
         self._addGenericAxioms(classobj, classdesc, expanddef)
 
-        # Get the IRI object of the parent class and add it as a parent.
-        parentIRI = self._getIRIFromDesc(
-            classdesc['Parent']
-        )
-        if parentIRI != None:
-            classobj.addSuperclass(parentIRI)
+        # Get the IRI objects of parent classes and add them as parents.
+        for parentID in self.dsparser.parseString(classdesc['Parent']):
+            parentIRI = self._getIRIFromDesc(parentID)
+            if parentIRI != None:
+                classobj.addSuperclass(parentIRI)
     
         # Add any subclass of axioms (specified as class expressions in
         # Manchester Syntax).
-        ms_exps = classdesc['Subclass of']
-        if ms_exps != '':
-            classobj.addSubclassOf(ms_exps)
+        ms_exps = self.dsparser.parseString(classdesc['Subclass of'])
+        for ms_exp in ms_exps:
+            classobj.addSubclassOf(ms_exp)
  
         # Add any equivalency axioms (specified as class expressions in
         # Manchester Syntax).
-        ms_exps = classdesc['Equivalent to']
-        if ms_exps != '':
-            classobj.addEquivalentTo(ms_exps)
+        ms_exps = self.dsparser.parseString(classdesc['Equivalent to'])
+        for ms_exp in ms_exps:
+            classobj.addEquivalentTo(ms_exp)
 
         # Add any disjoint with axioms (specified as class expressions in
         # Manchester Syntax).
-        ms_exps = classdesc['Disjoint with']
-        if ms_exps != '':
-            classobj.addDisjointWith(ms_exps)
+        ms_exps = self.dsparser.parseString(classdesc['Disjoint with'])
+        for ms_exp in ms_exps:
+            classobj.addDisjointWith(ms_exp)
  
     def addDataProperty(self, propdesc):
         """
@@ -147,9 +146,7 @@ class OWLOntologyBuilder:
         """
         try:
             # Create the new data property.
-            newprop = self.ontology.createNewDataProperty(
-                oboIDToIRI(propdesc['ID'])
-            )
+            newprop = self.ontology.createNewDataProperty(propdesc['ID'])
             
             # Make sure we have a label and add it to the new class.
             labeltext = propdesc['Label']
@@ -170,31 +167,30 @@ class OWLOntologyBuilder:
         """
         self._addGenericAxioms(propobj, propdesc, expanddef)
 
-        # Get the IRI object of the parent property and add it as a parent.
-        parentIRI = self._getIRIFromDesc(
-            propdesc['Parent']
-        )
-        if parentIRI != None:
-            propobj.addSuperproperty(parentIRI)
+        # Get the IRI objects of parent properties and add them as parents.
+        for parentID in self.dsparser.parseString(propdesc['Parent']):
+            parentIRI = self._getIRIFromDesc(parentID)
+            if parentIRI != None:
+                propobj.addSuperproperty(parentIRI)
 
-        # Add the domain, if we have one.
-        domainIRI = self._getIRIFromDesc(
-            propdesc['Domain']
-        )
-        if domainIRI != None:
-            propobj.addDomain(domainIRI)
+        # Add any domain axioms (specified as class expressions in Manchester
+        # Syntax).
+        ms_exps = self.dsparser.parseString(propdesc['Domain'])
+        for ms_exp in ms_exps:
+            propobj.addDomain(ms_exp)
 
-        # Add the range, if we have one.
-        range_exp = propdesc['Range']
-        if range_exp != '':
+        # Add any range axioms (specified as Manchester Syntax "dataRange"
+        # productions).
+        range_exps = self.dsparser.parseString(propdesc['Range'])
+        for range_exp in range_exps:
             propobj.addRange(range_exp)
 
-        # Add the disjoint with axiom, if we have a disjoint property.
-        disjIRI = self._getIRIFromDesc(
-            propdesc['Disjoint with']
-        )
-        if disjIRI != None:
-            propobj.addDisjointWith(disjIRI)
+        # Add any disjointness axioms.
+        propIDs = self.dsparser.parseString(propdesc['Disjoint with'])
+        for propID in propIDs:
+            disjIRI = self._getIRIFromDesc(propID)
+            if disjIRI != None:
+                propobj.addDisjointWith(disjIRI)
 
         # Add the characteristics, if provided.  The only supported
         # characteristic for data properties is "functional".
@@ -219,9 +215,7 @@ class OWLOntologyBuilder:
         """
         try:
             # Create the new object property.
-            newprop = self.ontology.createNewObjectProperty(
-                oboIDToIRI(propdesc['ID'])
-            )
+            newprop = self.ontology.createNewObjectProperty(propdesc['ID'])
             
             # Make sure we have a label and add it to the new class.
             labeltext = propdesc['Label']
@@ -242,43 +236,39 @@ class OWLOntologyBuilder:
         """
         self._addGenericAxioms(propobj, propdesc, expanddef)
 
-        # Get the IRI object of the parent property and add it as a parent.
-        parentIRI = self._getIRIFromDesc(
-            propdesc['Parent']
-        )
-        if parentIRI != None:
-            propobj.addSuperproperty(parentIRI)
+        # Get the IRI objects of parent properties and add them as parents.
+        for parentID in self.dsparser.parseString(propdesc['Parent']):
+            parentIRI = self._getIRIFromDesc(parentID)
+            if parentIRI != None:
+                propobj.addSuperproperty(parentIRI)
 
-        # Add the domain, if we have one.
-        domainIRI = self._getIRIFromDesc(
-            propdesc['Domain']
-        )
-        if domainIRI != None:
-            propobj.addDomain(domainIRI)
+        # Add any domain axioms (specified as class expressions in Manchester
+        # Syntax).
+        ms_exps = self.dsparser.parseString(propdesc['Domain'])
+        for ms_exp in ms_exps:
+            propobj.addDomain(ms_exp)
 
-        # Add the range, if we have one.
-        rangeIRI = self._getIRIFromDesc(
-            propdesc['Range']
-        )
-        if rangeIRI != None:
-            propobj.addRange(rangeIRI)
+        # Add any range axioms (specified as class expressions in Manchester
+        # Syntax).
+        ms_exps = self.dsparser.parseString(propdesc['Range'])
+        for ms_exp in ms_exps:
+            propobj.addRange(ms_exp)
 
-        # Add the inverse axiom, if we have an inverse property.
-        inverseIRI = self._getIRIFromDesc(
-            propdesc['Inverse']
-        )
-        if inverseIRI != None:
-            propobj.addInverse(inverseIRI)
+        # Add any "inverse of" axioms.
+        propIDs = self.dsparser.parseString(propdesc['Inverse'])
+        for propID in propIDs:
+            inverseIRI = self._getIRIFromDesc(propID)
+            if inverseIRI != None:
+                propobj.addInverse(inverseIRI)
 
-        # Add the disjoint with axiom, if we have a disjoint property.
-        disjIRI = self._getIRIFromDesc(
-            propdesc['Disjoint with']
-        )
-        if disjIRI != None:
-            propobj.addDisjointWith(disjIRI)
+        # Add any disjointness axioms.
+        propIDs = self.dsparser.parseString(propdesc['Disjoint with'])
+        for propID in propIDs:
+            disjIRI = self._getIRIFromDesc(propID)
+            if disjIRI != None:
+                propobj.addDisjointWith(disjIRI)
 
-        # Add the characteristics, if provided.  The only supported
-        # characteristic for data properties is "functional".
+        # Add the characteristics, if provided.
         chars_str = propdesc['Characteristics']
         if chars_str != '':
             self._processObjPropCharacteristics(propobj, chars_str)
@@ -322,9 +312,7 @@ class OWLOntologyBuilder:
         """
         try:
             # Create the new annotation property.
-            newprop = self.ontology.createNewAnnotationProperty(
-                oboIDToIRI(propdesc['ID'])
-            )
+            newprop = self.ontology.createNewAnnotationProperty(propdesc['ID'])
             
             # Make sure we have a label and add it to the new class.
             labeltext = propdesc['Label']
@@ -345,12 +333,11 @@ class OWLOntologyBuilder:
         """
         self._addGenericAxioms(propobj, propdesc, expanddef)
 
-        # Get the IRI object of the parent property and add it as a parent.
-        parentIRI = self._getIRIFromDesc(
-            propdesc['Parent']
-        )
-        if parentIRI != None:
-            propobj.addSuperproperty(parentIRI)
+        # Get the IRI objects of parent properties and add them as parents.
+        for parentID in self.dsparser.parseString(propdesc['Parent']):
+            parentIRI = self._getIRIFromDesc(parentID)
+            if parentIRI != None:
+                propobj.addSuperproperty(parentIRI)
 
     def processDeferredEntityAxioms(self, expanddefs=True):
         """
@@ -443,7 +430,7 @@ class OWLOntologyBuilder:
         example, if the definition contains the text "A {whole plant} that...",
         it will be converted to "A whole plant (PO:0000003) that...".
         """
-        labelre = re.compile(r'(\{[A-Za-z\- _]+\})')
+        labelre = re.compile(r'(\{[A-Za-z0-9\- _]+\})')
         defparts = labelre.split(deftext)
 
         newdef = ''
