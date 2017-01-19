@@ -11,7 +11,7 @@ from urllib2 import HTTPError
 import logging
 from progressbar import ProgressBar, Percentage, Bar, ETA
 import math
-from tablereader import TableReaderFactory
+from tablereaderfactory import TableReaderFactory
 import ontobuilder
 from ontobuilder import TRUE_STRS
 from ontology import Ontology

@@ -14,9 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from ontobuilder.tablereader import _TableRow, ColumnNameError
-from ontobuilder.tablereader import TableReaderFactory
-from ontobuilder.tablereader import CSVTableReader, ODFTableReader
+from ontobuilder.tablereader import TableRow, ColumnNameError
+from ontobuilder.tablereaderfactory import TableReaderFactory
+from ontobuilder.tablereader_csv import CSVTableReader
+from ontobuilder.tablereader_odf import ODFTableReader
 import unittest
 from testfixtures import LogCapture
 
@@ -38,14 +39,14 @@ class TestTableReaderFactory(unittest.TestCase):
 
 class TestTableRow(unittest.TestCase):
     """
-    Tests the _TableRow class.
+    Tests the TableRow class.
     """
     def setUp(self):
         self.required = ['col1']
         self.optional = ['col2', 'col3', 'col4', 'col5']
         self.defaults = {'col3': 'default1', 'col4': 'default2'}
 
-        self.tr = _TableRow(1, 'null', self.required, self.optional, self.defaults)
+        self.tr = TableRow(1, 'null', self.required, self.optional, self.defaults)
 
     def test_setGetContains(self):
         self.tr['Col1'] = 'testval'

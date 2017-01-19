@@ -60,5 +60,5 @@ TRUE_STRS = ('t', 'true', 'y', 'yes')
 from owlontologybuilder import OWLOntologyBuilder
 from owlontologybuilder import TermDescriptionError
 from importmodulebuilder import ImportModuleBuilder
-from tablereader import TableReaderFactory
+from tablereaderfactory import TableReaderFactory
 
