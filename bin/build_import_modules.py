@@ -4,8 +4,9 @@ import csv
 import os
 import logging
 from argparse import ArgumentParser
-from ontobuilder.tablereader import TableReaderFactory
+from ontobuilder import TableReaderFactory
 from ontobuilder import ImportModuleBuilder
+from ontobuilder import TRUE_STRS
 
 
 # Set the format for logging output.
@@ -28,6 +29,11 @@ args = argp.parse_args()
 # least not reliably.
 IRI_BASE = args.baseIRI
 
+# Required columns.
+REQUIRED_COLS = ('Termsfile', 'IRI')
+# Optional columns.
+OPTIONAL_COLS = ('Ignore',)
+
 # Verify that the imports file exists.
 if not(os.path.isfile(args.importsfile)):
     raise RuntimeError('The imports file could not be found.')
@@ -36,22 +42,24 @@ mbuilder = ImportModuleBuilder(IRI_BASE)
 
 with TableReaderFactory(args.importsfile) as ireader:
     for table in ireader:
-        table.setRequiredColumns(['Termsfile', 'IRI'])
+        table.setRequiredColumns(REQUIRED_COLS)
+        table.setOptionalColumns(OPTIONAL_COLS)
     
         for row in table:
-            termsfile_path = row['Termsfile']
-            # If the termsfile path is a relative path, convert it to an
-            # absolute path using the location of the top-level imports table
-            # file as the base.
-            if not(os.path.isabs(termsfile_path)):
-                termsdir = os.path.dirname(os.path.abspath(args.importsfile))
-                termsfile_path = os.path.join(termsdir, termsfile_path)
-    
-            if mbuilder.isBuildNeeded(row['IRI'], termsfile_path, args.outputsuffix):
-                print ('Building the ' + row['name'] + ' (' + row['IRI']
-                        + ') import module.')
-                mbuilder.buildModule(row['IRI'], termsfile_path, args.outputsuffix)
-            else:
-                print ('The ' + row['name'] + ' (' + row['IRI']
-                        + ') import module is already up-to-date.')
+            if not(row['Ignore'].lower() in TRUE_STRS):
+                termsfile_path = row['Termsfile']
+                # If the termsfile path is a relative path, convert it to an
+                # absolute path using the location of the top-level imports table
+                # file as the base.
+                if not(os.path.isabs(termsfile_path)):
+                    termsdir = os.path.dirname(os.path.abspath(args.importsfile))
+                    termsfile_path = os.path.join(termsdir, termsfile_path)
+        
+                if mbuilder.isBuildNeeded(row['IRI'], termsfile_path, args.outputsuffix):
+                    print ('Building the ' + row['name'] + ' (' + row['IRI']
+                            + ') import module.')
+                    mbuilder.buildModule(row['IRI'], termsfile_path, args.outputsuffix)
+                else:
+                    print ('The ' + row['name'] + ' (' + row['IRI']
+                            + ') import module is already up-to-date.')
 

@@ -5,9 +5,10 @@ import os
 import sys
 import logging
 from argparse import ArgumentParser
-from ontobuilder.tablereader import TableReaderFactory
+from ontobuilder import TableReaderFactory
 from ontobuilder import OWLOntologyBuilder
-from ontobuilder.owlontologybuilder import TermDescriptionError
+from ontobuilder import TermDescriptionError
+from ontobuilder import TRUE_STRS
 
 
 # Set the format for logging output.
@@ -47,7 +48,10 @@ ontbuilder = OWLOntologyBuilder(args.base_ontology)
 # Required columns.
 REQUIRED_COLS = ('Type', 'ID')
 # Optional columns.
-OPTIONAL_COLS = ('Comments', 'Parent', 'Subclass of', 'Equivalent to', 'Disjoint with')
+OPTIONAL_COLS = (
+    'Comments', 'Parent', 'Subclass of', 'Equivalent to', 'Disjoint with',
+    'Ignore'
+)
 
 # Process each source file.  In this step, entities and label annotations are
 # defined, but processing of all other axioms (e.g., text definitions,
@@ -63,7 +67,7 @@ for termsfile in args.termsfiles:
             table.setOptionalColumns(OPTIONAL_COLS)
 
             for t_row in table:
-                if not(t_row['Ignore'].upper().startswith('Y')):
+                if not(t_row['Ignore'].lower() in TRUE_STRS):
                     typestr = t_row['Type'].lower()
     
                     try:

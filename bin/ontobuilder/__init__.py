@@ -1,10 +1,11 @@
 #
-# This package initialization script does three things:
+# This package initialization script does five things:
 #
 #   1. Set the logging level for SLF4J's SimpleLogger.
 #   2. Adds all required java library jar files to the classpath.
-#   3. Adds classes in package modules to the package's top-level scope.
-#   4. Initializes a Python logger object for printing status messages.
+#   3. Initializes a Python logger object for printing status messages.
+#   4. Define strings for recognizing yes/true values in input tables.
+#   5. Adds classes in package modules to the package's top-level scope.
 #
 # The directory "../../javalib" contains all of the java libraries on which the
 # OWL API depends.  The easiest way to get all of these library jar files is to
@@ -41,13 +42,6 @@ jlibpaths = glob.glob(jlibdir)
 for jlibpath in jlibpaths:
     sys.path.append(jlibpath)
 
-# Add top-level classes of contained modules that are used by UI code to the
-# package's top-level scope.
-from owlontologybuilder import OWLOntologyBuilder
-from owlontologybuilder import TermDescriptionError
-from importmodulebuilder import ImportModuleBuilder
-from tablereader import TableReaderFactory
-
 # Initialize the logger for this package.
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -57,4 +51,14 @@ handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+
+# Define string constants for recognizing yes/true values in input data.
+TRUE_STRS = ('t', 'true', 'y', 'yes')
+
+# Add top-level classes of contained modules that are used by UI code to the
+# package's top-level scope.
+from owlontologybuilder import OWLOntologyBuilder
+from owlontologybuilder import TermDescriptionError
+from importmodulebuilder import ImportModuleBuilder
+from tablereader import TableReaderFactory
 

@@ -11,8 +11,9 @@ from urllib2 import HTTPError
 import logging
 from progressbar import ProgressBar, Percentage, Bar, ETA
 import math
+from tablereader import TableReaderFactory
 import ontobuilder
-from ontobuilder.tablereader import TableReaderFactory
+from ontobuilder import TRUE_STRS
 from ontology import Ontology
 
 # Java imports.
@@ -41,7 +42,7 @@ class ImportModuleBuilder:
     REQUIRED_COLS = ('ID')
 
     # Fields for which no warnings are issued if the field is missing.
-    OPTIONAL_COLS = ('Exclude', 'Seed descendants', 'Reasoner')
+    OPTIONAL_COLS = ('Exclude', 'Seed descendants', 'Reasoner', 'Ignore')
 
     # Default values for input table columns.
     DEFAULT_COL_VALS = {'Reasoner': 'HermiT'}
@@ -55,7 +56,7 @@ class ImportModuleBuilder:
         # Define the strings that indicate TRUE in the input files.  Note that
         # variants of these strings with different casing will also be
         # recognized.
-        self.true_strs = ['t', 'true', 'y', 'yes']
+        TRUE_STRS = ['t', 'true', 'y', 'yes']
 
     def _updateDownloadProgress(self, blocks_transferred, blocksize, filesize):
         """
@@ -153,38 +154,17 @@ class ImportModuleBuilder:
                 table.setDefaultValues(self.DEFAULT_COL_VALS)
 
                 for row in table:
-                    idstr = row['ID']
-                    ontobuilder.logger.info('Processing entity ' + idstr + '.')
-                    owlent = sourceont.getExistingEntity(idstr).getOWLAPIObj()
-                    if owlent == None:
-                        raise RuntimeError(idstr + ' could not be found in the source ontology')
-    
-                    if row['Exclude'].lower() in self.true_strs:
-                        excluded_ents.append(owlent)
-                    else:
-                        signature.add(owlent)
+                    if not(row['Ignore'].lower() in TRUE_STRS):
+                        idstr = row['ID']
+                        ontobuilder.logger.info('Processing entity ' + idstr + '.')
+                        owlent = sourceont.getExistingEntity(idstr).getOWLAPIObj()
+                        if owlent == None:
+                            raise RuntimeError(idstr + ' could not be found in the source ontology')
         
-                        if row['Seed descendants'].lower() in self.true_strs:
-                            # Get the reasoner name from the input file, using
-                            # HermiT as the default.
-                            reasoner_name = row['Reasoner']
-    
-                            # Get the reasoner instance.
-                            reasoner = reasoner_man.getReasoner(reasoner_name)
-        
-                            # Get the entity's subclasses or subproperties.
-                            ontobuilder.logger.info('Adding descendant entities of ' + str(owlent) + '.')
-                            if isinstance(owlent, OWLClassExpression):
-                                signature.addAll(reasoner.getSubClasses(owlent, False).getFlattened())
-                            elif isinstance(owlent, OWLObjectPropertyExpression):
-                                propset = reasoner.getSubObjectProperties(owlent, False).getFlattened()
-                                # Note that getSubObjectProperties() can return both
-                                # named properties and ObjectInverseOf (i.e., unnamed)
-                                # properties, so we need to check the type of each
-                                # property before adding it to the module signature.
-                                for prop in propset:
-                                    if isinstance(prop, OWLObjectProperty):
-                                        signature.add(prop)
+                        if row['Exclude'].lower() in TRUE_STRS:
+                            excluded_ents.append(owlent)
+                        else:
+                            self._addEntityToSignature(owlent, signature, row, reasoner_man)
 
         if signature.size() == 0:
             raise RuntimeError('No terms to import were found in the terms file.')
@@ -199,6 +179,40 @@ class ImportModuleBuilder:
 
         module.saveOntology(outputfile)
 
+    def _addEntityToSignature(self, owlent, signature, trow, reasoner_man):
+        """
+        Adds an entity to a signature set for an import module extraction.  If
+        requested, also finds all descendents of a given ontology entity (class
+        or property) and adds them to the signature set, too.
+    
+        owlent: An OWL API ontology entity object.
+        signature: A Java Set.
+        trow: A row from an input table.
+        reasoner_man: A _ReasonerManager from which to obtain an OWL reasoner.
+        """
+        signature.add(owlent)
+                
+        if trow['Seed descendants'].lower() in TRUE_STRS:
+            # Get the reasoner name, using HermiT as the default.
+            reasoner_name = trow['Reasoner']
+    
+            # Get the reasoner instance.
+            reasoner = reasoner_man.getReasoner(reasoner_name)
+        
+            # Get the entity's subclasses or subproperties.
+            ontobuilder.logger.info('Adding descendant entities of ' + str(owlent) + '.')
+            if isinstance(owlent, OWLClassExpression):
+                signature.addAll(reasoner.getSubClasses(owlent, False).getFlattened())
+            elif isinstance(owlent, OWLObjectPropertyExpression):
+                propset = reasoner.getSubObjectProperties(owlent, False).getFlattened()
+                # Note that getSubObjectProperties() can return both
+                # named properties and ObjectInverseOf (i.e., unnamed)
+                # properties, so we need to check the type of each
+                # property before adding it to the module signature.
+                for prop in propset:
+                    if isinstance(prop, OWLObjectProperty):
+                        signature.add(prop)
+    
 
 class _ReasonerManager:
     """
