@@ -41,11 +41,12 @@ jlibpaths = glob.glob(jlibdir)
 for jlibpath in jlibpaths:
     sys.path.append(jlibpath)
 
-# Add classes of contained modules to the package's top-level scope.
-from labelmap import LabelMap
-from ontology import Ontology
+# Add top-level classes of contained modules that are used by UI code to the
+# package's top-level scope.
 from owlontologybuilder import OWLOntologyBuilder
+from owlontologybuilder import TermDescriptionError
 from importmodulebuilder import ImportModuleBuilder
+from tablereader import TableReaderFactory
 
 # Initialize the logger for this package.
 logger = logging.getLogger(__name__)

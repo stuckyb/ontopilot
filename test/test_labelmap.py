@@ -15,7 +15,8 @@
 
 
 # Python imports.
-from ontobuilder import LabelMap, Ontology
+from ontobuilder.ontology import Ontology
+from ontobuilder.labelmap import LabelMap
 import unittest
 from testfixtures import LogCapture
 
