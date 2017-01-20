@@ -15,6 +15,7 @@ from java.io import File
 from org.apache.poi.ss.usermodel import WorkbookFactory, CellType
 from org.apache.poi.ss.usermodel import DataFormatter, FormulaEvaluator
 
+
 class _ExcelTable(BaseTable):
     """
     Represents a single table (i.e., sheet) in a Microsoft Excel spreadsheet
