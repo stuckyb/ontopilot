@@ -14,10 +14,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+#
+# This module includes tests for all classes related to reading input data
+# tables, including concrete implementations of BaseTable and BaseTableReader.
+#
+
 from ontobuilder.tablereader import TableRow, ColumnNameError
 from ontobuilder.tablereaderfactory import TableReaderFactory
 from ontobuilder.tablereader_csv import CSVTableReader
 from ontobuilder.tablereader_odf import ODFTableReader
+from ontobuilder.tablereader_excel import ExcelTableReader
 import unittest
 from testfixtures import LogCapture
 
@@ -290,7 +296,8 @@ class TestODFTableReader(_TestTableReader, unittest.TestCase):
         ),
         # The second sheet in the test file includes date and time types.
         'Sheet2': (
-            {'date val': 'Nov. 24, 2016', 'time val': '01:22:00 PM', 'one more': 'Blah!!'},
+            {'date val': 'Nov. 24, 2016', 'time val': '01:22:00 PM', 'one more': '123'},
+            {'date val': '1/20/2017', 'time val': '14:50', 'one more': '12.123'}
         )
     }
 
@@ -327,4 +334,90 @@ class TestODFTableReader(_TestTableReader, unittest.TestCase):
         # Try loading a table that is completely empty.
         with self.assertRaisesRegexp(RuntimeError, 'The input ODF spreadsheet .* empty.'):
             self.tr.getTableByIndex(1)
+
+
+class TestExcelTableReader(_TestTableReader):
+    """
+    Tests the ExcelTableReader class.  Note this class does not inherit from
+    unittest.TestCase, because we need two concrete subclasses, one for XLS
+    (Excel 97-2003) documents and one for XLSX (Excel 2007+) documents.  These
+    two subclasses will inherit from unittest.TestCase, and they are
+    dynamically generated using a simple implementation of test
+    parameterization; see code below this class.
+    """
+    # The expected values from the Excel test file.  Both sheets in the test
+    # file include a huge number of empty cells that nevertheless have explicit
+    # style formatting.  These should be ignored by the table reader.
+    expvals = {
+        # Vary the casing of the column names to test that the returned table
+        # rows are not case sensitive.  The first sheet in the test file
+        # includes an empty row in between the two data-containing rows; the
+        # empty row should be ignored.
+        'sheet 1': (
+            {'COL1': 'data 1', 'COLUMN 2':'extra whitespace!', 'COL3':'data2'},
+            {'col1': 'the', 'column 2':'last', 'col3':'row'}
+        ),
+        # The second sheet in the test file includes date, time, and number
+        # types.
+        'Sheet2': (
+            {'date val': 'Nov. 24, 2016', 'time val': '01:22:00 PM', 'one more': '123'},
+            {'date val': '1/20/2017', 'time val': '14:50', 'one more': '12.123'}
+        )
+    }
+
+    # The number of each data-containing row in each table of the test file,
+    # with counting starting at 1.
+    exp_rownums = {
+        'sheet 1': (2, 4),
+        'Sheet2': (2,)
+    }
+
+    # These should be overridden by child classes to provide the paths to the
+    # test data files.
+    valid_input_testfile = None
+    error_input_testfile = None
+
+    def _openFile(self, filename):
+        self.tr = ExcelTableReader(filename)
+
+    def test_errors(self):
+        """
+        Tests a variety of error conditions.
+        """
+        self._openFile(self.error_input_testfile)
+
+        # Use an invalid table index and name.
+        with self.assertRaises(KeyError):
+            self.tr.getTableByIndex(2)
+        with self.assertRaises(KeyError):
+            self.tr.getTableByName('nonexistant')
+
+        # Try loading a table with non-unique column names.  The test data is
+        # such that this also tests that checking for unique column names is
+        # not case sensitive.
+        with self.assertRaisesRegexp(RuntimeError, 'The column name "col1" is used more than once'):
+            self.tr.next()
+
+        # Try loading a table that is completely empty.
+        with self.assertRaisesRegexp(RuntimeError, 'The input Excel spreadsheet .* empty.'):
+            self.tr.getTableByIndex(1)
+
+
+# Python's unittest does not support parameterized tests, so we mimic it here
+# by using the type() function to dynamically generate two concrete testing
+# classes: one for XLS documents (Excel 97-2003), and one for XLSX documents
+# (Excel 2007+).  Each class will have custom values for the
+# 'valid_input_testfile' and 'error_input_testfile' attributes that provide the
+# correct test data file names.
+excel_test_params = (
+    ('XLS', ('test_data/test_table-valid.xls', 'test_data/test_table-error.xls')),
+    ('XLSX', ('test_data/test_table-valid.xlsx', 'test_data/test_table-error.xlsx'))
+)
+for clname_suffix, filenames in excel_test_params:
+    clname = 'TestExcelTableReader_' + clname_suffix
+    globals()[clname] = type(
+        clname, (TestExcelTableReader, unittest.TestCase), {
+            'valid_input_testfile': filenames[0], 'error_input_testfile': filenames[1]
+        }
+    )
 
