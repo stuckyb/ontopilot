@@ -3,6 +3,7 @@
 import os
 from tablereader_csv import CSVTableReader
 from tablereader_odf import ODFTableReader
+from tablereader_excel import ExcelTableReader
 
 # Java imports.
 
@@ -29,6 +30,8 @@ class TableReaderFactory:
             self.t_reader = CSVTableReader(self.filepath)
         elif ext in ('.ods', '.fods'):
             self.t_reader = ODFTableReader(self.filepath)
+        elif ext in ('.xls', '.xlsx'):
+            self.t_reader = ExcelTableReader(self.filepath)
         else:
             raise RuntimeError('The type of the input file "' + self.filepath
                     + '" could not be determined or is not supported.')
