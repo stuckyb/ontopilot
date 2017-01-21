@@ -30,31 +30,42 @@ class _ODFTable(BaseTable):
 
         self.sheet = odfsheet
 
+        # Define the number of consecutive empty rows to be encountered before
+        # the remainder of an input sheet is assumed to be empty.
+        self.EMPTYROW_LIM = 1000
+
         # If the spreadsheet includes cells that contain no data, but to which
         # formatting was applied, then the number of defined rows and/or
         # columns (as returned, e.g., by self.sheet.getRowCount()) can be much
         # greater than the range of rows and columns that actually contain
         # data.  This could slow things down considerably since a naive
         # algorithm could be iterating over millions of empty cells.  There are
-        # at least two ways to deal with this.  First is to use the
+        # at least three ways to deal with this.  First is to use the
         # getUsedRange() method of the Sheet class to get the range of cells
         # that actually contain data and iterate only over those.  The second
         # option is to inspect the first table row to infer the number of
         # data-containing columns, then skipping empty rows assuming no data
-        # are found beyond the used columns in the header row.  I implemented
-        # both of these options and timed each on the valid test data file
-        # running the ODFTableReader unit tests.  The first sheet ("sheet 1")
-        # of this test file is an example of a sheet that has "spurious" rows
-        # and column caused by defining formatting styles with no data.  This
-        # sheet is a worst-case scenario, because *every* row and column in the
-        # spreadsheet has a formatting style applied to it, which means the
-        # numbers of rows and columns are as large as possible (1,024 x
-        # 1,048,576; more than 1 billion cells).  The results are as follows:
+        # are found beyond the used columns in the header row.  This option
+        # will still read all the way to the end of the sheet.  A third option,
+        # which is a slight modification of option 2, is to stop reading a
+        # sheet once a certain number of consecutive empty rows are
+        # encountered.  I implemented all three of these options and timed each
+        # on the valid test data file running the ODFTableReader unit tests.
+        # The first sheet ("sheet 1") of this test file is an example of a
+        # sheet that has "spurious" rows and column caused by defining
+        # formatting styles with no data.  This sheet is a worst-case scenario,
+        # because *every* row and column in the spreadsheet has a formatting
+        # style applied to it, which means the numbers of rows and columns are
+        # as large as possible (1,024 x 1,048,576; more than 1 billion cells).
+        # The results are as follows:
         #
-        #     Option 1 (getUsedRange()): 131.1 s
-        #     Option 2 (infer column count, skip empty rows): 7.0 s
+        #   Option 1 (getUsedRange()): 131.1 s
+        #   Option 2 (infer column count, skip empty rows): 7.0 s
+        #   Option 3 (same as 2, but stop after 1,000 consecutive empty rows): 0.5 s
         #
-        # I went with option 2 for obvious reasons.
+        # Option 3 should be perfectly reasonable for any real-world input
+        # data, and the speed improvement is substantial.
+        #
         self.numrows = self.sheet.getRowCount()
         self.numcols = self.sheet.getColumnCount()
         #print 'RAW ROW COUNT:', self.sheet.getRowCount()
@@ -99,11 +110,16 @@ class _ODFTable(BaseTable):
         # the next non-empty row, assuming counting starts at 1 (if the search
         # succeeded).
         emptyrow = True
-        while (self.rowcnt < self.numrows) and emptyrow:
+        emptyrowcnt = 0
+        while (
+            (self.rowcnt < self.numrows) and emptyrow and (emptyrowcnt < self.EMPTYROW_LIM)
+        ):
             for colnum in range(self.numcols):
                 if self.sheet.getImmutableCellAt(colnum, self.rowcnt).getTextValue() != '':
                     emptyrow = False
                     break
+            if emptyrow:
+                emptyrowcnt += 1
             self.rowcnt += 1
 
         if emptyrow:
