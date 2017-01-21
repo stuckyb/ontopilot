@@ -15,7 +15,7 @@
 
 
 # Python imports.
-from ontobuilder.tablereader import _TableRow
+from ontobuilder.tablereader import TableRow
 from ontobuilder.owlontologybuilder import OWLOntologyBuilder
 from ontobuilder.ontology_entities import (
     CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,
@@ -43,7 +43,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         # Define a test row.  In setUp(), we define row values that are shared
         # among all entities.  Remaining entity-specific values should be
         # defined in the entity-specific test methods.
-        self.tr = _TableRow(1, 'nofile')
+        self.tr = TableRow(1, None)
         self.tr['ID'] = 'http://purl.obolibrary.org/obo/OBTO_0011'
         self.tr['Label'] = 'new test entity'
         self.tr['Text definition'] = 'The definition!'
