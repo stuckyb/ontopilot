@@ -6,7 +6,38 @@ import logging
 # Java imports.
 
 
-class ColumnNameError(RuntimeError):
+class TableRowError(RuntimeError):
+    """
+    Base class for all table row input data errors.  This class provides
+    functionality to automatically include context information about where in
+    the input file the error occurred.
+    """
+    def __init__(self, error_msg, tablerow):
+        self.tablerow = tablerow
+
+        new_msg = (
+            'Error encountered in ' + self._generateContextStr(tablerow)
+            + ':\n' + error_msg
+        )
+
+        RuntimeError.__init__(self, new_msg)
+
+    def _generateContextStr(self, tablerow):
+        table = tablerow.getTable()
+        
+        if table.getTableReader().getNumTables() > 1:
+            contextstr = 'row {0} of table "{1}" in "{2}"'.format(
+                tablerow.getRowNum(), table.getTableName(), tablerow.getFileName()
+            )
+        else:
+            contextstr = 'row {0} of "{1}"'.format(
+                tablerow.getRowNum(), tablerow.getFileName()
+            )
+
+        return contextstr
+
+
+class ColumnNameError(TableRowError):
     """
     Exception class for missing required columns.
     """
@@ -24,9 +55,9 @@ class TableRow:
     not be instantiated directly; rather, instances should be obtained from one
     of the TableReader classes.
     """
-    def __init__(self, rownum, filename, required_cols=[], optional_cols=[], default_vals={}):
+    def __init__(self, rownum, table, required_cols=[], optional_cols=[], default_vals={}):
         self.rownum = rownum
-        self.filename = filename
+        self.table = table
 
         # Required columns.
         self.required = required_cols
@@ -59,8 +90,8 @@ class TableRow:
         else:
             if colname in self.required:
                 raise ColumnNameError(
-                    'The required column "' + colname
-                    + '" was missing in the table row.'
+                    'A required column, "' + colname + '", was missing.',
+                    self
                 )
             else:
                 if colname not in self.optional:
@@ -84,11 +115,18 @@ class TableRow:
 
         return metadata + str(self.data)
 
+    def getTable(self):
+        """
+        Returns the BaseTable subclass instance from which this TableRow
+        originated.
+        """
+        return self.table
+
     def getRowNum(self):
         return self.rownum
 
     def getFileName(self):
-        return self.filename
+        return self.table.getFileName()
 
 
 class BaseTable:
@@ -96,11 +134,12 @@ class BaseTable:
     Base class for a single table in an input data file.  This is an abstract
     base class and should not be instantiated directly.
     """
-    def __init__(self, tablename, required_cols=[], optional_cols=[], default_vals={}):
+    def __init__(self, tablename, tablereader, required_cols=[], optional_cols=[], default_vals={}):
         # This is an abstract base class.
         __metaclass__ = abc.ABCMeta
 
         self.name = tablename
+        self.tablereader = tablereader
 
         # Required columns.
         self.required_cols = required_cols
@@ -113,6 +152,15 @@ class BaseTable:
         self.defaultvals = default_vals
 
         self.rowcnt = 0
+
+    def getTableReader(self):
+        return self.tablereader
+
+    def getFileName(self):
+        return self.getTableReader().getFileName()
+
+    def getTableName(self):
+        return self.name
 
     def setRequiredColumns(self, colnames):
         """
@@ -184,10 +232,20 @@ class BaseTableReader:
         # This is an abstract base class.
         __metaclass__ = abc.ABCMeta
 
+        self.filename = None
         self.numtables = 0
         self.curr_table = -1
 
+    def getFileName(self):
+        """
+        Returns the file path of the input source.
+        """
+        return self.filename
+
     def getNumTables(self):
+        """
+        Returns the total number of tables in the input source.
+        """
         return self.numtables
 
     @abc.abstractmethod

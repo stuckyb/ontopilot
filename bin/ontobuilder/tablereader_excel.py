@@ -27,11 +27,13 @@ class _ExcelTable(BaseTable):
     SUPPORTED_CELL_TYPES = (CellType.BLANK, CellType.BOOLEAN, CellType.FORMULA,
         CellType.NUMERIC, CellType.STRING)
 
-    def __init__(self, excelsheet, filename, required_cols=[], optional_cols=[], default_vals={}):
-        BaseTable.__init__(self, excelsheet.getSheetName(), required_cols, optional_cols, default_vals)
+    def __init__(self, excelsheet, exceltablereader, required_cols=[], optional_cols=[], default_vals={}):
+        BaseTable.__init__(
+            self, excelsheet.getSheetName(), exceltablereader,
+            required_cols, optional_cols, default_vals
+        )
 
         self.sheet = excelsheet
-        self.filename = filename
 
         # Get a DataFormtater and FormulaEvaluator so that we can extract
         # strings from cells that match the output produced by Excel's UI.
@@ -60,7 +62,7 @@ class _ExcelTable(BaseTable):
 
         if self.numcols == 0:
             raise RuntimeError('The input Excel spreadsheet "' + self.name
-                    + '" in the file "' + self.filename
+                    + '" in the file "' + self.getFileName()
                     + '" appears to be empty.')
 
         # Trim the column names and make sure they are unique.
@@ -70,7 +72,7 @@ class _ExcelTable(BaseTable):
             if self.colnames[colnum] in nameset:
                 raise RuntimeError('The column name "' + self.colnames[colnum]
                     + '" is used more than once in the input Excel spreadsheet "'
-                    + self.name + '" in the file "' + self.filename
+                    + self.name + '" in the file "' + self.getFileName()
                     + '".  All column names must be unique.')
             else:
                 nameset.add(self.colnames[colnum])
@@ -115,7 +117,7 @@ class _ExcelTable(BaseTable):
             raise StopIteration()
 
         trow = TableRow(
-            self.rowcnt, self.filename,
+            self.rowcnt, self,
             self.required_cols, self.optional_cols, self.defaultvals
         )
         for colnum in range(self.numcols):
@@ -146,7 +148,7 @@ class ExcelTableReader(BaseTableReader):
                     + '.  No matching sheet could be found in the file "'
                     + self.filename + '".')
 
-        return _ExcelTable(self.wbook.getSheetAt(index), self.filename)
+        return _ExcelTable(self.wbook.getSheetAt(index), self)
 
     def getTableByName(self, tablename):
         sheet = self.wbook.getSheet(tablename)
@@ -155,7 +157,7 @@ class ExcelTableReader(BaseTableReader):
                     + '".  No matching sheet could be found in the file "'
                     + self.filename + '".')
 
-        table = _ExcelTable(sheet, self.filename)
+        table = _ExcelTable(sheet, self)
 
         return table
 

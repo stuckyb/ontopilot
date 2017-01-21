@@ -22,11 +22,13 @@ class _ODFTable(BaseTable):
     names.  Each subsequent row is returned as a TableRow object; thus, column
     names are not case sensitive.
     """
-    def __init__(self, odfsheet, filename, required_cols=[], optional_cols=[], default_vals={}):
-        BaseTable.__init__(self, odfsheet.getName(), required_cols, optional_cols, default_vals)
+    def __init__(self, odfsheet, odftablereader, required_cols=[], optional_cols=[], default_vals={}):
+        BaseTable.__init__(
+            self, odfsheet.getName(), odftablereader,
+            required_cols, optional_cols, default_vals
+        )
 
         self.sheet = odfsheet
-        self.filename = filename
 
         # If the spreadsheet includes cells that contain no data, but to which
         # formatting was applied, then the number of defined rows and/or
@@ -73,7 +75,7 @@ class _ODFTable(BaseTable):
 
         if self.numcols == 0:
             raise RuntimeError('The input ODF spreadsheet "' + self.name
-                    + '" in the file "' + self.filename
+                    + '" in the file "' + self.getFileName()
                     + '" appears to be empty.')
 
         # Trim the column names and make sure they are unique.
@@ -83,7 +85,7 @@ class _ODFTable(BaseTable):
             if self.colnames[colnum] in nameset:
                 raise RuntimeError('The column name "' + self.colnames[colnum]
                     + '" is used more than once in the input ODF spreadsheet "'
-                    + self.name + '" in the file "' + self.filename
+                    + self.name + '" in the file "' + self.getFileName()
                     + '".  All column names must be unique.')
             else:
                 nameset.add(self.colnames[colnum])
@@ -108,7 +110,7 @@ class _ODFTable(BaseTable):
             raise StopIteration()
 
         trow = TableRow(
-            self.rowcnt, self.filename,
+            self.rowcnt, self,
             self.required_cols, self.optional_cols, self.defaultvals
         )
         for colnum in range(self.numcols):
@@ -150,7 +152,7 @@ class ODFTableReader(BaseTableReader):
                     + '.  No matching sheet could be found in the file "'
                     + self.filename + '".')
 
-        return _ODFTable(self.odfs.getSheet(index), self.filename)
+        return _ODFTable(self.odfs.getSheet(index), self)
 
     def getTableByName(self, tablename):
         sheet = self.odfs.getSheet(tablename)
@@ -159,7 +161,7 @@ class ODFTableReader(BaseTableReader):
                     + '".  No matching sheet could be found in the file "'
                     + self.filename + '".')
 
-        table = _ODFTable(sheet, self.filename)
+        table = _ODFTable(sheet, self)
 
         return table
 

@@ -19,7 +19,7 @@
 # tables, including concrete implementations of BaseTable and BaseTableReader.
 #
 
-from ontobuilder.tablereader import TableRow, ColumnNameError
+from ontobuilder.tablereader import TableRow, TableRowError, ColumnNameError
 from ontobuilder.tablereaderfactory import TableReaderFactory
 from ontobuilder.tablereader_csv import CSVTableReader
 from ontobuilder.tablereader_odf import ODFTableReader
@@ -43,6 +43,53 @@ class TestTableReaderFactory(unittest.TestCase):
             TableReaderFactory('unknown_type.blah').__enter__()
 
 
+# Define two simple stub classes to provide the BaseTable and BaseTableReader
+# functionality that TableRowError and TableRow need.  This could be done more
+# neatly using the mock package, but in this case, the additional package
+# installations probably aren't worth it.
+class TableReaderStub:
+    numtables = 1
+    def getNumTables(self):
+        return self.numtables
+
+class TableStub:
+    def __init__(self):
+        self.t_reader = TableReaderStub()
+    def getFileName(self):
+        return 'mock_file'
+    def getTableName(self):
+        return 'mock_table'
+    def getTableReader(self):
+        return self.t_reader
+
+
+class TestTableRowError(unittest.TestCase):
+    """
+    Tests TableRowError to verify that error context information is correctly
+    reported.
+    """
+    def setUp(self):
+        self.tr = TableRow(1, TableStub())
+        self.errobj = TableRowError('Sample message.', self.tr)
+
+    def test__generateContextStr(self):
+        """
+        Verifies that context messages are correct for data sources with only
+        one table or with multiple named tables.
+        """
+        # Mimic a data source with only 1 table.
+        self.assertEqual(
+            'row 1 of "mock_file"', self.errobj._generateContextStr(self.tr)
+        )
+
+        # Mimic a data source with more than 1 table.
+        self.tr.getTable().getTableReader().numtables = 2
+        self.assertEqual(
+            'row 1 of table "mock_table" in "mock_file"',
+            self.errobj._generateContextStr(self.tr)
+        )
+
+
 class TestTableRow(unittest.TestCase):
     """
     Tests the TableRow class.
@@ -52,7 +99,7 @@ class TestTableRow(unittest.TestCase):
         self.optional = ['col2', 'col3', 'col4', 'col5']
         self.defaults = {'col3': 'default1', 'col4': 'default2'}
 
-        self.tr = TableRow(1, 'null', self.required, self.optional, self.defaults)
+        self.tr = TableRow(1, TableStub(), self.required, self.optional, self.defaults)
 
     def test_setGetContains(self):
         self.tr['Col1'] = 'testval'

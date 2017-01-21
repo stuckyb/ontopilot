@@ -12,6 +12,7 @@ import logging
 from progressbar import ProgressBar, Percentage, Bar, ETA
 import math
 from tablereaderfactory import TableReaderFactory
+from tablereader import TableRowError
 import ontobuilder
 from ontobuilder import TRUE_STRS
 from ontology import Ontology
@@ -21,6 +22,22 @@ from java.util import HashSet
 from org.semanticweb.owlapi.model import IRI, OWLClassExpression
 from org.semanticweb.owlapi.model import OWLObjectPropertyExpression
 from org.semanticweb.owlapi.model import OWLObjectProperty
+
+
+class ImportModSpecError(TableRowError):
+    """
+    An exception class for errors encountered in import module specifications
+    in tabular input files.
+    """
+    def __init__(self, error_msg, tablerow):
+        self.tablerow = tablerow
+
+        new_msg = (
+            'Error encountered in import module specification in '
+            + self._generateContextStr(tablerow) + ':\n' + error_msg
+        )
+
+        RuntimeError.__init__(self, new_msg)
 
 
 class URLOpenerWithErrorHandling(FancyURLopener):
@@ -39,7 +56,7 @@ class ImportModuleBuilder:
     OWL files.
     """
     # Required fields (i.e., keys) for all import term specifications.
-    REQUIRED_COLS = ('ID')
+    REQUIRED_COLS = ('ID',)
 
     # Fields for which no warnings are issued if the field is missing.
     OPTIONAL_COLS = ('Exclude', 'Seed descendants', 'Reasoner', 'Ignore')
@@ -156,10 +173,15 @@ class ImportModuleBuilder:
                 for row in table:
                     if not(row['Ignore'].lower() in TRUE_STRS):
                         idstr = row['ID']
-                        ontobuilder.logger.info('Processing entity ' + idstr + '.')
-                        owlent = sourceont.getExistingEntity(idstr).getOWLAPIObj()
+                        ontobuilder.logger.info('Processing entity "' + idstr + '".')
+                        owlent = sourceont.getExistingEntity(idstr)
                         if owlent == None:
-                            raise RuntimeError(idstr + ' could not be found in the source ontology')
+                            raise ImportModSpecError(
+                                'The entity "' + idstr
+                                + '" could not be found in the source ontology.',
+                                row
+                            )
+                        owlent = owlent.getOWLAPIObj()
         
                         if row['Exclude'].lower() in TRUE_STRS:
                             excluded_ents.append(owlent)

@@ -1,11 +1,11 @@
 #!/usr/bin/env jython
 
 import csv
-import os
+import os, sys
 import logging
 from argparse import ArgumentParser
-from ontobuilder import TableReaderFactory
-from ontobuilder import ImportModuleBuilder
+from ontobuilder import TableReaderFactory, ColumnNameError
+from ontobuilder import ImportModuleBuilder, ImportModSpecError
 from ontobuilder import TRUE_STRS
 
 
@@ -58,7 +58,11 @@ with TableReaderFactory(args.importsfile) as ireader:
                 if mbuilder.isBuildNeeded(row['IRI'], termsfile_path, args.outputsuffix):
                     print ('Building the ' + row['name'] + ' (' + row['IRI']
                             + ') import module.')
-                    mbuilder.buildModule(row['IRI'], termsfile_path, args.outputsuffix)
+                    try:
+                        mbuilder.buildModule(row['IRI'], termsfile_path, args.outputsuffix)
+                    except (ColumnNameError, ImportModSpecError) as err:
+                        print '\n', err , '\n'
+                        sys.exit(1)
                 else:
                     print ('The ' + row['name'] + ' (' + row['IRI']
                             + ') import module is already up-to-date.')

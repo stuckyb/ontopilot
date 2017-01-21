@@ -14,11 +14,12 @@ from ontology_entities import (
     ANNOTATIONPROPERTY_ENTITY
 )
 from delimstr_parser import DelimStrParser
+from tablereader import TableRowError
 
 # Java imports.
 
 
-class TermDescriptionError(RuntimeError):
+class TermDescriptionError(TableRowError):
     """
     An exception class for errors encountered in term descriptions in rows from
     input files.
@@ -27,9 +28,8 @@ class TermDescriptionError(RuntimeError):
         self.tablerow = tablerow
 
         new_msg = (
-            'Error encountered in term description in row '
-            + str(tablerow.getRowNum()) + ' of a table in "'
-            + tablerow.getFileName() + '":\n' + error_msg
+            'Error encountered in term description in '
+            + self._generateContextStr(tablerow) + ':\n' + error_msg
         )
 
         RuntimeError.__init__(self, new_msg)
