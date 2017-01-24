@@ -24,11 +24,14 @@ class OntoConfig(RawConfigParser):
     methods, but configuration values can also be accessed generically using
     the usual ConfigParser methods (e.g., get(), getint(), etc.).
     """
-    def read(self, filename):
+    def __init__(self, filename):
         """
-        Reads the configuration information and checks that the configuration file
-        contains all required information.
+        Reads the configuration information and checks that the configuration
+        file contains all required information.
         """
+        # Call the superclass constructor.
+        RawConfigParser.__init__(self)
+
         # Call the superclass read() method.
         filesread = RawConfigParser.read(self, filename)
 

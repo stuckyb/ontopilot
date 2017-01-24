@@ -33,8 +33,7 @@ class TestOntoConfig(unittest.TestCase):
         self.termsfiles = ['terms_1.csv', 'terms_2.csv']
         self.mod_baseIRI = 'https://a.sample.iri/to/imports'
 
-        self.oc = OntoConfig()
-        self.oc.read('test_data/config.conf')
+        self.oc = OntoConfig('test_data/config.conf')
 
         self.td_path = os.path.abspath('test_data/')
 
@@ -60,7 +59,7 @@ class TestOntoConfig(unittest.TestCase):
         Verifies that basic configuration file errors are correctly detected.
         """
         # Start with an empty configuration.
-        self.oc = OntoConfig()
+        self.oc.remove_section('Main')
 
         with self.assertRaisesRegexp(
             ConfigError, 'The "Main" section was not found'
