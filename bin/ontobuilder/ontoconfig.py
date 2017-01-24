@@ -41,6 +41,8 @@ class OntoConfig(RawConfigParser):
                 + ', could not be opened.'
             )
 
+        self.conffile = filename
+
         self.checkConfig()
 
         self.confdir = path.dirname(path.abspath(filename))
@@ -61,6 +63,9 @@ class OntoConfig(RawConfigParser):
         Returns the name of the ontology file without the file extension.
         """
         return path.splitext(self.getOntologyFileName())[0]
+
+    def getConfigFilePath(self):
+        return path.abspath(self.conffile)
 
     def getCustom(self, section, option, default=''):
         """
@@ -145,19 +150,10 @@ the value of the "ontology_file" setting in the build configuration file.'
             if tfnameraw.strip() != '':
                 tfileslist.append(tfnameraw.strip())
 
-        if len(tfileslist) == 0:
-            raise ConfigError(
-                'No ontology entities/terms files were provided.  Please \
-set the value of the "termsfiles" setting in the build configuration file.'
-            )
-
         # Get the location of the terms files.
         termsfolder = ''
-        if self.has_option('Ontology', 'termsdir'):
-            termsfolder_raw = self.get('Ontology', 'termsdir')
-            termsfolder = self._getAbsPath(termsfolder_raw)
-        else:
-            termsfolder = path.join(self.confdir, 'src/terms')
+        tfolder_raw = self.getCustom('Ontology', 'termsdir', 'src/terms')
+        termsfolder = self._getAbsPath(tfolder_raw)
 
         pathslist = [path.join(termsfolder, fname) for fname in tfileslist]
 

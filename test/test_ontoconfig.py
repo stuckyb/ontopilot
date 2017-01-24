@@ -54,6 +54,12 @@ class TestOntoConfig(unittest.TestCase):
             'defaultval', self.oc.getCustom('Main', 'optstr2', 'defaultval')
         )
 
+    def test_getConfigFilePath(self):
+        self.assertEqual(
+            os.path.abspath('test_data/config.conf'),
+            self.oc.getConfigFilePath()
+        )
+
     def test_checkConfig(self):
         """
         Verifies that basic configuration file errors are correctly detected.
@@ -113,19 +119,13 @@ class TestOntoConfig(unittest.TestCase):
         exp = [abspath + '/' + fname for fname in self.termsfiles]
         self.assertEqual(exp, self.oc.getTermsFilePaths())
 
-        # Verify that a missing termsfiles setting is detected.
+        # Verify that a missing termsfiles setting returns an empty list.
         self.oc.remove_option('Main', 'termsfiles')
-        with self.assertRaisesRegexp(
-            ConfigError, 'No ontology entities/terms files were provided.'
-        ):
-            self.oc.getTermsFilePaths()
+        self.assertEqual([], self.oc.getTermsFilePaths())
 
-        # Verify that a blank termsfiles setting is detected.
+        # Verify that a blank termsfiles returns an empty list.
         self.oc.set('Main', 'termsfiles', '   \t  ')
-        with self.assertRaisesRegexp(
-            ConfigError, 'No ontology entities/terms files were provided.'
-        ):
-            self.oc.getTermsFilePaths()
+        self.assertEqual([], self.oc.getTermsFilePaths())
 
     def test_getAbsPath(self):
         # Test an absolute input path.
