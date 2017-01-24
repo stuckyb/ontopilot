@@ -54,13 +54,9 @@ class OntoConfig(RawConfigParser):
 
     def _getOntFileBase(self):
         """
-        Extracts the name of the ontology file, minus the extension, from the
-        ontology IRI.
+        Returns the name of the ontology file without the file extension.
         """
-        parts = rfc3987.parse(self.getOntologyIRI(), rule='absolute_IRI')
-        ontfname = path.basename(parts['path'])
-
-        return path.splitext(ontfname)[0]
+        return path.splitext(self.getOntologyFileName())[0]
 
     def getCustom(self, section, option, default=''):
         """
@@ -111,6 +107,27 @@ configuration file.  See the example configuration file for more information.'
             )
 
         return iristr
+
+    def getOntologyFileName(self):
+        """
+        Returns the name of the compiled ontology file.  If no name was
+        provided in the configuration file, the name will be extracted from the
+        ontology's IRI, if possible.
+        """
+        ontfname = self.getCustom('Ontology', 'ontology_file', '')
+
+        if ontfname == '':
+            parts = rfc3987.parse(self.getOntologyIRI(), rule='absolute_IRI')
+            ontfname = path.basename(parts['path'])
+
+            if ontfname == '':
+                raise ConfigError(
+                    'An ontology file name was not provided, and a suitable \
+name could not be automatically extracted from the ontology IRI.  Please set \
+the value of the "ontology_file" setting in the build configuration file.'
+                )
+
+        return ontfname
 
     def getTermsFilePaths(self):
         """

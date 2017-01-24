@@ -142,6 +142,21 @@ class TestOntoConfig(unittest.TestCase):
     def test_getOntFileBase(self):
         self.assertEqual('ontname', self.oc._getOntFileBase())
 
+    def test_getOntologyFileName(self):
+        # Test extracting the file name from the ontology's IRI.
+        self.assertEqual('ontname.owl', self.oc.getOntologyFileName())
+
+        # Test that an IRI without a filename is correctly detected.
+        self.oc.set('Main', 'ontologyIRI', 'https://a.sample.iri/to/ontology/')
+        with self.assertRaisesRegexp(
+            ConfigError, 'An ontology file name was not provided'
+        ):
+            self.oc.getOntologyFileName()
+
+        # Test an explicitly provided file name.
+        self.oc.set('Ontology', 'ontology_file', 'custom.owl')
+        self.assertEqual('custom.owl', self.oc.getOntologyFileName())
+
     def test_getBaseOntologyPath(self):
         # Test the default case.
         self.assertEqual(
