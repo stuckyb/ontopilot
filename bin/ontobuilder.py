@@ -5,8 +5,10 @@ import os
 import sys
 import logging
 from argparse import ArgumentParser
-from ontobuilder import OntoConfig, OntoBuildManager
-from ontobuilder import ConfigError, TermDescriptionError
+from ontobuilder import OntoConfig, ConfigError
+from ontobuilder import OntoBuildManager, TermDescriptionError
+from ontobuilder import ImportsBuildManager
+from ontobuilder import ColumnNameError, ImportModSpecError
 
 
 # Set the format for logging output.
@@ -49,9 +51,20 @@ if args.task == 'ontology':
     if buildman.isBuildNeeded():
         try:
             buildman.build()
-        except TermDescriptionError as err:
+        except (TermDescriptionError, RuntimeError) as err:
             print '\n', err , '\n'
             sys.exit(1)
     else:
         print '\nThe compiled ontology is already up to date.\n'
+elif args.task == 'imports':
+    buildman = ImportsBuildManager(config, args.build_folder)
+
+    try:
+        buildman.build()
+    except (ColumnNameError, ImportModSpecError, RuntimeError) as err:
+        print '\n', err , '\n'
+        sys.exit(1)
+else:
+    print '\nUnrecognized build task: {0}.\n'.format(args.task)
+    sys.exit(1)
 

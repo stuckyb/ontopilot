@@ -64,11 +64,25 @@ class ImportModuleBuilder:
     # Default values for input table columns.
     DEFAULT_COL_VALS = {'Reasoner': 'HermiT'}
 
-    def __init__(self, base_IRI):
+    def __init__(self, base_IRI, outputdir):
+        """
+        base_IRI: The base IRI string to use when generating module IRIs.
+        oututdir: The directory in which to save the module OWL files.
+        """
         self.progbar = None
         self.sourceOntologyIRI = ''
 
         self.base_IRI = base_IRI
+        self.outputdir = os.path.abspath(outputdir)
+
+        # Generate the directory name for local copies of source ontologies,
+        # and create the directory, if needed.
+        self.ontcachedir = os.path.join(outputdir, 'source_ontologies')
+        if not(os.path.isdir(self.ontcachedir)):
+            if not(os.path.exists(self.ontcachedir)):
+                os.mkdir(self.ontcachedir)
+            else:
+                raise RuntimeError('A file with the name of the ontology cache directory already exists: {0}.  Please delete or rename the conflicting file.'.format(self.ontcachedir))
 
         # Define the strings that indicate TRUE in the input files.  Note that
         # variants of these strings with different casing will also be
@@ -138,8 +152,10 @@ class ImportModuleBuilder:
             raise RuntimeError('Could not find the input terms file "'
                     + termsfile_path + '".')
 
-        # Extract the name of the source ontology file from the IRI.
+        # Extract the name of the source ontology file from the IRI and
+        # generate the path to it on the local filesystem.
         ontfile = os.path.basename(ontologyIRI)
+        ontfile = os.path.join(self.ontcachedir, ontfile)
 
         # Generate the file name and IRI for the output ontology OWL file.
         outputfile = self._getOutputFileName(ontologyIRI, outputsuffix)
@@ -199,7 +215,8 @@ class ImportModuleBuilder:
         for ent in excluded_ents:
             module.removeEntity(ent)
 
-        module.saveOntology(outputfile)
+        outputpath = os.path.join(self.outputdir, outputfile)
+        module.saveOntology(outputpath)
 
     def _addEntityToSignature(self, owlent, signature, trow, reasoner_man):
         """
