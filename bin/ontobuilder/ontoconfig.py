@@ -159,6 +159,16 @@ the value of the "ontology_file" setting in the build configuration file.'
 
         return pathslist
 
+    def getBuildDir(self):
+        """
+        Returns the path to the build directory.
+        """
+        default = 'build'
+        pathstr = self.getCustom('Build', 'builddir', default)
+        pathstr = self._getAbsPath(pathstr)
+
+        return pathstr
+
     def getBaseOntologyPath(self):
         """
         Returns the path to the base ontology file.  If no such value is

@@ -21,15 +21,14 @@ OPTIONAL_COLS = (
 )
         
 class OntoBuildManager:
-    def __init__(self, config, builddir, expanddefs=True):
+    def __init__(self, config, expanddefs=True):
         """
         config: An OntoConfig instance.
-        builddir: The path of the build directory.
         expanddefs: Whether to add IDs to term references in definitions.
         """
         self.config = config
         self.expanddefs = expanddefs
-        self.builddir = builddir
+        self.builddir = config.getBuildDir()
 
     def _checkFiles(self):
         """

@@ -20,8 +20,6 @@ modules using information from table-based source files.')
 argp.add_argument('-c', '--config_file', type=str, required=False,
     default='ontology.conf', help='The path to a configuration file for the \
 ontology build process.')
-argp.add_argument('-b', '--build_folder', type=str, required=False,
-    default='build', help='The location of the build folder.')
 argp.add_argument('-n', '--no_def_expand', action='store_true', help='If this \
 flag is given, no attempt will be made to modify definition strings by adding \
 the IDs of term labels referenced in the definitions.')
@@ -37,16 +35,17 @@ except ConfigError as err:
     sys.exit(1)
 
 # Check if the build directory exists; if not, attempt to create it.
-if not(os.path.isdir(args.build_folder)):
-    if os.path.exists(args.build_folder):
-        print '\nA file with the same name as the build folder, {0}, already exists.  Use the "-b" (or "--build_folder") option to specify a different build folder path, or rename the conflicting file.\n'.format(args.build_folder)
+builddir = config.getBuildDir()
+if not(os.path.isdir(builddir)):
+    if os.path.exists(builddir):
+        print '\nA file with the same name as the build folder, {0}, already exists.  Use the "builddir" option in the configuration file to specify a different build folder path, or rename the conflicting file.\n'.format(builddir)
         sys.exit(1)
     else:
-        os.mkdir(args.build_folder)
+        os.mkdir(builddir)
 
 # Run the specified build task.
 if args.task == 'ontology':
-    buildman = OntoBuildManager(config, args.build_folder, not(args.no_def_expand))
+    buildman = OntoBuildManager(config, not(args.no_def_expand))
 
     if buildman.isBuildNeeded():
         try:
@@ -57,7 +56,7 @@ if args.task == 'ontology':
     else:
         print '\nThe compiled ontology is already up to date.\n'
 elif args.task == 'imports':
-    buildman = ImportsBuildManager(config, args.build_folder)
+    buildman = ImportsBuildManager(config)
 
     try:
         buildman.build()

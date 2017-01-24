@@ -19,13 +19,12 @@ OPTIONAL_COLS = ('Ignore',)
 
 
 class ImportsBuildManager:
-    def __init__(self, config, builddir):
+    def __init__(self, config):
         """
         config: An OntoConfig instance.
-        builddir: The path of the build directory.
         """
         self.config = config
-        self.builddir = builddir
+        self.builddir = config.getBuildDir()
 
     def _checkFiles(self):
         """
@@ -78,5 +77,5 @@ class ImportsBuildManager:
                             mbuilder.buildModule(row['IRI'], termsfile_path, outputsuffix)
                         else:
                             print ('The ' + row['name'] + ' (' + row['IRI']
-                                    + ') import module is already up-to-date.')
+                                    + ') import module is already up to date.')
 

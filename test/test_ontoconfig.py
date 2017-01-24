@@ -56,7 +56,7 @@ class TestOntoConfig(unittest.TestCase):
 
     def test_getConfigFilePath(self):
         self.assertEqual(
-            os.path.abspath('test_data/config.conf'),
+            self.td_path + '/config.conf',
             self.oc.getConfigFilePath()
         )
 
@@ -76,6 +76,17 @@ class TestOntoConfig(unittest.TestCase):
 
         # This should not raise an exception.
         self.oc.checkConfig()
+
+    def test_getAbsPath(self):
+        # Test an absolute input path.
+        abspath = '/an/absolute/path'
+        self.assertEqual(abspath, self.oc._getAbsPath(abspath))
+
+        # Test a relative input path.
+        relpath = 'a/rel/path'
+        self.assertEqual(
+            self.td_path + '/' + relpath, self.oc._getAbsPath(relpath)
+        )
 
     def test_getOntologyIRI(self):
         self.assertEqual(self.ontIRIstr, self.oc.getOntologyIRI())
@@ -127,16 +138,25 @@ class TestOntoConfig(unittest.TestCase):
         self.oc.set('Main', 'termsfiles', '   \t  ')
         self.assertEqual([], self.oc.getTermsFilePaths())
 
-    def test_getAbsPath(self):
-        # Test an absolute input path.
-        abspath = '/an/absolute/path'
-        self.assertEqual(abspath, self.oc._getAbsPath(abspath))
-
-        # Test a relative input path.
-        relpath = 'a/rel/path'
+    def test_getBuildDir(self):
+        # Test the default case.
         self.assertEqual(
-            self.td_path + '/' + relpath, self.oc._getAbsPath(relpath)
+            self.td_path + '/build',
+            self.oc.getBuildDir()
         )
+
+        # Test a custom relative file path.
+        relpath = 'rel/build'
+        self.oc.set('Build', 'builddir', relpath)
+        self.assertEqual(
+            self.td_path + '/' + relpath,
+            self.oc.getBuildDir()
+        )
+
+        # Test a custom absolute file path.
+        abspath = '/an/absolute/path/build'
+        self.oc.set('Build', 'builddir', abspath)
+        self.assertEqual(abspath, self.oc.getBuildDir())
 
     def test_getOntFileBase(self):
         self.assertEqual('ontname', self.oc._getOntFileBase())

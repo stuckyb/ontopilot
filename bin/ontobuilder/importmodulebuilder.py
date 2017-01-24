@@ -126,11 +126,12 @@ class ImportModuleBuilder:
         Tests whether an import module actually needs to be built.
         """
         outputfile = self._getOutputFileName(ontologyIRI, outputsuffix)
+        outputpath = os.path.join(self.outputdir, outputfile)
     
         # If the output file already exists and the terms file was not
         # modified/created more recently, there is nothing to do.
-        if os.path.isfile(outputfile):
-            if os.path.getmtime(outputfile) > os.path.getmtime(termsfile_path):
+        if os.path.isfile(outputpath):
+            if os.path.getmtime(outputpath) > os.path.getmtime(termsfile_path):
                 return False
 
         return True
