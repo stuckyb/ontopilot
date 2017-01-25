@@ -6,6 +6,7 @@
 
 # Python imports.
 import os
+import glob
 from tablereaderfactory import TableReaderFactory
 from owlontologybuilder import OWLOntologyBuilder, TermDescriptionError
 from ontobuilder import TRUE_STRS
@@ -30,9 +31,33 @@ class OntoBuildManager:
         self.expanddefs = expanddefs
         self.builddir = config.getBuildDir()
 
-    def _checkFiles(self):
+    def _getExpandedTermsFilesList(self):
+        """
+        Prepares the list of terms files by expanding any paths with
+        shell-style wildcards.  Verifies that each path string resolves to one
+        or more valid paths, and eliminates any duplicate paths.
+        """
+        pathsset = set()
+
+        # Attempt to expand each terms path string and eliminate any duplicate
+        # paths by building a set of path strings.
+        for fpath in self.config.getTermsFilePaths():
+            flist = glob.glob(fpath)
+            if len(flist) == 0:
+                raise RuntimeError(
+                    'The source terms/entities file(s) could not be found: {0}.'.format(fpath)
+                )
+            for filename in flist:
+                pathsset.add(filename)
+
+        return list(pathsset)
+
+    def _retrieveAndCheckFilePaths(self):
         """
         Verifies that all files and directories needed for the build exist.
+        Once file paths are retrieved from the OntoConfig instance, expanded,
+        and verified, they are cached as instance attributes for later use in
+        the build process.
         """
         # Verify that the base ontology file exists.
         fpath = self.config.getBaseOntologyPath()
@@ -40,13 +65,18 @@ class OntoBuildManager:
             raise RuntimeError(
                 'The base ontology file could not be found: {0}.'.format(fpath)
             )
-        
-        # Verify that the terms files exist.
-        for fpath in self.config.getTermsFilePaths():
+        self.base_ont_path = fpath
+
+        # Verify that the terms files exist and are of correct type.  The
+        # method _expandTermsFilesList() ensures that all paths are valid in
+        # the list it returns.
+        pathslist = self._getExpandedTermsFilesList()
+        for fpath in pathslist:
             if not(os.path.isfile(fpath)):
                 raise RuntimeError(
-                    'The source terms/entities file could not be found: {0}.'.format(fpath)
+                    'The source terms/entities path "{0}" exists, but is not a valid file.'.format(fpath)
                 )
+        self.termsfile_paths = pathslist
 
         # Verify that the build directory exists.
         if not(os.path.isdir(self.builddir)):
@@ -96,9 +126,9 @@ class OntoBuildManager:
         """
         Runs the build process and produces a compiled OWL ontology file.
         """
-        self._checkFiles()
+        self._retrieveAndCheckFilePaths()
 
-        ontbuilder = OWLOntologyBuilder(self.config.getBaseOntologyPath())
+        ontbuilder = OWLOntologyBuilder(self.base_ont_path)
         
         # Process each source file.  In this step, entities and label
         # annotations are defined, but processing of all other axioms (e.g.,
@@ -107,7 +137,7 @@ class OntoBuildManager:
         # allows forward referencing of labels and term IRIs and means that
         # entity descriptions and source files can be processed in any
         # arbitrary order.
-        for termsfile in self.config.getTermsFilePaths():
+        for termsfile in self.termsfile_paths:
             with TableReaderFactory(termsfile) as reader:
                 print 'Parsing ' + termsfile + '...'
                 for table in reader:
