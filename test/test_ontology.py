@@ -274,7 +274,7 @@ class Test_Ontology(unittest.TestCase):
         importIRI = IRI.create('http://test.import/iri/ont.owl')
         importsset = set(self.owlont.getDirectImportsDocuments())
 
-        self.ont.addImport(importIRI)
+        self.ont.addImport(importIRI, False)
         importsset.add(importIRI)
 
         self.assertEqual(

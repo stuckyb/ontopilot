@@ -115,6 +115,12 @@ class LabelMap:
                     + '>.'
                 )
 
+    def addOntologyTerms(self, ontology):
+        """
+        Adds terms from an ontology to this LabelMap.
+        """
+        self._makeMap(ontology)
+
     def _makeMap(self, ontology):
         """
         Creates label lookup table entries for a given ontology, including its

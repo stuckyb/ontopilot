@@ -24,7 +24,8 @@ from org.semanticweb import HermiT
 from uk.ac.manchester.cs.owlapi.modularity import SyntacticLocalityModuleExtractor
 from uk.ac.manchester.cs.owlapi.modularity import ModuleType
 from com.google.common.base import Optional
-
+from org.semanticweb.owlapi.io import OWLOntologyCreationIOException
+from org.semanticweb.owlapi.model import OWLOntologyFactoryNotFoundException
 
 class Ontology:
     """
@@ -63,6 +64,12 @@ class Ontology:
         Returns the OWL API ontology object contained by this Ontology object.
         """
         return self.ontology
+
+    def getOntologyManager(self):
+        """
+        Returns the OWL API ontology manager object contained by this Ontology.
+        """
+        return self.ontman
 
     def labelToIRI(self, labeltxt):
         """
@@ -431,12 +438,14 @@ class Ontology:
         newoid = OWLOntologyID(Optional.fromNullable(ontIRI), Optional.absent())
         self.ontman.applyChange(SetOntologyID(self.ontology, newoid))
 
-    def addImport(self, source_iri):
+    def addImport(self, source_iri, load_import=True):
         """
         Adds an OWL import statement to this ontology.
 
         source_iri: The IRI of the source ontology.  Can be either an IRI
             object or a string.
+        load_import: If True, the new import will be automatically loaded and
+            its terms labels will be added to the internal LabelMap.
         """
         sourceIRI = self.expandIRI(source_iri)
 
@@ -444,6 +453,19 @@ class Ontology:
         self.ontman.applyChange(
             AddImport(self.getOWLOntology(), importdec)
         )
+
+        if load_import:
+            # Manually load the newly added import.
+            try:
+                importont = self.ontman.loadOntology(sourceIRI)
+            except (
+                OWLOntologyFactoryNotFoundException,
+                OWLOntologyCreationIOException
+            ) as err:
+                raise RuntimeError('The import module ontology at <{0}> could not be loaded.  Please make sure that the IRI is correct and that the import module ontology is accessible.'.format(source_iri))
+
+            # Add the imported ontology's terms to the LabelMap.
+            self.labelmap.addOntologyTerms(importont)
 
     def setOntologySource(self, source_iri):
         """

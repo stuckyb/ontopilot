@@ -10,6 +10,10 @@ import glob
 from tablereaderfactory import TableReaderFactory
 from owlontologybuilder import OWLOntologyBuilder, TermDescriptionError
 from ontobuilder import TRUE_STRS
+from imports_buildmanager import ImportsBuildManager
+
+# Java imports.
+from org.semanticweb.owlapi.model import IRI
 
 
 # Required columns in terms files.
@@ -129,7 +133,13 @@ class OntoBuildManager:
         self._retrieveAndCheckFilePaths()
 
         ontbuilder = OWLOntologyBuilder(self.base_ont_path)
-        
+        ibm = ImportsBuildManager(self.config)
+
+        # Add all import modules to the ontology.
+        ontman = ontbuilder.getOntology().getOntologyManager()
+        for importIRI in ibm.getImportsIRIs():
+            ontbuilder.getOntology().addImport(importIRI, True)
+
         # Process each source file.  In this step, entities and label
         # annotations are defined, but processing of all other axioms (e.g.,
         # text definitions, comments, equivalency axioms, subclass of axioms,
@@ -170,10 +180,10 @@ class OntoBuildManager:
         # Define all deferred axioms from the source entity descriptions.
         print 'Defining all remaining entity axioms...'
         ontbuilder.processDeferredEntityAxioms(self.expanddefs)
-        
+
         # Set the ontology ID, if a new ID was provided.
         ontbuilder.getOntology().setOntologyID(self.config.getOntologyIRI())
-        
+
         # Write the ontology to the output file.
         fileoutpath = self._getOutputFilePath()
         print 'Writing compiled ontology to ' + fileoutpath + '...'
