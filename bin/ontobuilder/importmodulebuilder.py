@@ -203,7 +203,7 @@ class ImportModuleBuilder:
         ontfile = os.path.join(self.ontcachedir, ontfile)
 
         # Generate the file name and IRI for the output ontology OWL file.
-        outputfile = self._getOutputFileName(ontologyIRI, self.mod_suffix)
+        outputfile = self._getOutputFileName(ontologyIRI)
         ont_IRI = IRI.create(self.getModuleIRIStr(ontologyIRI))
 
         # Verify that the source ontology file exists; if not, download it.

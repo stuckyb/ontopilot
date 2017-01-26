@@ -140,7 +140,7 @@ class ImportsBuildManager:
                     if not(row['Ignore'].lower() in TRUE_STRS):
                         self._checkSourceIRI(row)
 
-                        tersmfile_path = self._getAbsTermsFilePath(row) 
+                        termsfile_path = self._getAbsTermsFilePath(row) 
                 
                         if mbuilder.isBuildNeeded(row['IRI'], termsfile_path):
                             print ('Building the ' + row['name'] + ' (' + row['IRI']
