@@ -219,7 +219,7 @@ the value of the "ontology_file" setting in the build configuration file.'
             if rfc3987.match(iristr, rule='absolute_IRI') == None:
                 raise ConfigError(
                     'Invalid modules base IRI string in the build configuration file: "'
-                    + iristr + '".'
+                    + iristr + '".  Please check the value of the "mod_baseIRI" variable.'
                 )
         else:
             # Attempt to generate a suitable modules base IRI from the main
