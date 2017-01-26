@@ -16,6 +16,7 @@ from tablereader import TableRowError
 import ontobuilder
 from ontobuilder import TRUE_STRS
 from ontology import Ontology
+from rfc3987 import rfc3987
 
 # Java imports.
 from java.util import HashSet
@@ -64,30 +65,43 @@ class ImportModuleBuilder:
     # Default values for input table columns.
     DEFAULT_COL_VALS = {'Reasoner': 'HermiT'}
 
-    def __init__(self, base_IRI, outputdir):
+    def __init__(self, base_IRI, module_suffix, outputdir):
         """
         base_IRI: The base IRI string to use when generating module IRIs.
-        oututdir: The directory in which to save the module OWL files.
+        module_suffix: The suffix string for generating module file names.
+        outputdir: The directory in which to save the module OWL files.
         """
         self.progbar = None
         self.sourceOntologyIRI = ''
 
         self.base_IRI = base_IRI
+        self.mod_suffix = module_suffix
         self.outputdir = os.path.abspath(outputdir)
 
-        # Generate the directory name for local copies of source ontologies,
-        # and create the directory, if needed.
+        # Generate the directory name for local copies of source ontologies.
         self.ontcachedir = os.path.join(outputdir, 'source_ontologies')
-        if not(os.path.isdir(self.ontcachedir)):
-            if not(os.path.exists(self.ontcachedir)):
-                os.mkdir(self.ontcachedir)
-            else:
-                raise RuntimeError('A file with the name of the ontology cache directory already exists: {0}.  Please delete or rename the conflicting file.'.format(self.ontcachedir))
 
         # Define the strings that indicate TRUE in the input files.  Note that
         # variants of these strings with different casing will also be
         # recognized.
         TRUE_STRS = ['t', 'true', 'y', 'yes']
+
+    def _checkOutputDirs(self):
+        """
+        Verifies that the output directory and ontology cache directory both
+        exist.  If the cache directory does not exist, _checkOutputDirs()
+        attempts to create it.
+        """
+        # Check the main build directory.
+        if not(os.path.isdir(self.outputdir)):
+            raise RuntimeError('The build directory could not be found: {0}.'.format(self.outputdir))
+
+        # Check the downloaded ontologies cache directory.
+        if not(os.path.isdir(self.ontcachedir)):
+            if not(os.path.exists(self.ontcachedir)):
+                os.mkdir(self.ontcachedir)
+            else:
+                raise RuntimeError('A file with the name of the ontology cache directory already exists: {0}.  Please delete or rename the conflicting file.'.format(self.ontcachedir))
 
     def _updateDownloadProgress(self, blocks_transferred, blocksize, filesize):
         """
@@ -109,7 +123,7 @@ class ImportModuleBuilder:
                 self.progbar.finish()
                 print
 
-    def _getOutputFileName(self, ontologyIRI, outputsuffix):
+    def _getOutputFileName(self, ontologyIRI):
         """
         Constructs the file name for the output import module file.
         """
@@ -117,15 +131,44 @@ class ImportModuleBuilder:
         ontfile = os.path.basename(ontologyIRI)
 
         # Generate the file name for the ouput ontology OWL file.
-        outputfile = os.path.splitext(ontfile)[0] + outputsuffix
+        outputfile = os.path.splitext(ontfile)[0] + self.mod_suffix
 
         return outputfile
 
-    def isBuildNeeded(self, ontologyIRI, termsfile_path, outputsuffix):
+    def getModuleIRIStr(self, ontologyIRI):
+        """
+        Returns the IRI string that will be used for an import module.
+
+        ontologyIRI: The IRI of the ontology to import.
+        """
+        outputfile = self._getOutputFileName(ontologyIRI)
+
+        # Generate the IRI for the output ontology OWL file by parsing the base
+        # path from the base IRI and then adding the new module file name to
+        # the base path.
+        try:
+            parts = rfc3987.parse(self.base_IRI, rule='absolute_IRI')
+        except ValueError as err:
+            raise RuntimeError('"{0}" is not a valid base IRI for generating import module IRIs.'.format(self.base_IRI))
+
+        newpath = os.path.join(parts['path'], outputfile)
+        parts['path'] = newpath
+        
+        return rfc3987.compose(**parts)
+
+    def isBuildNeeded(self, ontologyIRI, termsfile_path):
         """
         Tests whether an import module actually needs to be built.
+
+        ontologyIRI: The IRI of the imported ontology.
+        termsfile_path: The input file containing the terms to import.
         """
-        outputfile = self._getOutputFileName(ontologyIRI, outputsuffix)
+        # Verify that the terms file exists.
+        if not(os.path.isfile(termsfile_path)):
+            raise RuntimeError('Could not find the input terms file "'
+                    + termsfile_path + '".')
+
+        outputfile = self._getOutputFileName(ontologyIRI)
         outputpath = os.path.join(self.outputdir, outputfile)
     
         # If the output file already exists and the terms file was not
@@ -136,22 +179,23 @@ class ImportModuleBuilder:
 
         return True
         
-    def buildModule(self, ontologyIRI, termsfile_path, outputsuffix):
+    def buildModule(self, ontologyIRI, termsfile_path):
         """
         Builds an import module from a single external ontology and an input
         file containing a set of terms to import.  The import module will be
-        saved as an OWL file with a name generated by appending outputsuffix to
-        the base of the source ontology file name.
+        saved as an OWL file with a name generated by appending self.mod_suffix
+        to the base of the source ontology file name.
 
-          ontologyIRI: The IRI of the source ontology.
-          termsfile_path: The input file containing the terms to import.
-          outputsuffix: A string to use when generating file names for the
-                        import module OWL files.
+        ontologyIRI: The IRI of the source ontology.
+        termsfile_path: The input file containing the terms to import.
         """
         # Verify that the terms file exists.
         if not(os.path.isfile(termsfile_path)):
             raise RuntimeError('Could not find the input terms file "'
                     + termsfile_path + '".')
+
+        # Check the output directories.
+        self._checkOutputDirs()
 
         # Extract the name of the source ontology file from the IRI and
         # generate the path to it on the local filesystem.
@@ -159,8 +203,8 @@ class ImportModuleBuilder:
         ontfile = os.path.join(self.ontcachedir, ontfile)
 
         # Generate the file name and IRI for the output ontology OWL file.
-        outputfile = self._getOutputFileName(ontologyIRI, outputsuffix)
-        ont_IRI = IRI.create(self.base_IRI + outputfile)
+        outputfile = self._getOutputFileName(ontologyIRI, self.mod_suffix)
+        ont_IRI = IRI.create(self.getModuleIRIStr(ontologyIRI))
 
         # Verify that the source ontology file exists; if not, download it.
         if not(os.path.isfile(ontfile)):

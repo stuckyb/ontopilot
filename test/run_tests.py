@@ -39,7 +39,8 @@ sys.path.append(ontobuilder_dir)
 test_modules = [
     'test_labelmap', 'test_tablereader', 'test_mshelper',
     'test_owlontologybuilder', 'test_ontology', 'test_delimstr_parser',
-    'test_ontology_entities', 'test_ontoconfig', 'test_onto_buildmanager'
+    'test_ontology_entities', 'test_ontoconfig', 'test_onto_buildmanager',
+    'test_importmodulebuilder'
 ]
 
 successful = True
