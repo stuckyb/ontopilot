@@ -270,3 +270,14 @@ class Test_Ontology(unittest.TestCase):
         annot_ax_set = self.owlont.getAnnotationAssertionAxioms(IRIobj)
         self.assertTrue(annot_ax_set.isEmpty())
 
+    def test_addImport(self):
+        importIRI = IRI.create('http://test.import/iri/ont.owl')
+        importsset = set(self.owlont.getDirectImportsDocuments())
+
+        self.ont.addImport(importIRI)
+        importsset.add(importIRI)
+
+        self.assertEqual(
+            importsset, set(self.owlont.getDirectImportsDocuments())
+        )
+

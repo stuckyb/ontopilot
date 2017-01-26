@@ -13,7 +13,8 @@ from rfc3987 import rfc3987
 # Java imports.
 from java.io import File, FileOutputStream
 from org.semanticweb.owlapi.apibinding import OWLManager
-from org.semanticweb.owlapi.model import IRI, AddAxiom, OWLOntologyID
+from org.semanticweb.owlapi.model import IRI, OWLOntologyID
+from org.semanticweb.owlapi.model import AddAxiom, AddImport
 from org.semanticweb.owlapi.model import SetOntologyID, AxiomType, OWLOntology
 from org.semanticweb.owlapi.model import AddOntologyAnnotation
 from org.semanticweb.owlapi.model import OWLRuntimeException
@@ -429,6 +430,20 @@ class Ontology:
 
         newoid = OWLOntologyID(Optional.fromNullable(ontIRI), Optional.absent())
         self.ontman.applyChange(SetOntologyID(self.ontology, newoid))
+
+    def addImport(self, source_iri):
+        """
+        Adds an OWL import statement to this ontology.
+
+        source_iri: The IRI of the source ontology.  Can be either an IRI
+            object or a string.
+        """
+        sourceIRI = self.expandIRI(source_iri)
+
+        importdec = self.df.getOWLImportsDeclaration(sourceIRI)
+        self.ontman.applyChange(
+            AddImport(self.getOWLOntology(), importdec)
+        )
 
     def setOntologySource(self, source_iri):
         """
