@@ -63,4 +63,5 @@ from owlontologybuilder import TermDescriptionError
 from ontoconfig import OntoConfig, ConfigError
 from onto_buildmanager import OntoBuildManager
 from imports_buildmanager import ImportsBuildManager
+from projectcreator import ProjectCreator
 
