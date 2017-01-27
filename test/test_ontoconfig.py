@@ -112,6 +112,26 @@ class TestOntoConfig(unittest.TestCase):
         ):
             self.oc.getOntologyIRI()
 
+    def test_getTermsDir(self):
+        # Test the default case.
+        self.assertEqual(
+            self.td_path + '/src/terms',
+            self.oc.getTermsDir()
+        )
+
+        # Test a custom relative file path.
+        relpath = 'rel/terms'
+        self.oc.set('Ontology', 'termsdir', relpath)
+        self.assertEqual(
+            self.td_path + '/' + relpath,
+            self.oc.getTermsDir()
+        )
+
+        # Test a custom absolute file path.
+        abspath = '/an/absolute/path/terms'
+        self.oc.set('Ontology', 'termsdir', abspath)
+        self.assertEqual(abspath, self.oc.getTermsDir())
+
     def test_getTermsFilePaths(self):
         # Check the default terms file location.
         exp = [self.td_path + '/src/terms/' + fname for fname in self.termsfiles]

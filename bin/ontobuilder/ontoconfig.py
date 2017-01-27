@@ -135,6 +135,14 @@ value of the "ontology_file" setting in the build configuration file.'
 
         return self._getAbsPath(ontfname)
 
+    def getTermsDir(self):
+        """
+        Returns the path to the directory of the terms/entities source files.
+        """
+        pathstr = self.getCustom('Ontology', 'termsdir', 'src/terms')
+        
+        return self._getAbsPath(pathstr)
+
     def getTermsFilePaths(self):
         """
         Returns a list of full paths to all input terms/entities files.
@@ -147,10 +155,8 @@ value of the "ontology_file" setting in the build configuration file.'
             if tfnameraw.strip() != '':
                 tfileslist.append(tfnameraw.strip())
 
-        # Get the location of the terms files.
-        tfolder_raw = self.getCustom('Ontology', 'termsdir', 'src/terms')
-        termsfolder = self._getAbsPath(tfolder_raw)
-
+        # Generate the locations of all terms files.
+        termsfolder = self.getTermsDir()
         pathslist = [path.join(termsfolder, fname) for fname in tfileslist]
 
         return pathslist
