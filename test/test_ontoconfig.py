@@ -161,20 +161,19 @@ class TestOntoConfig(unittest.TestCase):
     def test_getOntFileBase(self):
         self.assertEqual('ontname', self.oc._getOntFileBase())
 
-    def test_getOntologyFileName(self):
-        # Test extracting the file name from the ontology's IRI.
-        self.assertEqual('ontname.owl', self.oc.getOntologyFileName())
+    def test_getOntologyFilePath(self):
+        # Test an explicitly provided file name.
+        self.assertEqual(
+            os.path.join(self.td_path, 'ontology/ontname.owl'),
+            self.oc.getOntologyFilePath()
+        )
 
-        # Test that an IRI without a filename is correctly detected.
-        self.oc.set('Main', 'ontologyIRI', 'https://a.sample.iri/to/ontology/')
+        # Test that a blank path is correctly detected.
+        self.oc.set('Main', 'ontology_file', '')
         with self.assertRaisesRegexp(
             ConfigError, 'An ontology file name was not provided'
         ):
-            self.oc.getOntologyFileName()
-
-        # Test an explicitly provided file name.
-        self.oc.set('Ontology', 'ontology_file', 'custom.owl')
-        self.assertEqual('custom.owl', self.oc.getOntologyFileName())
+            self.oc.getOntologyFilePath()
 
     def test_getBaseOntologyPath(self):
         # Test the default case.
@@ -196,16 +195,36 @@ class TestOntoConfig(unittest.TestCase):
         self.oc.set('Ontology', 'base_ontology_file', abspath)
         self.assertEqual(abspath, self.oc.getBaseOntologyPath())
 
-    def test_getImportsDir(self):
+    def test_getImportsSrcDir(self):
         # Test the default case.
         self.assertEqual(
             self.td_path + '/src/imports',
+            self.oc.getImportsSrcDir()
+        )
+
+        # Test a custom relative file path.
+        relpath = 'rel/path/imports'
+        self.oc.set('Imports', 'imports_src', relpath)
+        self.assertEqual(
+            self.td_path + '/' + relpath,
+            self.oc.getImportsSrcDir()
+        )
+
+        # Test a custom absolute file path.
+        abspath = '/an/absolute/path/imports'
+        self.oc.set('Imports', 'imports_src', abspath)
+        self.assertEqual(abspath, self.oc.getImportsSrcDir())
+
+    def test_getImportsDir(self):
+        # Test the default case.
+        self.assertEqual(
+            self.td_path + '/imports',
             self.oc.getImportsDir()
         )
 
         # Test a custom relative file path.
         relpath = 'rel/path/imports'
-        self.oc.set('Imports', 'importsdir', relpath)
+        self.oc.set('Imports', 'imports_dir', relpath)
         self.assertEqual(
             self.td_path + '/' + relpath,
             self.oc.getImportsDir()
@@ -213,7 +232,7 @@ class TestOntoConfig(unittest.TestCase):
 
         # Test a custom absolute file path.
         abspath = '/an/absolute/path/imports'
-        self.oc.set('Imports', 'importsdir', abspath)
+        self.oc.set('Imports', 'imports_dir', abspath)
         self.assertEqual(abspath, self.oc.getImportsDir())
 
     def test_getTopImportsFilePath(self):
@@ -242,8 +261,14 @@ class TestOntoConfig(unittest.TestCase):
             'https://a.sample.iri/to/imports', self.oc.getModulesBaseIRI()
         )
 
-        # Check an ontology IRI that can't be converted.
-        self.oc.set('Main', 'ontologyIRI', 'https://a.sample.iri/non/default/ontology.owl')
+        # Check a custom local imports path.
+        self.oc.set('Imports', 'imports_dir', 'custom/imports')
+        self.assertEqual(
+            'https://a.sample.iri/to/custom/imports', self.oc.getModulesBaseIRI()
+        )
+
+        # Check an ontology IRI that doesn't match the local ontology path.
+        self.oc.set('Main', 'ontologyIRI', 'https://a.sample.iri/to_/ontology/ontology.owl')
         with self.assertRaisesRegexp(
             ConfigError, 'Unable to automatically generate a suitable base IRI'
         ):

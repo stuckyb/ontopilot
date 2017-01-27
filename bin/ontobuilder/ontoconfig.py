@@ -62,7 +62,9 @@ class OntoConfig(RawConfigParser):
         """
         Returns the name of the ontology file without the file extension.
         """
-        return path.splitext(self.getOntologyFileName())[0]
+        ontfname = path.basename(self.getOntologyFilePath())
+
+        return path.splitext(ontfname)[0]
 
     def getConfigFilePath(self):
         return path.abspath(self.conffile)
@@ -117,26 +119,21 @@ configuration file.  See the example configuration file for more information.'
 
         return iristr
 
-    def getOntologyFileName(self):
+    def getOntologyFilePath(self):
         """
-        Returns the name of the compiled ontology file.  If no name was
+        Returns the full path to the compiled ontology file.  If no name was
         provided in the configuration file, the name will be extracted from the
         ontology's IRI, if possible.
         """
-        ontfname = self.getCustom('Ontology', 'ontology_file', '')
+        ontfname = self.getCustom('Main', 'ontology_file', '')
 
         if ontfname == '':
-            parts = rfc3987.parse(self.getOntologyIRI(), rule='absolute_IRI')
-            ontfname = path.basename(parts['path'])
+            raise ConfigError(
+                    'An ontology file name was not provided.  Please set the \
+value of the "ontology_file" setting in the build configuration file.'
+            )
 
-            if ontfname == '':
-                raise ConfigError(
-                    'An ontology file name was not provided, and a suitable \
-name could not be automatically extracted from the ontology IRI.  Please set \
-the value of the "ontology_file" setting in the build configuration file.'
-                )
-
-        return ontfname
+        return self._getAbsPath(ontfname)
 
     def getTermsFilePaths(self):
         """
@@ -151,7 +148,6 @@ the value of the "ontology_file" setting in the build configuration file.'
                 tfileslist.append(tfnameraw.strip())
 
         # Get the location of the terms files.
-        termsfolder = ''
         tfolder_raw = self.getCustom('Ontology', 'termsdir', 'src/terms')
         termsfolder = self._getAbsPath(tfolder_raw)
 
@@ -181,12 +177,22 @@ the value of the "ontology_file" setting in the build configuration file.'
 
         return baseontpath
 
-    def getImportsDir(self):
+    def getImportsSrcDir(self):
         """
         Returns the path to the directory of the import modules sources.
         """
         default = 'src/imports'
-        pathstr = self.getCustom('Imports', 'importsdir', default)
+        pathstr = self.getCustom('Imports', 'imports_src', default)
+        pathstr = self._getAbsPath(pathstr)
+
+        return pathstr
+
+    def getImportsDir(self):
+        """
+        Returns the path to the compiled import modules.
+        """
+        default = 'imports'
+        pathstr = self.getCustom('Imports', 'imports_dir', default)
         pathstr = self._getAbsPath(pathstr)
 
         return pathstr
@@ -199,12 +205,12 @@ the value of the "ontology_file" setting in the build configuration file.'
         if pathstr != '':
             pathstr = self._getAbsPath(pathstr)
         else:
-            pattern = path.join(self.getImportsDir(), 'imported_ontologies.*')
+            pattern = path.join(self.getImportsSrcDir(), 'imported_ontologies.*')
             plist = glob.glob(pattern)
             if len(plist) > 0:
                 pathstr = plist[0]
             else:
-                pathstr = path.join(self.getImportsDir(), 'imported_ontologies.csv')
+                pathstr = path.join(self.getImportsSrcDir(), 'imported_ontologies.csv')
 
         return pathstr
 
@@ -224,19 +230,30 @@ the value of the "ontology_file" setting in the build configuration file.'
         else:
             # Attempt to generate a suitable modules base IRI from the main
             # ontology IRI.
-            # Get the name of the containing directory of the ontology
-            # document.
-            parts = rfc3987.parse(self.getOntologyIRI(), rule='absolute_IRI')
-            pathparts = path.split(path.dirname(parts['path']))
 
-            if pathparts[1] == 'ontology':
-                parts['path'] = pathparts[0] + '/' + 'imports'
+            # Get the relative path to the ontology document.
+            ontpath = path.relpath(self.getOntologyFilePath(), self.confdir)
+
+            # Get the relative path to the imports modules.
+            importspath = path.relpath(self.getImportsDir(), self.confdir)
+
+            # Get the path portion of the ontology IRI.
+            parts = rfc3987.parse(self.getOntologyIRI(), rule='absolute_IRI')
+            iripath = parts['path']
+
+            # See if the local, relative ontology document path matches the end
+            # of the IRI path.  If so, we can generate the imports IRI path.
+            if iripath.endswith(ontpath):
+                index = iripath.rfind(ontpath)
+                iripath = path.join(iripath[:index], importspath)
+
+                parts['path'] = iripath
                 iristr = rfc3987.compose(**parts)
             else:
                 raise ConfigError(
                     'Unable to automatically generate a suitable base IRI for \
 the import modules because the path in the main ontology IRI does not appear \
-to follow the default project folder structure.  Please set the value of the \
+to follow the project folder structure.  Please set the value of the \
 "mod_baseIRI" setting in the build configuration file.'
                 )
 
