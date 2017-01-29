@@ -179,7 +179,7 @@ class TestOntoConfig(unittest.TestCase):
         self.assertEqual(abspath, self.oc.getBuildDir())
 
     def test_getOntFileBase(self):
-        self.assertEqual('ontname', self.oc._getOntFileBase())
+        self.assertEqual('ontname', self.oc.getOntFileBase())
 
     def test_getOntologyFilePath(self):
         # Test an explicitly provided file name.

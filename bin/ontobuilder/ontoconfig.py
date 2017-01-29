@@ -58,7 +58,7 @@ class OntoConfig(RawConfigParser):
         else:
             return path.normpath(path.join(self.confdir, pathstr))
 
-    def _getOntFileBase(self):
+    def getOntFileBase(self):
         """
         Returns the name of the ontology file without the file extension.
         """
@@ -178,7 +178,7 @@ value of the "ontology_file" setting in the build configuration file.'
         explicitly provided in the configuration file, a sensible default is
         used.
         """
-        default = 'src/' + self._getOntFileBase() + '-base.owl'
+        default = 'src/' + self.getOntFileBase() + '-base.owl'
         baseontpath = self.getCustom('Ontology', 'base_ontology_file', default)
         baseontpath = self._getAbsPath(baseontpath)
 
@@ -271,7 +271,7 @@ to follow the project folder structure.  Please set the value of the \
         Returns the suffix string to use for generating import module file
         names.
         """
-        default = '_' + self._getOntFileBase() + '_import_module.owl'
+        default = '_' + self.getOntFileBase() + '_import_module.owl'
         suffix = self.getCustom('Imports', 'import_mod_suffix', default)
 
         return suffix
