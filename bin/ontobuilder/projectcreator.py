@@ -5,7 +5,7 @@
 #
 
 # Python imports.
-import os, glob
+import os, glob, shutil
 import re
 import urllib, urlparse
 from tablereaderfactory import TableReaderFactory
@@ -40,10 +40,28 @@ class ProjectCreator:
         """
         self.targetdir = os.path.abspath(targetdir)
         self.ontfilename = ontfilename
-        self.templatedir = templatedir
+        self.templatedir = os.path.abspath(templatedir)
 
         if not(os.path.isdir(self.targetdir)):
             raise RuntimeError('The target directory for the new project, "{0}", could not be found.'.format(self.targetdir))
+
+    def _copyAndModify(self, srcpath, destpath, replacements):
+        """
+        Copies a file from srcpath to destpath while searching for and
+        replacing target strings in the source.
+
+        srcpath: The source file.
+        destpath: The destination file.
+        replacements: A list/tuple of lists/tuples containing regex search
+            patterns and replacement text.
+        """
+        with file(srcpath) as filein, file(destpath, 'w') as fileout:
+            for line in filein:
+                for replacement in replacements:
+                    if replacement[0].search(line) != None:
+                        line = replacement[0].sub(replacement[1], line)
+
+                fileout.write(line)
 
     def _initConfig(self):
         """
@@ -51,6 +69,7 @@ class ProjectCreator:
         ontology file path and IRI.  Returns an initialized OntoConfig object.
         """
         configpath = os.path.join(self.templatedir, 'ontology.conf')
+        ontname = os.path.splitext(os.path.basename(self.ontfilename))[0]
 
         if not(os.path.isfile(configpath)):
             raise RuntimeError(
@@ -70,20 +89,26 @@ class ProjectCreator:
             'file://localhost', urllib.pathname2url(abs_ontpath)
         )
 
-        # Regular expressions for recognizing specific configuration settings.
-        file_regex = re.compile('ontology_file =\s*$')
-        iri_regex = re.compile('ontologyIRI =\s*$')
+        # Define regular expressions for recognizing specific configuration
+        # settings and create the customized replacement settings strings.
+        replacements = [
+            (
+                re.compile('^ontology_file =\s*$'),
+                'ontology_file = {0}\n'.format(rel_ontpath)
+            ),
+            (
+                re.compile('^ontologyIRI =\s*$'),
+                'ontologyIRI = {0}\n'.format(ontIRIstr)
+            ),
+            (
+                re.compile('^termsfiles =\s*$'),
+                'termsfiles = {0}_classes.csv, {0}_properties.csv\n'.format(ontname)
+            )
+        ]
 
         # Copy and customize the template.
         try:
-            with file(configpath) as filein, file(outpath, 'w') as fileout:
-                for line in filein:
-                    if file_regex.match(line) != None:
-                        line = 'ontology_file = {0}\n'.format(rel_ontpath)
-                    elif iri_regex.match(line) != None:
-                        line = 'ontologyIRI = {0}\n'.format(ontIRIstr)
-    
-                    fileout.write(line)
+            self._copyAndModify(configpath, outpath, replacements)
         except IOError:
             raise RuntimeError(
                 'The new project configuration file, "{0}", could not be created.  Please make sure that you have permission to create new files and directories in the new project location.'.format(outpath)
@@ -118,6 +143,70 @@ class ProjectCreator:
                 else:
                     raise RuntimeError('The path "{0}" already exists, but is not a directory.  This file must be moved, renamed, or deleted before the new project can be created.'.format(dirpath))
 
+    def _createSourceFiles(self, config):
+        """
+        Creates the initial source files for a new ontology project.
+
+        config: An OntoConfig object from which to get the project folder
+            structure.
+        """
+        projname = config.getOntFileBase()
+
+        # Define a regular expression/replacement pair for customizing sample
+        # files with the new project's name.
+        replacements = [
+            (
+                re.compile('ontname'),
+                projname
+            )
+        ]
+
+        # Copy and customize the top-level import file.
+        srcpath = os.path.join(self.templatedir, 'imported_ontologies.csv')
+        destpath = config.getTopImportsFilePath()
+        try:
+            self._copyAndModify(srcpath, destpath, replacements)
+        except IOError:
+            raise RuntimeError(
+                'The new top-level imports file, "{0}", could not be created.  Please make sure that you have permission to create new files and directories in the new project location.'.format(destpath)
+            )
+
+        # Copy and rename the sample import terms file.
+        srcpath = os.path.join(self.templatedir, 'bfo_sample_terms.csv')
+        destpath = os.path.join(
+            config.getImportsSrcDir(), 'bfo_{0}_terms.csv'.format(projname)
+        )
+        try:
+            shutil.copyfile(srcpath, destpath)
+        except IOError:
+            raise RuntimeError(
+                'The sample import terms file, "{0}", could not be created.  Please make sure that you have permission to create new files and directories in the new project location.'.format(destpath)
+            )
+
+        # Create a list of terms source file / destination pairs.
+        copypairs = [
+            (
+                os.path.join(self.templatedir, 'sample_classes.csv'),
+                '{0}_classes.csv'.format(projname)
+            ),
+            (
+                os.path.join(self.templatedir, 'sample_properties.csv'),
+                '{0}_properties.csv'.format(projname)
+            )
+        ]
+
+        # Copy and rename the sample ontology terms files.
+        for copypair in copypairs:
+            destpath = os.path.join(
+                config.getTermsDir(), copypair[1]
+            )
+            try:
+                shutil.copyfile(copypair[0], destpath)
+            except IOError:
+                raise RuntimeError(
+                    'The sample terms file, "{0}", could not be created.  Please make sure that you have permission to create new files and directories in the new project location.'.format(destpath)
+                )
+
     def createProject(self):
         """
         Creates a new ontology project in the target directory.
@@ -129,4 +218,7 @@ class ProjectCreator:
 
         print 'Generating project folder structure...'
         self._createProjectDirs(config)
+
+        print 'Creating initial source files...'
+        self._createSourceFiles(config)
 
