@@ -40,18 +40,18 @@ class TestOntoConfig(unittest.TestCase):
     def test_getCustom(self):
         # Test an extant option.
         self.assertEqual(
-            self.ontIRIstr, self.oc.getCustom('Main', 'ontologyIRI')
+            self.ontIRIstr, self.oc.getCustom('Ontology', 'ontologyIRI')
         )
 
         # Test an extant option that is empty.
-        self.oc.set('Main', 'optstr', '    \t  ')
+        self.oc.set('Ontology', 'optstr', '    \t  ')
         self.assertEqual(
-            'defaultval', self.oc.getCustom('Main', 'optstr', 'defaultval')
+            'defaultval', self.oc.getCustom('Ontology', 'optstr', 'defaultval')
         )
 
         # Test a nonexistent option.
         self.assertEqual(
-            'defaultval', self.oc.getCustom('Main', 'optstr2', 'defaultval')
+            'defaultval', self.oc.getCustom('Ontology', 'optstr2', 'defaultval')
         )
 
     def test_getConfigFilePath(self):
@@ -65,14 +65,14 @@ class TestOntoConfig(unittest.TestCase):
         Verifies that basic configuration file errors are correctly detected.
         """
         # Start with an empty configuration.
-        self.oc.remove_section('Main')
+        self.oc.remove_section('Ontology')
 
         with self.assertRaisesRegexp(
-            ConfigError, 'The "Main" section was not found'
+            ConfigError, 'The "Ontology" section was not found'
         ):
             self.oc.checkConfig()
 
-        self.oc.add_section('Main')
+        self.oc.add_section('Ontology')
 
         # This should not raise an exception.
         self.oc.checkConfig()
@@ -92,21 +92,21 @@ class TestOntoConfig(unittest.TestCase):
         self.assertEqual(self.ontIRIstr, self.oc.getOntologyIRI())
 
         # Verify that a missing IRI is detected.
-        self.oc.remove_option('Main', 'ontologyIRI')
+        self.oc.remove_option('Ontology', 'ontologyIRI')
         with self.assertRaisesRegexp(
             ConfigError, 'No ontology IRI was provided.'
         ):
             self.oc.getOntologyIRI()
 
         # Verify that a blank IRI string is detected.
-        self.oc.set('Main', 'ontologyIRI', '  \t  ')
+        self.oc.set('Ontology', 'ontologyIRI', '  \t  ')
         with self.assertRaisesRegexp(
             ConfigError, 'No ontology IRI was provided.'
         ):
             self.oc.getOntologyIRI()
 
         # Verify that an invalid IRI string is detected.
-        self.oc.set('Main', 'ontologyIRI', '/not/an/absolute/IRI')
+        self.oc.set('Ontology', 'ontologyIRI', '/not/an/absolute/IRI')
         with self.assertRaisesRegexp(
             ConfigError, 'Invalid ontology IRI string'
         ):
@@ -151,11 +151,11 @@ class TestOntoConfig(unittest.TestCase):
         self.assertEqual(exp, self.oc.getTermsFilePaths())
 
         # Verify that a missing termsfiles setting returns an empty list.
-        self.oc.remove_option('Main', 'termsfiles')
+        self.oc.remove_option('Ontology', 'termsfiles')
         self.assertEqual([], self.oc.getTermsFilePaths())
 
         # Verify that a blank termsfiles returns an empty list.
-        self.oc.set('Main', 'termsfiles', '   \t  ')
+        self.oc.set('Ontology', 'termsfiles', '   \t  ')
         self.assertEqual([], self.oc.getTermsFilePaths())
 
     def test_getBuildDir(self):
@@ -189,7 +189,7 @@ class TestOntoConfig(unittest.TestCase):
         )
 
         # Test that a blank path is correctly detected.
-        self.oc.set('Main', 'ontology_file', '')
+        self.oc.set('Ontology', 'ontology_file', '')
         with self.assertRaisesRegexp(
             ConfigError, 'An ontology file name was not provided'
         ):
@@ -288,7 +288,7 @@ class TestOntoConfig(unittest.TestCase):
         )
 
         # Check an ontology IRI that doesn't match the local ontology path.
-        self.oc.set('Main', 'ontologyIRI', 'https://a.sample.iri/to_/ontology/ontology.owl')
+        self.oc.set('Ontology', 'ontologyIRI', 'https://a.sample.iri/to_/ontology/ontology.owl')
         with self.assertRaisesRegexp(
             ConfigError, 'Unable to automatically generate a suitable base IRI'
         ):

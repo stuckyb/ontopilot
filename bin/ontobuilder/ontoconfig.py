@@ -90,19 +90,20 @@ class OntoConfig(RawConfigParser):
         Performs some basic checks to make sure the configuration file is
         valid.  If any problems are found, a ConfigError exception is thrown.
         """
-        if not(self.has_section('Main')):
+        if not(self.has_section('Ontology')):
             raise ConfigError(
-                'The "Main" section was not found in the build configuration \
-file.  This section is required and must contain the variables "termsfiles" \
-and "ontologyIRI".  To correct this error, add the line "[Main]" to your \
-configuration file.  See the example configuration file for more information.'
+                'The "Ontology" section was not found in the build \
+configuration file.  This section is required and must contain the variables \
+"termsfiles" and "ontologyIRI".  To correct this error, add the line \
+"[Ontology]" to your configuration file.  See the example configuration file \
+for more information.'
             )
 
     def getOntologyIRI(self):
         """
         Returns the IRI for the main ontology file.
         """
-        iristr = self.getCustom('Main', 'ontologyIRI', '')
+        iristr = self.getCustom('Ontology', 'ontologyIRI', '')
 
         if iristr == '':
             raise ConfigError(
@@ -125,7 +126,7 @@ configuration file.  See the example configuration file for more information.'
         provided in the configuration file, the name will be extracted from the
         ontology's IRI, if possible.
         """
-        ontfname = self.getCustom('Main', 'ontology_file', '')
+        ontfname = self.getCustom('Ontology', 'ontology_file', '')
 
         if ontfname == '':
             raise ConfigError(
@@ -147,7 +148,7 @@ value of the "ontology_file" setting in the build configuration file.'
         """
         Returns a list of full paths to all input terms/entities files.
         """
-        tfilesraw = self.getCustom('Main', 'termsfiles', '').split(',')
+        tfilesraw = self.getCustom('Ontology', 'termsfiles', '').split(',')
 
         # Remove any empty terms file names.
         tfileslist = []
