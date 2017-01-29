@@ -156,7 +156,10 @@ class OntoBuildManager:
         
                     for t_row in table:
                         if not(t_row['Ignore'].lower() in TRUE_STRS):
-                            typestr = t_row['Type'].lower()
+                            # Collapse all spaces in the "Type" string so that,
+                            # e.g., "DataProperty" and "Data Property" will
+                            # both work as expected.
+                            typestr = t_row['Type'].lower().replace(' ', '')
             
                             if typestr == 'class':
                                 ontbuilder.addClass(t_row)
