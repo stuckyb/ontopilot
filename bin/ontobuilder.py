@@ -24,19 +24,32 @@ ontology build process.')
 argp.add_argument('-n', '--no_def_expand', action='store_true', help='If this \
 flag is given, no attempt will be made to modify definition strings by adding \
 the IDs of term labels referenced in the definitions.')
-argp.add_argument('task', type=str, nargs='?', default='ontology',
-    help='The build task to run.  Must be either "imports" or "ontology".')
+argp.add_argument('task', type=str, nargs='?', default='ontology', help='The \
+build task to run.  Must be either "init", "imports", or "ontology".')
+argp.add_argument('taskargs', type=str, nargs='*', help='Additional arguments \
+for the specified build task.')
 args = argp.parse_args()
 
 # Run the specified build task.
 if args.task == 'init':
+    if len(args.taskargs) == 0:
+        print '\nPlease provide the name of the ontology file for the new project.  For example:\n$ {0} init test.owl\n\n'.format(os.path.basename(sys.argv[0]))
+        sys.exit(1)
+    elif len(args.taskargs) > 1:
+        print '\nToo many arguments for the "init" task.  Please provide only the name of the ontology file for the new project.  For example:\n$ {0} init test.owl\n\n'.format(os.path.basename(sys.argv[0]))
+        sys.exit(1)
+
     # Get the path to the project template files directory.
     templatedir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), '../template_files'
     )
 
-    projc = ProjectCreator('.', 'test.owl', templatedir)
-    projc.createProject()
+    projc = ProjectCreator('.', args.taskargs[0], templatedir)
+    try:
+        projc.createProject()
+    except RuntimeError as err:
+        print '\n', err , '\n'
+        sys.exit(1)
 else:
     # All other build tasks require a configuration file, so attempt to
     # instantiate an OntoConfig object.
