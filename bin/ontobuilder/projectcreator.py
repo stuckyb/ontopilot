@@ -97,10 +97,6 @@ class ProjectCreator:
             )
 
         rel_ontpath = os.path.join('ontology', self.ontfilename)
-        abs_ontpath = os.path.abspath(rel_ontpath)
-        ontIRIstr = urlparse.urljoin(
-            'file://localhost', urllib.pathname2url(abs_ontpath)
-        )
 
         # Define regular expressions for recognizing specific configuration
         # settings and create the customized replacement settings strings.
@@ -108,10 +104,6 @@ class ProjectCreator:
             (
                 re.compile('^ontology_file =\s*$'),
                 'ontology_file = {0}\n'.format(rel_ontpath)
-            ),
-            (
-                re.compile('^ontologyIRI =\s*$'),
-                'ontologyIRI = {0}\n'.format(ontIRIstr)
             ),
             (
                 re.compile('^termsfiles =\s*$'),

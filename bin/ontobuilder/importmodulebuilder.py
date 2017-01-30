@@ -141,6 +141,9 @@ class ImportModuleBuilder:
 
         ontologyIRI: The IRI of the ontology to import.
         """
+        if self.base_IRI == '':
+            return ''
+
         outputfile = self._getOutputFileName(ontologyIRI)
 
         # Generate the IRI for the output ontology OWL file by parsing the base

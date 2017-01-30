@@ -2,7 +2,9 @@
 from ConfigParser import RawConfigParser
 import os.path as path
 import glob
+import urllib, urlparse
 from rfc3987 import rfc3987
+from ontobuilder import logger
 
 
 class ConfigError(Exception):
@@ -105,20 +107,27 @@ for more information.'
         """
         iristr = self.getCustom('Ontology', 'ontologyIRI', '')
 
-        if iristr == '':
-            raise ConfigError(
-                'No ontology IRI was provided.  Please set the value of the \
-"ontologyIRI" setting in the build configuration file.'
-            )
-
-        # Verify that we have a valid absolute IRI string.
-        if rfc3987.match(iristr, rule='absolute_IRI') == None:
-            raise ConfigError(
-                'Invalid ontology IRI string in the build configuration file: "'
-                + iristr + '".'
-            )
+        if iristr != '':
+            # Verify that we have a valid absolute IRI string.
+            if rfc3987.match(iristr, rule='absolute_IRI') == None:
+                raise ConfigError(
+                    'Invalid ontology IRI string in the build configuration file: "'
+                    + iristr + '".'
+                )
 
         return iristr
+
+    def getLocalOntologyIRI(self):
+        """
+        Returns a local file:// IRI for the compiled ontology document.  This
+        can be used, e.g., if no IRI is provided for the ontology.
+        """
+        abs_ontpath = self.getOntologyFilePath()
+        ontIRIstr = urlparse.urljoin(
+            'file://localhost', urllib.pathname2url(abs_ontpath)
+        )
+
+        return ontIRIstr
 
     def getOntologyFilePath(self):
         """
@@ -220,12 +229,27 @@ value of the "ontology_file" setting in the build configuration file.'
                 pathstr = path.join(self.getImportsSrcDir(), 'imported_ontologies.csv')
 
         return pathstr
+    
+    def getLocalModulesBaseIRI(self):
+        """
+        Returns a local file:// base IRI for the compiled import modules.  This
+        can be used, e.g., if no IRI is explicitly provided for either the
+        ontology or the import modules, or if a modules base IRI cannot be
+        automatically generated from the ontology IRI.
+        """
+        abs_path = self.getImportsDir()
+        ontIRIstr = urlparse.urljoin(
+            'file://localhost', urllib.pathname2url(abs_path)
+        )
+
+        return ontIRIstr
 
     def getModulesBaseIRI(self):
         """
         Returns the base IRI to use when generating import modules.
         """
         iristr = self.getCustom('Imports', 'mod_baseIRI', '')
+        ontIRI = self.getOntologyIRI()
 
         if iristr != '':
             # Verify that we have a valid absolute IRI string.
@@ -234,7 +258,7 @@ value of the "ontology_file" setting in the build configuration file.'
                     'Invalid modules base IRI string in the build configuration file: "'
                     + iristr + '".  Please check the value of the "mod_baseIRI" variable.'
                 )
-        else:
+        elif ontIRI != '':
             # Attempt to generate a suitable modules base IRI from the main
             # ontology IRI.
 
@@ -245,7 +269,7 @@ value of the "ontology_file" setting in the build configuration file.'
             importspath = path.relpath(self.getImportsDir(), self.confdir)
 
             # Get the path portion of the ontology IRI.
-            parts = rfc3987.parse(self.getOntologyIRI(), rule='absolute_IRI')
+            parts = rfc3987.parse(ontIRI, rule='absolute_IRI')
             iripath = parts['path']
 
             # See if the local, relative ontology document path matches the end
@@ -257,12 +281,17 @@ value of the "ontology_file" setting in the build configuration file.'
                 parts['path'] = iripath
                 iristr = rfc3987.compose(**parts)
             else:
-                raise ConfigError(
+                logger.warning(
                     'Unable to automatically generate a suitable base IRI for \
 the import modules because the path in the main ontology IRI does not appear \
 to follow the project folder structure.  Please set the value of the \
 "mod_baseIRI" setting in the build configuration file.'
                 )
+
+        # If all other attempts to get a modules base IRI failed, use a local
+        # file system IRI.
+        if iristr == '':
+            iristr = self.getLocalModulesBaseIRI()
 
         return iristr
 

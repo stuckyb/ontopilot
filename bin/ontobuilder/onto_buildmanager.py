@@ -184,8 +184,10 @@ class OntoBuildManager:
         print 'Defining all remaining entity axioms...'
         ontbuilder.processDeferredEntityAxioms(self.expanddefs)
 
-        # Set the ontology ID, if a new ID was provided.
-        ontbuilder.getOntology().setOntologyID(self.config.getOntologyIRI())
+        # Set the ontology ID, if an ontology IRI was provided.
+        ontIRI = self.config.getOntologyIRI()
+        if ontIRI != '':
+            ontbuilder.getOntology().setOntologyID(ontIRI)
 
         # Write the ontology to the output file.
         fileoutpath = self._getOutputFilePath()

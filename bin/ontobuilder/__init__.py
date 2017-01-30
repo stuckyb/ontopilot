@@ -45,12 +45,13 @@ for jlibpath in jlibpaths:
 # Initialize the logger for this package.
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-logger.propagate = False
+
+# Define a custom handler for log messages.
 handler = logging.StreamHandler()
 handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(message)s')
+formatter = logging.Formatter('%(levelname)s: %(message)s')
 handler.setFormatter(formatter)
-logger.addHandler(handler)
+logging.getLogger().addHandler(handler)
 
 # Define string constants for recognizing yes/true values in input data.
 TRUE_STRS = ('t', 'true', 'y', 'yes')

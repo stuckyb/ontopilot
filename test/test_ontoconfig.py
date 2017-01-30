@@ -88,22 +88,22 @@ class TestOntoConfig(unittest.TestCase):
             self.td_path + '/' + relpath, self.oc._getAbsPath(relpath)
         )
 
+    def test_getLocalOntologyIRI(self):
+        self.assertEqual(
+            'file://localhost' + self.td_path + '/ontology/ontname.owl',
+            self.oc.getLocalOntologyIRI()
+        )
+
     def test_getOntologyIRI(self):
         self.assertEqual(self.ontIRIstr, self.oc.getOntologyIRI())
 
-        # Verify that a missing IRI is detected.
+        # Verify that a missing IRI is correctly handled.
         self.oc.remove_option('Ontology', 'ontologyIRI')
-        with self.assertRaisesRegexp(
-            ConfigError, 'No ontology IRI was provided.'
-        ):
-            self.oc.getOntologyIRI()
+        self.assertEqual('', self.oc.getOntologyIRI())
 
-        # Verify that a blank IRI string is detected.
+        # Verify that a blank IRI string is correctly handled.
         self.oc.set('Ontology', 'ontologyIRI', '  \t  ')
-        with self.assertRaisesRegexp(
-            ConfigError, 'No ontology IRI was provided.'
-        ):
-            self.oc.getOntologyIRI()
+        self.assertEqual('', self.oc.getOntologyIRI())
 
         # Verify that an invalid IRI string is detected.
         self.oc.set('Ontology', 'ontologyIRI', '/not/an/absolute/IRI')
@@ -275,6 +275,12 @@ class TestOntoConfig(unittest.TestCase):
         self.oc.set('Imports', 'top_importsfile', abspath)
         self.assertEqual(abspath, self.oc.getTopImportsFilePath())
 
+    def test_getLocalModulesBaseIRI(self):
+        self.assertEqual(
+            'file://localhost' + self.td_path + '/imports',
+            self.oc.getLocalModulesBaseIRI()
+        )
+
     def test_getModulesBaseIRI(self):
         # Check auto-generating a modules base IRI.
         self.assertEqual(
@@ -287,12 +293,28 @@ class TestOntoConfig(unittest.TestCase):
             'https://a.sample.iri/to/custom/imports', self.oc.getModulesBaseIRI()
         )
 
+        # Check an empty ontology IRI.
+        self.oc.set('Ontology', 'ontologyIRI', '')
+        self.oc.set('Imports', 'imports_dir', '')
+        exp_localiri = 'file://localhost' + self.td_path + '/imports'
+        self.assertEqual(exp_localiri, self.oc.getModulesBaseIRI())
+
         # Check an ontology IRI that doesn't match the local ontology path.
         self.oc.set('Ontology', 'ontologyIRI', 'https://a.sample.iri/to_/ontology/ontology.owl')
-        with self.assertRaisesRegexp(
-            ConfigError, 'Unable to automatically generate a suitable base IRI'
-        ):
-            self.oc.getModulesBaseIRI()
+        with LogCapture() as lc:
+            iristr = self.oc.getModulesBaseIRI()
+        # Check the log message.  Unfortunately, LogCapture's check() method
+        # does not support partial string matching, so it would be too
+        # cumbersome to use it here because of the very long log message.
+        logrec = lc.records[0] 
+        self.assertEqual('ontobuilder', logrec.name)
+        self.assertEqual('WARNING', logrec.levelname)
+        self.assertTrue(
+            'Unable to automatically generate a suitable base IRI'
+            in logrec.getMessage()
+        )
+        # Make sure we got back the local file system base IRI.
+        self.assertEqual(exp_localiri, iristr)
 
         # Check an explicitly provided IRI.
         altIRI = 'https://a.sample.iri/alt/imports/path'
