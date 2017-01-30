@@ -44,10 +44,9 @@ class OntoConfig(RawConfigParser):
             )
 
         self.conffile = filename
+        self.confdir = path.dirname(path.abspath(filename))
 
         self.checkConfig()
-
-        self.confdir = path.dirname(path.abspath(filename))
 
     def _getAbsPath(self, pathstr):
         """
@@ -100,6 +99,10 @@ configuration file.  This section is required and must contain the variables \
 "[Ontology]" to your configuration file.  See the example configuration file \
 for more information.'
             )
+
+        # The only setting that is always required is the path to the compiled
+        # ontology file.
+        self.getOntologyFilePath()
 
     def getOntologyIRI(self):
         """

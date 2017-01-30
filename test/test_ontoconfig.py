@@ -74,6 +74,13 @@ class TestOntoConfig(unittest.TestCase):
 
         self.oc.add_section('Ontology')
 
+        with self.assertRaisesRegexp(
+            ConfigError, 'An ontology file name was not provided.'
+        ):
+            self.oc.checkConfig()
+
+        self.oc.set('Ontology', 'ontology_file', 'ontology/test.owl')
+
         # This should not raise an exception.
         self.oc.checkConfig()
 
