@@ -29,9 +29,26 @@ class TestImportModuleBuilder(unittest.TestCase):
     def setUp(self):
         self.baseIRI = 'https://a.sample.iri/for/'
         self.mod_suffix = '_import_module.owl'
-        self.imb = ImportModuleBuilder(self.baseIRI, self.mod_suffix, 'imports')
-
         self.td_path = os.path.abspath('test_data/')
+
+        self.imb = ImportModuleBuilder(
+            self.baseIRI, self.mod_suffix, self.td_path + '/imports'
+        )
+
+    def test_init(self):
+        """
+        Tests the constructor.
+        """
+        builddir = self.td_path + '/build'
+        outputdir = self.td_path + '/imports'
+
+        imb = ImportModuleBuilder(self.baseIRI, self.mod_suffix, builddir)
+        self.assertEqual(builddir, imb.builddir)
+        self.assertEqual(builddir, imb.outputdir)
+
+        imb = ImportModuleBuilder(self.baseIRI, self.mod_suffix, builddir, outputdir)
+        self.assertEqual(builddir, imb.builddir)
+        self.assertEqual(outputdir, imb.outputdir)
 
     def test_getOutputFileName(self):
         # Define the list of test values.  Each tuple is in the order

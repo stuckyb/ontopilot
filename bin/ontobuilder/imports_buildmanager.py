@@ -26,7 +26,17 @@ class ImportsBuildManager:
         config: An OntoConfig instance.
         """
         self.config = config
+
+        # The string builddir is the path to a build directory where, at a
+        # minimum, source ontologies can be cached.  If we are doing an
+        # out-of-source build, this will also be the location for the compiled
+        # imports modules, specified by outputdir.  For in-source builds,
+        # outputdir will be the final destination for the imports modules.
         self.builddir = config.getBuildDir()
+        if config.getDoInSourceBuilds():
+            self.outputdir = config.getImportsDir()
+        else:
+            self.outputdir = self.builddir
 
     def _checkFiles(self):
         """
@@ -44,6 +54,13 @@ class ImportsBuildManager:
             raise RuntimeError(
                 'The build directory does not exist: {0}.'.format(self.builddir)
             )
+
+        # Check the imports directory if we are doing an in-source build.
+        if self.config.getDoInSourceBuilds():
+            if not(os.path.isdir(self.outputdir)):
+                raise RuntimeError(
+                    'The destination directory does not exist: {0}.'.format(self.builddir)
+                )
 
     def _getAbsTermsFilePath(self, trow):
         """
@@ -78,10 +95,8 @@ class ImportsBuildManager:
 
     def _checkSourceIRI(self, trow):
         """
-        Does some basic data validation on input rows from import module
-        specification tables.  Verifies that the terms file (in the 'Termsfile'
-        field) exists and verifies that the source IRI string (in the 'IRI'
-        field) is a valid IRI.  Raises an exception if either value is invalid.
+        Verifies that the source IRI string in an input table row (in the 'IRI'
+        field) is a valid IRI.  Raises an exception if it is invalid.
         """
         # Verify that the source IRI is valid.
         if rfc3987.match(trow['IRI'], rule='absolute_IRI') == None:
@@ -100,7 +115,8 @@ class ImportsBuildManager:
 
         mbuilder = ImportModuleBuilder(
                         self.config.getModulesBaseIRI(),
-                        self.config.getImportModSuffix(), self.builddir
+                        self.config.getImportModSuffix(), self.builddir,
+                        self.outputdir
                     )
         
         ifpath = self.config.getTopImportsFilePath()
@@ -126,7 +142,8 @@ class ImportsBuildManager:
 
         mbuilder = ImportModuleBuilder(
                         self.config.getModulesBaseIRI(),
-                        self.config.getImportModSuffix(), self.builddir
+                        self.config.getImportModSuffix(), self.builddir,
+                        self.outputdir
                     )
         
         ifpath = self.config.getTopImportsFilePath()

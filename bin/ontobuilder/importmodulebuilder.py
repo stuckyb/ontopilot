@@ -65,26 +65,34 @@ class ImportModuleBuilder:
     # Default values for input table columns.
     DEFAULT_COL_VALS = {'Reasoner': 'HermiT'}
 
-    def __init__(self, base_IRI, module_suffix, outputdir):
+    def __init__(self, base_IRI, module_suffix, builddir, outputdir=''):
         """
+        ImportModuleBuilder constructor.
+
         base_IRI: The base IRI string to use when generating module IRIs.
         module_suffix: The suffix string for generating module file names.
-        outputdir: The directory in which to save the module OWL files.
+        builddir: The build directory to use.
+        outputdir: The directory in which to save the import module OWL files,
+            if different from builddir.
         """
         self.progbar = None
         self.sourceOntologyIRI = ''
 
         self.base_IRI = base_IRI
         self.mod_suffix = module_suffix
-        self.outputdir = os.path.abspath(outputdir)
+
+        # The string builddir is the path to a build directory where source
+        # ontologies can be cached.  The string outputdir is the location at
+        # which to write the compiled imports modules.  By default, it will be
+        # the same as builddir.
+        self.builddir = os.path.abspath(builddir)
+        if outputdir != '':
+            self.outputdir = os.path.abspath(outputdir)
+        else:
+            self.outputdir = self.builddir
 
         # Generate the directory name for local copies of source ontologies.
-        self.ontcachedir = os.path.join(outputdir, 'source_ontologies')
-
-        # Define the strings that indicate TRUE in the input files.  Note that
-        # variants of these strings with different casing will also be
-        # recognized.
-        TRUE_STRS = ['t', 'true', 'y', 'yes']
+        self.ontcachedir = os.path.join(builddir, 'source_ontologies')
 
     def _checkOutputDirs(self):
         """
@@ -93,7 +101,7 @@ class ImportModuleBuilder:
         attempts to create it.
         """
         # Check the main build directory.
-        if not(os.path.isdir(self.outputdir)):
+        if not(os.path.isdir(self.builddir)):
             raise RuntimeError('The build directory could not be found: {0}.'.format(self.outputdir))
 
         # Check the downloaded ontologies cache directory.
@@ -102,6 +110,11 @@ class ImportModuleBuilder:
                 os.mkdir(self.ontcachedir)
             else:
                 raise RuntimeError('A file with the name of the ontology cache directory already exists: {0}.  Please delete or rename the conflicting file.'.format(self.ontcachedir))
+
+        # Check the output directory, if it is different from the build directory.
+        if self.builddir != self.outputdir:
+            if not(os.path.isdir(self.outputdir)):
+                raise RuntimeError('The output directory could not be found: {0}.'.format(self.outputdir))
 
     def _updateDownloadProgress(self, blocks_transferred, blocksize, filesize):
         """
@@ -264,6 +277,7 @@ class ImportModuleBuilder:
             module.removeEntity(ent)
 
         outputpath = os.path.join(self.outputdir, outputfile)
+        print outputpath
         module.saveOntology(outputpath)
 
     def _addEntityToSignature(self, owlent, signature, trow, reasoner_man):

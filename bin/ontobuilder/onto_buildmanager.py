@@ -33,7 +33,6 @@ class OntoBuildManager:
         """
         self.config = config
         self.expanddefs = expanddefs
-        self.builddir = config.getBuildDir()
 
     def _getExpandedTermsFilesList(self):
         """
@@ -83,18 +82,23 @@ class OntoBuildManager:
         self.termsfile_paths = pathslist
 
         # Verify that the build directory exists.
-        if not(os.path.isdir(self.builddir)):
+        destdir = os.path.dirname(self._getOutputFilePath())
+        if not(os.path.isdir(destdir)):
             raise RuntimeError(
-                'The build directory does not exist: {0}.'.format(self.builddir)
+                'The destination directory for the ontology does not exist: {0}.'.format(destdir)
             )
 
     def _getOutputFilePath(self):
         """
         Returns the path of the compiled ontology file.
         """
-        ontfilename = os.path.basename(self.config.getOntologyFilePath())
+        if self.config.getDoInSourceBuilds():
+            destpath = self.config.getOntologyFilePath()
+        else:
+            ontfilename = os.path.basename(self.config.getOntologyFilePath())
+            destpath = os.path.join(self.config.getBuildDir(), ontfilename)
 
-        return os.path.join(self.builddir, ontfilename)
+        return destpath
 
     def isBuildNeeded(self):
         """
