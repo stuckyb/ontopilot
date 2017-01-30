@@ -4,7 +4,7 @@ import os.path as path
 import glob
 import urllib, urlparse
 from rfc3987 import rfc3987
-from ontobuilder import logger
+from ontobuilder import logger, TRUE_STRS
 
 
 class ConfigError(Exception):
@@ -173,6 +173,14 @@ value of the "ontology_file" setting in the build configuration file.'
         pathslist = [path.join(termsfolder, fname) for fname in tfileslist]
 
         return pathslist
+
+    def getDoInSourceBuilds(self):
+        """
+        Returns True if builds should be in source; returns False otherwise.
+        """
+        insource_str = self.getCustom('Build', 'insource_builds', 'False')
+
+        return insource_str.lower() in TRUE_STRS
 
     def getBuildDir(self):
         """

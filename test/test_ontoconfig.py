@@ -165,6 +165,21 @@ class TestOntoConfig(unittest.TestCase):
         self.oc.set('Ontology', 'termsfiles', '   \t  ')
         self.assertEqual([], self.oc.getTermsFilePaths())
 
+    def test_getDoInSourceBuilds(self):
+        self.assertFalse(self.oc.getDoInSourceBuilds())
+
+        self.oc.set('Build', 'insource_builds', 'false')
+        self.assertFalse(self.oc.getDoInSourceBuilds())
+
+        self.oc.set('Build', 'insource_builds', 'True')
+        self.assertTrue(self.oc.getDoInSourceBuilds())
+
+        self.oc.set('Build', 'insource_builds', 'true')
+        self.assertTrue(self.oc.getDoInSourceBuilds())
+
+        self.oc.set('Build', 'insource_builds', 'yes')
+        self.assertTrue(self.oc.getDoInSourceBuilds())
+
     def test_getBuildDir(self):
         # Test the default case.
         self.assertEqual(
