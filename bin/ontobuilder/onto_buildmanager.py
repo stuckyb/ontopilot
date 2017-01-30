@@ -22,7 +22,7 @@ REQUIRED_COLS = ('Type', 'ID')
 # Optional columns in terms files.
 OPTIONAL_COLS = (
     'Comments', 'Parent', 'Subclass of', 'Equivalent to', 'Disjoint with',
-    'Ignore'
+    'Inverse', 'Characteristics', 'Ignore'
 )
         
 class OntoBuildManager:
@@ -92,9 +92,9 @@ class OntoBuildManager:
         """
         Returns the path of the compiled ontology file.
         """
-        return os.path.join(
-            self.builddir, self.config.getOntologyFileName()
-        )
+        ontfilename = os.path.basename(self.config.getOntologyFilePath())
+
+        return os.path.join(self.builddir, ontfilename)
 
     def isBuildNeeded(self):
         """
