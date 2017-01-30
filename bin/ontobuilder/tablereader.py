@@ -1,7 +1,7 @@
 
 # Python imports.
 import abc
-import logging
+from ontobuilder import logger
 
 # Java imports.
 
@@ -95,7 +95,7 @@ class TableRow:
                 )
             else:
                 if colname not in self.optional:
-                    logging.warning(
+                    logger.warning(
                         'The column "' + colname
                         + '" was missing in the table row.'
                     )

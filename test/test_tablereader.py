@@ -132,7 +132,7 @@ class TestTableRow(unittest.TestCase):
         with LogCapture() as lc:
             self.tr['col6']
         lc.check((
-            'root', 'WARNING',
+            'ontobuilder', 'WARNING',
             'The column "col6" was missing in the table row.'
         ))
 
@@ -235,7 +235,7 @@ class _TestTableReader:
         with LogCapture() as lc:
             row['column 7']
         lc.check((
-            'root', 'WARNING',
+            'ontobuilder', 'WARNING',
             'The column "column 7" was missing in the table row.'
         ))
 
