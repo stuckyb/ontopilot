@@ -100,6 +100,12 @@ class OntoBuildManager:
             ontfilename = os.path.basename(self.config.getOntologyFilePath())
             destpath = os.path.join(self.config.getBuildDir(), ontfilename)
 
+        # If we are merging the import modules into the ontology (rather than
+        # using import statements), modify the file name accordingly.
+        if self.mergeimports:
+            parts = os.path.splitext(destpath)
+            destpath = parts[0] + '-merged' + parts[1]
+
         return destpath
 
     def isBuildNeeded(self):
