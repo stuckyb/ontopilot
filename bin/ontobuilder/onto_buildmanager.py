@@ -26,12 +26,14 @@ OPTIONAL_COLS = (
 )
         
 class OntoBuildManager:
-    def __init__(self, config, expanddefs=True):
+    def __init__(self, config, mergeimports=False, expanddefs=True):
         """
         config: An OntoConfig instance.
+        mergeimports: Whether to merge imported terms into the main ontology.
         expanddefs: Whether to add IDs to term references in definitions.
         """
         self.config = config
+        self.mergeimports = mergeimports
         self.expanddefs = expanddefs
 
     def _getExpandedTermsFilesList(self):
@@ -141,8 +143,15 @@ class OntoBuildManager:
 
         # Add all import modules to the ontology.
         ontman = ontbuilder.getOntology().getOntologyManager()
-        for importIRI in ibm.getImportsIRIs():
-            ontbuilder.getOntology().addImport(importIRI, True)
+        if self.mergeimports:
+            # Merge the axioms from each important module directly into this
+            # ontology (that is, do not use import statements).
+            for importIRI in ibm.getImportsIRIs():
+                ontbuilder.getOntology().mergeOntology(importIRI)
+        else:
+            # Add import declarations for each import modules.
+            for importIRI in ibm.getImportsIRIs():
+                ontbuilder.getOntology().addImport(importIRI, True)
 
         # Process each source file.  In this step, entities and label
         # annotations are defined, but processing of all other axioms (e.g.,

@@ -24,6 +24,9 @@ ontology build process.')
 argp.add_argument('-n', '--no_def_expand', action='store_true', help='If this \
 flag is given, no attempt will be made to modify definition strings by adding \
 the IDs of term labels referenced in the definitions.')
+argp.add_argument('-m', '--merge_imports', action='store_true', help='If this \
+flag is given, imported terms will be merged with the main ontology when \
+compiling the ontology document.')
 argp.add_argument('task', type=str, nargs='?', default='ontology', help='The \
 build task to run.  Must be either "init", "imports", or "ontology".')
 argp.add_argument('taskargs', type=str, nargs='*', help='Additional arguments \
@@ -70,7 +73,9 @@ else:
             os.mkdir(builddir)
 
     if args.task == 'ontology':
-        buildman = OntoBuildManager(config, not(args.no_def_expand))
+        buildman = OntoBuildManager(
+            config, args.merge_imports, not(args.no_def_expand)
+        )
     
         if buildman.isBuildNeeded():
             try:

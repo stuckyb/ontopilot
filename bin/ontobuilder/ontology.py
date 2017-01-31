@@ -26,6 +26,7 @@ from uk.ac.manchester.cs.owlapi.modularity import ModuleType
 from com.google.common.base import Optional
 from org.semanticweb.owlapi.io import OWLOntologyCreationIOException
 from org.semanticweb.owlapi.model import OWLOntologyFactoryNotFoundException
+from org.semanticweb.owlapi.model.parameters import Imports as ImportsEnum
 
 class Ontology:
     """
@@ -466,6 +467,30 @@ class Ontology:
 
             # Add the imported ontology's terms to the LabelMap.
             self.labelmap.addOntologyTerms(importont)
+
+    def mergeOntology(self, source_iri):
+        """
+        Merges the axioms from an external ontology into this ontology.
+
+        source_iri: The IRI of the source ontology.  Can be either an IRI
+            object or a string.
+        """
+        sourceIRI = self.expandIRI(source_iri)
+
+        try:
+            importont = self.ontman.loadOntology(sourceIRI)
+        except (
+            OWLOntologyFactoryNotFoundException,
+            OWLOntologyCreationIOException
+        ) as err:
+            raise RuntimeError('The import module ontology at <{0}> could not be loaded.  Please make sure that the IRI is correct and that the import module ontology is accessible.'.format(source_iri))
+
+        # Add the axioms from the external ontology to this ontology.
+        axiomset = importont.getAxioms(ImportsEnum.EXCLUDED)
+        self.ontman.addAxioms(self.getOWLOntology(), axiomset)
+
+        # Add the imported ontology's terms to the LabelMap.
+        self.labelmap.addOntologyTerms(importont)
 
     def setOntologySource(self, source_iri):
         """
