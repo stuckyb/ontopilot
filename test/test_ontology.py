@@ -273,13 +273,17 @@ class Test_Ontology(unittest.TestCase):
 
     def test_addImport(self):
         importIRI = IRI.create('http://test.import/iri/ont.owl')
-        importsset = set(self.owlont.getDirectImportsDocuments())
+
+        # Verify that the import is not yet included in the ontology.
+        self.assertFalse(
+            self.owlont.getDirectImportsDocuments().contains(importIRI)
+        )
 
         self.ont.addImport(importIRI, False)
-        importsset.add(importIRI)
 
-        self.assertEqual(
-            importsset, set(self.owlont.getDirectImportsDocuments())
+        # Verify that the import declaration was added.
+        self.assertTrue(
+            self.owlont.getDirectImportsDocuments().contains(importIRI)
         )
 
     def test_mergeOntology(self):

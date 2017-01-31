@@ -457,10 +457,16 @@ class Ontology:
             its terms labels will be added to the internal LabelMap.
         """
         sourceIRI = self.expandIRI(source_iri)
+        owlont = self.getOWLOntology()
+        
+        # Check if the imported ontology is already included in an imports
+        # declaration.  If so, there's nothing to do.
+        if owlont.getDirectImportsDocuments().contains(sourceIRI):
+            return
 
         importdec = self.df.getOWLImportsDeclaration(sourceIRI)
         self.ontman.applyChange(
-            AddImport(self.getOWLOntology(), importdec)
+            AddImport(owlont, importdec)
         )
 
         if load_import:
@@ -518,6 +524,15 @@ class Ontology:
             # If the merged ontology was not already imported, add its terms to
             # the LabelMap.
             self.labelmap.addOntologyTerms(importont)
+
+    def addInferredAxioms(self, reasoner):
+        """
+        Runs a reasoner on this ontology and adds the inferred axioms.  The
+        reasoner instance should be obtained from one of the get*Reasoner()
+        methods of this ontology.
+
+        reasoner: A reasoner instance.
+        """
 
     def setOntologySource(self, source_iri):
         """
