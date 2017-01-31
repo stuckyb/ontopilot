@@ -312,4 +312,4 @@ class Test_Ontology(unittest.TestCase):
         self.assertTrue(
             self.owlont.getSignature(ImportsEnum.EXCLUDED).contains(mergeclass)
         )
-        
+

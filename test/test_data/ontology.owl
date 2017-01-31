@@ -1,16 +1,13 @@
 <?xml version="1.0"?>
 <rdf:RDF xmlns="https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#"
      xml:base="https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl"
-     xmlns:ncbitaxon="http://purl.obolibrary.org/obo/ncbitaxon#"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:oboInOwl="http://www.geneontology.org/formats/oboInOwl#"
      xmlns:xml="http://www.w3.org/XML/1998/namespace"
-     xmlns:protege="http://protege.stanford.edu/plugins/owl/protege#"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
-     xmlns:obo="http://purl.obolibrary.org/obo/"
-     xmlns:dc="http://purl.org/dc/elements/1.1/">
+     xmlns:obo="http://purl.obolibrary.org/obo/">
     <owl:Ontology rdf:about="https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl">
         <owl:imports rdf:resource="https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl"/>
         <rdfs:label xml:lang="en">Simple Test Ontology</rdfs:label>
