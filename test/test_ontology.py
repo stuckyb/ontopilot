@@ -21,6 +21,7 @@ import unittest
 
 # Java imports.
 from org.semanticweb.owlapi.model import IRI
+from org.semanticweb.owlapi.model.parameters import Imports as ImportsEnum
 
 
 class Test_Ontology(unittest.TestCase):
@@ -281,3 +282,34 @@ class Test_Ontology(unittest.TestCase):
             importsset, set(self.owlont.getDirectImportsDocuments())
         )
 
+    def test_mergeOntology(self):
+        mergeiri_str = 'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl'
+        mergeIRI = IRI.create(mergeiri_str)
+
+        mergeclassiri_str = 'http://purl.obolibrary.org/obo/OBITO_0001'
+        mergeclassIRI = IRI.create(mergeclassiri_str)
+        mergeclass = self.ont.df.getOWLClass(mergeclassIRI)
+
+        # Verify that the source IRI is in the target ontology's imports list
+        # and that the class defined in the source ontology is not in the
+        # target ontology.
+        self.assertTrue(
+            self.owlont.getDirectImportsDocuments().contains(mergeIRI)
+        )
+        self.assertFalse(
+            self.owlont.getSignature(ImportsEnum.EXCLUDED).contains(mergeclass)
+        )
+
+        # Merge the axioms from the source ontology.
+        self.ont.mergeOntology(mergeiri_str)
+
+        # Verify that the source IRI is *not* in the target ontology's imports
+        # list and that the class defined in the source ontology *is* in the
+        # target ontology.
+        self.assertFalse(
+            self.owlont.getDirectImportsDocuments().contains(mergeIRI)
+        )
+        self.assertTrue(
+            self.owlont.getSignature(ImportsEnum.EXCLUDED).contains(mergeclass)
+        )
+        

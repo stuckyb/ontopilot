@@ -12,9 +12,10 @@ from rfc3987 import rfc3987
 
 # Java imports.
 from java.io import File, FileOutputStream
+from java.util import HashSet
 from org.semanticweb.owlapi.apibinding import OWLManager
 from org.semanticweb.owlapi.model import IRI, OWLOntologyID
-from org.semanticweb.owlapi.model import AddAxiom, AddImport
+from org.semanticweb.owlapi.model import AddAxiom, AddImport, RemoveImport
 from org.semanticweb.owlapi.model import SetOntologyID, AxiomType, OWLOntology
 from org.semanticweb.owlapi.model import AddOntologyAnnotation
 from org.semanticweb.owlapi.model import OWLRuntimeException
@@ -411,6 +412,11 @@ class Ontology:
         """
         ontset = self.ontology.getImportsClosure()
         for ont in ontset:
+            # A set for gathering axioms to remove so that axioms can be
+            # deleted after looping over an ontology's axioms rather than in
+            # the loop, to avoid the risk of invalidating the iteration.
+            del_axioms = HashSet()
+
             for axiom in ont.getAxioms():
                 # See if this axiom is an annotation axiom.
                 if axiom.getAxiomType() == AxiomType.ANNOTATION_ASSERTION:
@@ -420,11 +426,13 @@ class Ontology:
                         asubject = axiom.getSubject()
                         if isinstance(asubject, IRI):
                             if asubject.equals(entity.getIRI()):
-                                self.ontman.removeAxiom(ont, axiom)
+                                del_axioms.add(axiom)
                 # See if this axiom includes the target entity (e.g., a
                 # declaration axiom for the target entity).
                 elif axiom.getSignature().contains(entity):
-                    self.ontman.removeAxiom(ont, axiom)
+                    del_axioms.add(axiom)
+
+            self.ontman.removeAxioms(ont, del_axioms)
 
     def setOntologyID(self, ont_iri):
         """
@@ -470,12 +478,16 @@ class Ontology:
 
     def mergeOntology(self, source_iri):
         """
-        Merges the axioms from an external ontology into this ontology.
+        Merges the axioms from an external ontology into this ontology.  Also
+        manages collisions with import declarations, so that if the merged
+        ontology is declared as an import in the target ontology (i.e., this
+        ontology), the import declaration will be deleted.
 
         source_iri: The IRI of the source ontology.  Can be either an IRI
             object or a string.
         """
         sourceIRI = self.expandIRI(source_iri)
+        owlont = self.getOWLOntology()
 
         try:
             importont = self.ontman.loadOntology(sourceIRI)
@@ -487,10 +499,25 @@ class Ontology:
 
         # Add the axioms from the external ontology to this ontology.
         axiomset = importont.getAxioms(ImportsEnum.EXCLUDED)
-        self.ontman.addAxioms(self.getOWLOntology(), axiomset)
+        self.ontman.addAxioms(owlont, axiomset)
 
-        # Add the imported ontology's terms to the LabelMap.
-        self.labelmap.addOntologyTerms(importont)
+        # See if the merged ontology was already in the imports declarations
+        # for the target ontology; if so, remove it.  Do this by gathering
+        # invalidated imports declarations into a set so that they can be
+        # deleted after looping over an ontology's imports declarations rather
+        # than in the loop, to avoid the risk of invalidating the iteration.
+        del_decs = HashSet()
+        for importsdec in owlont.getImportsDeclarations():
+            if importsdec.getIRI().equals(sourceIRI):
+                del_decs.add(importsdec)
+
+        for dec in del_decs:
+            self.ontman.applyChange(RemoveImport(owlont, dec))
+
+        if del_decs.isEmpty():
+            # If the merged ontology was not already imported, add its terms to
+            # the LabelMap.
+            self.labelmap.addOntologyTerms(importont)
 
     def setOntologySource(self, source_iri):
         """
