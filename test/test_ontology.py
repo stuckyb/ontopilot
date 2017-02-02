@@ -321,13 +321,17 @@ class Test_Ontology(unittest.TestCase):
         # For now, just test that we're getting back the expected number of
         # generators for each reasoner type, rather than trying to check the
         # types of all returned generators.
+        reasoner = self.ont.getELKReasoner()
         self.assertEqual(
-            4, len(self.ont._getGeneratorsList(self.ont.getELKReasoner()))
+            4, len(self.ont._getGeneratorsList(reasoner, True))
         )
+        reasoner.dispose()
 
+        reasoner = self.ont.getHermitReasoner()
         self.assertEqual(
-            6, len(self.ont._getGeneratorsList(self.ont.getHermitReasoner()))
+            6, len(self.ont._getGeneratorsList(reasoner, True))
         )
+        reasoner.dispose()
 
     def test_addInferredAxioms(self):
         testclassIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
@@ -357,8 +361,8 @@ class Test_Ontology(unittest.TestCase):
             self.owlont.getDisjointClassesAxioms(testclass).isEmpty()
         )
 
-        # Run the reasoner.
-        self.ont.addInferredAxioms(self.ont.getELKReasoner())
+        # Run the reasoner.  Include disjointness axioms.
+        self.ont.addInferredAxioms(self.ont.getELKReasoner(), True)
         self.ont.saveOntology('blah.owl')
 
         # Make sure that there are no trivial axioms in the ontology (e.g.,

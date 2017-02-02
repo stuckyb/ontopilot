@@ -540,22 +540,25 @@ class Ontology:
             # the LabelMap.
             self.labelmap.addOntologyTerms(importont)
 
-    def _getGeneratorsList(self, reasoner):
+    def _getGeneratorsList(self, reasoner, include_disjoint):
         """
         Returns a list of AxiomGenerators for a reasoner that match the
         capabilities of the reasoner.
 
         reasoner: A reasoner instance.
+        include_disjoint: Whether to include a disjointness axioms generator.
         """
         # By default, only use generators that are supported by the ELK
         # reasoner.  Assume that all reasoners have these capabilities.
         generators = [
             InferredSubClassAxiomGenerator(),
             InferredEquivalentClassAxiomGenerator(),
-            InferredClassAssertionAxiomGenerator(),
-            InferredDisjointClassesAxiomGenerator()
+            InferredClassAssertionAxiomGenerator()
         ]
-        
+
+        if include_disjoint:
+            generators.append(InferredDisjointClassesAxiomGenerator())
+
         # Check for data property hierarchy inferencing support.
         hasmethod = True
         try:
@@ -609,13 +612,14 @@ class Ontology:
 
         return redundants
 
-    def addInferredAxioms(self, reasoner, annotate=False):
+    def addInferredAxioms(self, reasoner, include_disjoint=False, annotate=False):
         """
         Runs a reasoner on this ontology and adds the inferred axioms.  The
         reasoner instance should be obtained from one of the get*Reasoner()
         methods of this ontology.
 
         reasoner: A reasoner instance.
+        include_disjoint: Whether to include inferred disjointness axioms.
         annotate: If true, annotate inferred axioms to mark them as inferred.
         """
         # The general approach is to first get the set of all axioms in the
@@ -632,7 +636,7 @@ class Ontology:
         reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY)
         reasoner.precomputeInferences(InferenceType.CLASS_ASSERTIONS)
 
-        generators = self._getGeneratorsList(reasoner)
+        generators = self._getGeneratorsList(reasoner, include_disjoint)
         iog = InferredOntologyGenerator(reasoner, generators)
 
         inferredont = self.ontman.createOntology()
