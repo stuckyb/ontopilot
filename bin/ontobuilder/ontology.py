@@ -13,6 +13,7 @@ from rfc3987 import rfc3987
 # Java imports.
 from java.io import File, FileOutputStream
 from java.util import HashSet
+from java.lang import UnsupportedOperationException
 from org.semanticweb.owlapi.apibinding import OWLManager
 from org.semanticweb.owlapi.model import IRI, OWLOntologyID
 from org.semanticweb.owlapi.model import AddAxiom, AddImport, RemoveImport
@@ -28,6 +29,15 @@ from com.google.common.base import Optional
 from org.semanticweb.owlapi.io import OWLOntologyCreationIOException
 from org.semanticweb.owlapi.model import OWLOntologyFactoryNotFoundException
 from org.semanticweb.owlapi.model.parameters import Imports as ImportsEnum
+from org.semanticweb.owlapi.reasoner import InferenceType
+from org.semanticweb.owlapi.util import InferredSubClassAxiomGenerator
+from org.semanticweb.owlapi.util import InferredEquivalentClassAxiomGenerator
+from org.semanticweb.owlapi.util import InferredSubDataPropertyAxiomGenerator
+from org.semanticweb.owlapi.util import InferredSubObjectPropertyAxiomGenerator
+from org.semanticweb.owlapi.util import InferredClassAssertionAxiomGenerator
+from org.semanticweb.owlapi.util import InferredDisjointClassesAxiomGenerator
+from org.semanticweb.owlapi.util import InferredOntologyGenerator
+
 
 class Ontology:
     """
@@ -36,6 +46,11 @@ class Ontology:
     """
     # The IRI for the "dc:source" annotation property.
     SOURCE_PROP_IRI = IRI.create('http://purl.org/dc/elements/1.1/source')
+
+    # The IRI for inferred axiom annotation.
+    INFERRED_ANNOT_IRI = IRI.create(
+        'http://www.geneontology.org/formats/oboInOwl#is_inferred'
+    )
 
     def __init__(self, ontology_source):
         """
@@ -525,14 +540,106 @@ class Ontology:
             # the LabelMap.
             self.labelmap.addOntologyTerms(importont)
 
-    def addInferredAxioms(self, reasoner):
+    def _getGeneratorsList(self, reasoner):
+        """
+        Returns a list of AxiomGenerators for a reasoner that match the
+        capabilities of the reasoner.
+
+        reasoner: A reasoner instance.
+        """
+        # By default, only use generators that are supported by the ELK
+        # reasoner.  Assume that all reasoners have these capabilities.
+        generators = [
+            InferredSubClassAxiomGenerator(),
+            InferredEquivalentClassAxiomGenerator(),
+            InferredClassAssertionAxiomGenerator(),
+            InferredDisjointClassesAxiomGenerator()
+        ]
+        
+        # Check for data property hierarchy inferencing support.
+        hasmethod = True
+        try:
+            testprop = self.df.getOWLDataProperty(IRI.create('test'))
+            reasoner.getSuperDataProperties(testprop, True)
+        except UnsupportedOperationException as err:
+            hasmethod = False
+        if hasmethod:
+            generators.append(InferredSubDataPropertyAxiomGenerator())
+
+        # Check for object property hierarchy inferencing support.
+        hasmethod = True
+        try:
+            testprop = self.df.getOWLObjectProperty(IRI.create('test'))
+            reasoner.getSuperObjectProperties(testprop, True)
+        except UnsupportedOperationException as err:
+            hasmethod = False
+        if hasmethod:
+            generators.append(InferredSubObjectPropertyAxiomGenerator())
+
+        return generators
+
+    def addInferredAxioms(self, reasoner, annotate=False):
         """
         Runs a reasoner on this ontology and adds the inferred axioms.  The
         reasoner instance should be obtained from one of the get*Reasoner()
         methods of this ontology.
 
         reasoner: A reasoner instance.
+        annotate: If true, annotate inferred axioms to mark them as inferred.
         """
+        # The general approach is to first get the set of all axioms in the
+        # ontology prior to reasoning so that this set can be used for
+        # de-duplication later.  Then, inferred axioms are added to a new
+        # ontology.  This makes it easy to compare explicit and inferred
+        # axioms and to annotate inferred axioms.  Trivial axioms are removed
+        # from the inferred axiom set, and the inferred axioms are merged into
+        # the main ontology.
+
+        owlont = self.getOWLOntology()
+        oldaxioms = owlont.getAxioms(ImportsEnum.INCLUDED)
+
+        reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY)
+        reasoner.precomputeInferences(InferenceType.CLASS_ASSERTIONS)
+
+        generators = self._getGeneratorsList(reasoner)
+        iog = InferredOntologyGenerator(reasoner, generators)
+
+        inferredont = self.ontman.createOntology()
+        iog.fillOntology(self.df, inferredont)
+
+        # Delete axioms in the inferred set that are explicitly stated in the
+        # source ontology (or its imports closure).
+        delaxioms = HashSet()
+        for axiom in inferredont.getAxioms():
+            if oldaxioms.contains(axiom):
+                delaxioms.add(axiom)
+        self.ontman.removeAxioms(inferredont, delaxioms)
+
+        # Delete trivial axioms (e.g., subclass of owl:Thing, etc.).
+        trivial_entities = [
+            self.df.getOWLThing(), self.df.getOWLTopDataProperty(),
+            self.df.getOWLTopObjectProperty()
+        ]
+        delaxioms.clear()
+        for axiom in inferredont.getAxioms():
+            for trivial_entity in trivial_entities:
+                if axiom.containsEntityInSignature(trivial_entity):
+                    delaxioms.add(axiom)
+                    break
+        self.ontman.removeAxioms(inferredont, delaxioms)
+
+        if annotate:
+            # Annotate all of the inferred axioms.
+            annotprop = self.df.getOWLAnnotationProperty(self.INFERRED_ANNOT_IRI)
+            annotval = self.df.getOWLLiteral('true')
+            for axiom in inferredont.getAxioms():
+                annot = self.df.getOWLAnnotation(annotprop, annotval)
+                newaxiom = axiom.getAnnotatedAxiom(HashSet([annot]))
+                self.ontman.removeAxiom(inferredont, axiom)
+                self.ontman.addAxiom(inferredont, newaxiom)
+
+        # Merge the inferred axioms into the main ontology.
+        self.ontman.addAxioms(owlont, inferredont.getAxioms())
 
     def setOntologySource(self, source_iri):
         """

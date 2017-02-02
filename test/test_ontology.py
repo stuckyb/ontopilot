@@ -33,7 +33,7 @@ class Test_Ontology(unittest.TestCase):
     DATAPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0020'
     ANNOTPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0030'
     CLASS_IRI = 'http://purl.obolibrary.org/obo/OBTO_0010'
-    INDIVIDUAL_IRI = 'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#individual_001'
+    INDIVIDUAL_IRI = 'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#individual_002'
 
     # IRI that is not used in the test ontology.
     NULL_IRI = 'http://purl.obolibrary.org/obo/OBTO_9999'
@@ -301,7 +301,7 @@ class Test_Ontology(unittest.TestCase):
             self.owlont.getDirectImportsDocuments().contains(mergeIRI)
         )
         self.assertFalse(
-            self.owlont.getSignature(ImportsEnum.EXCLUDED).contains(mergeclass)
+            self.owlont.isDeclared(mergeclass, ImportsEnum.EXCLUDED)
         )
 
         # Merge the axioms from the source ontology.
@@ -314,6 +314,69 @@ class Test_Ontology(unittest.TestCase):
             self.owlont.getDirectImportsDocuments().contains(mergeIRI)
         )
         self.assertTrue(
-            self.owlont.getSignature(ImportsEnum.EXCLUDED).contains(mergeclass)
+            self.owlont.isDeclared(mergeclass, ImportsEnum.EXCLUDED)
         )
+
+    def test_getGeneratorsList(self):
+        # For now, just test that we're getting back the expected number of
+        # generators for each reasoner type, rather than trying to check the
+        # types of all returned generators.
+        self.assertEqual(
+            4, len(self.ont._getGeneratorsList(self.ont.getELKReasoner()))
+        )
+
+        self.assertEqual(
+            6, len(self.ont._getGeneratorsList(self.ont.getHermitReasoner()))
+        )
+
+    def test_addInferredAxioms(self):
+        testclassIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
+        testclass = self.ont.df.getOWLClass(testclassIRI)
+
+        parentIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
+
+        individualIRI = IRI.create(self.INDIVIDUAL_IRI)
+        individual = self.ont.df.getOWLNamedIndividual(individualIRI)
+
+        # Prior to running the reasoner, OBTO_0012 should not have any
+        # "subclass of" axioms.
+        axioms = self.owlont.getSubClassAxiomsForSubClass(testclass)
+        self.assertTrue(axioms.isEmpty())
+
+        # Individual individual_002 should only have OBTO_0010 as its type.
+        axioms = self.owlont.getClassAssertionAxioms(individual)
+        self.assertEqual(1, axioms.size())
+        typeclass = axioms.iterator().next().getClassExpression().asOWLClass()
+        self.assertTrue(typeclass.getIRI().equals(parentIRI))
+
+        # Run the reasoner.
+        self.ont.addInferredAxioms(self.ont.getELKReasoner())
+        self.ont.saveOntology('blah.owl')
+
+        # Make sure that there are no trivial axioms in the ontology (e.g.,
+        # axioms that involve owl:Thing).
+        self.assertFalse(
+            self.owlont.containsEntityInSignature(self.ont.df.getOWLThing())
+        )
+
+        # OBTO_0012 should now have OBTO_0010 as a parent class.
+        axioms = self.owlont.getSubClassAxiomsForSubClass(testclass)
+        self.assertEqual(1, axioms.size())
+        axiom = axioms.iterator().next()
+        self.assertTrue(axiom.getSuperClass().getIRI().equals(parentIRI))
+
+        # Individual individual_002 should now have OBTO_0010, OBTO_0012, and
+        # OBITO_0001 as its types.
+        axioms = self.owlont.getClassAssertionAxioms(individual)
+        self.assertEqual(3, axioms.size())
+        expected_typeiri_strs = {
+            testclassIRI.toString(), parentIRI.toString(),
+            'http://purl.obolibrary.org/obo/OBITO_0001'
+        }
+        typeiri_strs = set()
+        for axiom in axioms:
+            typeiri_strs.add(
+                axiom.getClassExpression().asOWLClass().getIRI().toString()
+            )
+        self.assertEqual(expected_typeiri_strs, typeiri_strs)
 
