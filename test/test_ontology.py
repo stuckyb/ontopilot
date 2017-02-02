@@ -349,6 +349,11 @@ class Test_Ontology(unittest.TestCase):
         typeclass = axioms.iterator().next().getClassExpression().asOWLClass()
         self.assertTrue(typeclass.getIRI().equals(parentIRI))
 
+        # Class OBTO_0012 should not have any disjointness axioms.
+        self.assertTrue(
+            self.owlont.getDisjointClassesAxioms(testclass).isEmpty()
+        )
+
         # Run the reasoner.
         self.ont.addInferredAxioms(self.ont.getELKReasoner())
         self.ont.saveOntology('blah.owl')
@@ -379,4 +384,13 @@ class Test_Ontology(unittest.TestCase):
                 axiom.getClassExpression().asOWLClass().getIRI().toString()
             )
         self.assertEqual(expected_typeiri_strs, typeiri_strs)
+
+        # Class OBTO_0012 should now be disjoint with OBTO_0011.
+        disjointIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0011')
+        disjointclass = self.ont.df.getOWLClass(disjointIRI)
+        axioms = self.owlont.getDisjointClassesAxioms(testclass)
+        self.assertEqual(1, axioms.size())
+        self.assertTrue(
+            axioms.iterator().next().containsEntityInSignature(disjointclass)
+        )
 
