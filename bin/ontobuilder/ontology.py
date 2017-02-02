@@ -578,6 +578,37 @@ class Ontology:
 
         return generators
 
+    def _getRedundantSubclassOfAxioms(self, reasoner):
+        """
+        Returns a set of all "subclass of" axioms in this ontology that are
+        redundant.  In this context, "redundant" means that a class is asserted
+        to have two or more different superclasses that are part of the same
+        class hierarchy.  Only the superclass nearest to the subclass is
+        retained; all other axioms are considered to be redundant.  This
+        situation can easily arise after inferred "subclass of" axioms are
+        added to an ontology.
+
+        reasoner: A reasoner instance.
+        """
+        redundants = set()
+        owlont = self.getOWLOntology()
+
+        for classobj in owlont.getClassesInSignature():
+            # Get the set of direct superclasses for this class.
+            supersset = reasoner.getSuperClasses(classobj, True).getFlattened()
+
+            # Examine each "subclass of" axiom for this class.  If the
+            # superclass asserted in an axiom is not a direct superclass, then
+            # the axiom can be considered redundant.
+            axioms = owlont.getSubClassAxiomsForSubClass(classobj)
+            for axiom in axioms:
+                superclass = axiom.getSuperClass()
+                if not(superclass.isAnonymous()):
+                    if not(supersset.contains(superclass.asOWLClass())):
+                        redundants.add(axiom)
+
+        return redundants
+
     def addInferredAxioms(self, reasoner, annotate=False):
         """
         Runs a reasoner on this ontology and adds the inferred axioms.  The
@@ -640,6 +671,10 @@ class Ontology:
 
         # Merge the inferred axioms into the main ontology.
         self.ontman.addAxioms(owlont, inferredont.getAxioms())
+
+        # Find and remove redundant "subclass of" axioms.
+        redundants = self._getRedundantSubclassOfAxioms(reasoner)
+        self.ontman.removeAxioms(owlont, redundants)
 
     def setOntologySource(self, source_iri):
         """

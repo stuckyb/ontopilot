@@ -94,6 +94,7 @@
     <!-- http://purl.obolibrary.org/obo/OBTO_0012 -->
 
     <owl:Class rdf:about="http://purl.obolibrary.org/obo/OBTO_0012">
+        <rdfs:subClassOf rdf:resource="http://purl.obolibrary.org/obo/OBITO_0001"/>
         <owl:equivalentClass>
             <owl:Class>
                 <owl:intersectionOf rdf:parseType="Collection">

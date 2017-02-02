@@ -334,14 +334,17 @@ class Test_Ontology(unittest.TestCase):
         testclass = self.ont.df.getOWLClass(testclassIRI)
 
         parentIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
+        grandparentIRI = IRI.create('http://purl.obolibrary.org/obo/OBITO_0001')
 
         individualIRI = IRI.create(self.INDIVIDUAL_IRI)
         individual = self.ont.df.getOWLNamedIndividual(individualIRI)
 
-        # Prior to running the reasoner, OBTO_0012 should not have any
-        # "subclass of" axioms.
+        # Prior to running the reasoner, OBTO_0012 should only have OBITO_0001
+        # as an asserted superclass.
         axioms = self.owlont.getSubClassAxiomsForSubClass(testclass)
-        self.assertTrue(axioms.isEmpty())
+        self.assertEqual(1, axioms.size())
+        superclass = axioms.iterator().next().getSuperClass().asOWLClass()
+        self.assertTrue(superclass.getIRI().equals(grandparentIRI))
 
         # Individual individual_002 should only have OBTO_0010 as its type.
         axioms = self.owlont.getClassAssertionAxioms(individual)
@@ -364,11 +367,13 @@ class Test_Ontology(unittest.TestCase):
             self.owlont.containsEntityInSignature(self.ont.df.getOWLThing())
         )
 
-        # OBTO_0012 should now have OBTO_0010 as a parent class.
+        # After running the reasoner and removing redundant "subclass of"
+        # axioms, OBTO_0012 should only have OBTO_0010 as an asserted
+        # superclass.
         axioms = self.owlont.getSubClassAxiomsForSubClass(testclass)
         self.assertEqual(1, axioms.size())
-        axiom = axioms.iterator().next()
-        self.assertTrue(axiom.getSuperClass().getIRI().equals(parentIRI))
+        superclass = axioms.iterator().next().getSuperClass().asOWLClass()
+        self.assertTrue(superclass.getIRI().equals(parentIRI))
 
         # Individual individual_002 should now have OBTO_0010, OBTO_0012, and
         # OBITO_0001 as its types.
@@ -376,7 +381,7 @@ class Test_Ontology(unittest.TestCase):
         self.assertEqual(3, axioms.size())
         expected_typeiri_strs = {
             testclassIRI.toString(), parentIRI.toString(),
-            'http://purl.obolibrary.org/obo/OBITO_0001'
+            grandparentIRI.toString()
         }
         typeiri_strs = set()
         for axiom in axioms:
