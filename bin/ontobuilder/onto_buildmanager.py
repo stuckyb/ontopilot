@@ -26,14 +26,16 @@ OPTIONAL_COLS = (
 )
         
 class OntoBuildManager:
-    def __init__(self, config, mergeimports=False, expanddefs=True):
+    def __init__(self, config, mergeimports=False, prereason=False, expanddefs=True):
         """
         config: An OntoConfig instance.
         mergeimports: Whether to merge imported terms into the main ontology.
+        prereason: Whether to add inferred axioms to the compiled ontology.
         expanddefs: Whether to add IDs to term references in definitions.
         """
         self.config = config
         self.mergeimports = mergeimports
+        self.prereason = prereason
         self.expanddefs = expanddefs
 
     def _getExpandedTermsFilesList(self):
@@ -105,6 +107,12 @@ class OntoBuildManager:
         if self.mergeimports:
             parts = os.path.splitext(destpath)
             destpath = parts[0] + '-merged' + parts[1]
+
+        # If we are adding inferred axioms to the ontology, modify the file
+        # name accordingly.
+        if self.prereason:
+            parts = os.path.splitext(destpath)
+            destpath = parts[0] + '-reasoned' + parts[1]
 
         return destpath
 
@@ -202,6 +210,11 @@ class OntoBuildManager:
         # Define all deferred axioms from the source entity descriptions.
         print 'Defining all remaining entity axioms...'
         ontbuilder.processDeferredEntityAxioms(self.expanddefs)
+
+        if self.prereason:
+            print 'Running reasoner and adding inferred axioms...'
+            ontology = ontbuilder.getOntology()
+            ontology.addInferredAxioms(ontology.getELKReasoner())
 
         # Set the ontology ID, if an ontology IRI was provided.
         ontIRI = self.config.getOntologyIRI()

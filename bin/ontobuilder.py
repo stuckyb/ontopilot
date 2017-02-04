@@ -27,19 +27,30 @@ the IDs of term labels referenced in the definitions.')
 argp.add_argument('-m', '--merge_imports', action='store_true', help='If this \
 flag is given, imported terms will be merged with the main ontology when \
 compiling the ontology document.')
+argp.add_argument('-r', '--reason', action='store_true', help='If this \
+flag is given, a reasoner will be run on the ontology (ELK by default), and \
+inferred axioms will be added to the compiled ontology document.')
+argp.add_argument('-e', '--reasoner', type=str, required=False, default='ELK',
+        help='The reasoner to use when generating inferred axioms.')
 argp.add_argument('task', type=str, nargs='?', default='ontology', help='The \
 build task to run.  Must be either "init", "imports", or "ontology".')
 argp.add_argument('taskargs', type=str, nargs='*', help='Additional arguments \
 for the specified build task.')
 args = argp.parse_args()
 
-# Run the specified build task.
-if args.task == 'init':
+
+def _execInitTask():
+    """
+    Runs the project initialization build task.
+    """
     if len(args.taskargs) == 0:
-        print '\nPlease provide the name of the ontology file for the new project.  For example:\n$ {0} init test.owl\n\n'.format(os.path.basename(sys.argv[0]))
+        print '\nPlease provide the name of the ontology file for the new \
+project.  For example:\n$ {0} init test.owl\n\n'.format(os.path.basename(sys.argv[0]))
         sys.exit(1)
     elif len(args.taskargs) > 1:
-        print '\nToo many arguments for the "init" task.  Please provide only the name of the ontology file for the new project.  For example:\n$ {0} init test.owl\n\n'.format(os.path.basename(sys.argv[0]))
+        print '\nToo many arguments for the "init" task.  Please provide only \
+the name of the ontology file for the new project.  For example:\n$ {0} init \
+test.owl\n\n'.format(os.path.basename(sys.argv[0]))
         sys.exit(1)
 
     # Get the path to the project template files directory.
@@ -53,28 +64,51 @@ if args.task == 'init':
     except RuntimeError as err:
         print '\n', err , '\n'
         sys.exit(1)
+
+def _checkBuildDir(builddir):
+    """
+    Checks whether the build directory exists, and if not, attempts to create
+    it.
+    """
+    if not(os.path.isdir(builddir)):
+        if os.path.exists(builddir):
+            raise RuntimeError('A file with the same name as the build \
+folder, {0}, already exists.  Use the "builddir" option in the configuration \
+file to specify a different build folder path, or rename the conflicting \
+file.'.format(builddir))
+        else:
+            try:
+                os.mkdir(builddir)
+            except OSError:
+                raise RuntimeError('The project build directory, "{0}", could \
+not be created.  Please make sure that you have permission to create new \
+files and directories in the project location.'.format(builddir))
+
+
+# Run the specified build task.
+if args.task == 'init':
+    _execInitTask()
 else:
-    # All other build tasks require a configuration file, so attempt to
-    # instantiate an OntoConfig object.
     try:
+        # All other build tasks require a configuration file, so attempt to
+        # instantiate an OntoConfig object.
         config = OntoConfig(args.config_file)
-    except ConfigError as err:
+
+        # Check the build directory.
+        builddir = config.getBuildDir()
+        _checkBuildDir(builddir)
+    except IOError as err:
         print '\n', err , '\n'
         print 'Please make sure the configuration file exists and that the path is correct.  Use the "-c" (or "--config_file") option to specify a different configuration file or path.\n'
         sys.exit(1)
+    except (ConfigError, RuntimeError) as err:
+        print '\n', err , '\n'
+        sys.exit(1)
 
-    # Check if the build directory exists; if not, attempt to create it.
-    builddir = config.getBuildDir()
-    if not(os.path.isdir(builddir)):
-        if os.path.exists(builddir):
-            print '\nA file with the same name as the build folder, {0}, already exists.  Use the "builddir" option in the configuration file to specify a different build folder path, or rename the conflicting file.\n'.format(builddir)
-            sys.exit(1)
-        else:
-            os.mkdir(builddir)
 
     if args.task == 'ontology':
         buildman = OntoBuildManager(
-            config, args.merge_imports, not(args.no_def_expand)
+            config, args.merge_imports, args.reason, not(args.no_def_expand)
         )
     
         if buildman.isBuildNeeded():

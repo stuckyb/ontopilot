@@ -38,7 +38,7 @@ class OntoConfig(RawConfigParser):
         filesread = RawConfigParser.read(self, filename)
 
         if len(filesread) == 0:
-            raise ConfigError(
+            raise IOError(
                 'The configuration file, ' + filename
                 + ', could not be opened.'
             )
