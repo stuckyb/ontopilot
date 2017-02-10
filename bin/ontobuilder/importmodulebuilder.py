@@ -8,21 +8,22 @@ import csv
 import os
 from urllib import FancyURLopener
 from urllib2 import HTTPError
+import math
 import logging
 from progressbar import ProgressBar, Percentage, Bar, ETA
-import math
+from rfc3987 import rfc3987
 from tablereaderfactory import TableReaderFactory
 from tablereader import TableRowError
 import ontobuilder
 from ontobuilder import TRUE_STRS
 from ontology import Ontology
-from rfc3987 import rfc3987
+from reasoner_manager import ReasonerManager
 
 # Java imports.
 from java.util import HashSet
 from org.semanticweb.owlapi.model import IRI, OWLClassExpression
 from org.semanticweb.owlapi.model import OWLObjectPropertyExpression
-from org.semanticweb.owlapi.model import OWLObjectProperty
+from org.semanticweb.owlapi.model import OWLObjectProperty, OWLDataProperty
 
 
 class ImportModSpecError(TableRowError):
@@ -234,7 +235,7 @@ class ImportModuleBuilder:
 
         ontobuilder.logger.info('Loading source ontology from file ' + ontfile + '.')
         sourceont = Ontology(ontfile)
-        reasoner_man = _ReasonerManager(sourceont)
+        reasoner_man = ReasonerManager(sourceont)
 
         signature = HashSet()
         excluded_ents = []
@@ -263,7 +264,9 @@ class ImportModuleBuilder:
                         if row['Exclude'].lower() in TRUE_STRS:
                             excluded_ents.append(owlent)
                         else:
-                            self._addEntityToSignature(owlent, signature, row, reasoner_man)
+                            self._addEntityToSignature(
+                                owlent, signature, row, reasoner_man
+                            )
 
         if signature.size() == 0:
             raise RuntimeError('No terms to import were found in the terms file.')
@@ -277,7 +280,6 @@ class ImportModuleBuilder:
             module.removeEntity(ent)
 
         outputpath = os.path.join(self.outputdir, outputfile)
-        print outputpath
         module.saveOntology(outputpath)
 
     def _addEntityToSignature(self, owlent, signature, trow, reasoner_man):
@@ -289,66 +291,54 @@ class ImportModuleBuilder:
         owlent: An OWL API ontology entity object.
         signature: A Java Set.
         trow: A row from an input table.
-        reasoner_man: A _ReasonerManager from which to obtain an OWL reasoner.
+        reasoner_man: A ReasonerManager from which to obtain an OWL reasoner.
         """
         signature.add(owlent)
                 
         if trow['Seed descendants'].lower() in TRUE_STRS:
-            # Get the reasoner name, using HermiT as the default.
-            reasoner_name = trow['Reasoner']
-    
-            # Get the reasoner instance.
-            reasoner = reasoner_man.getReasoner(reasoner_name)
+            # Get the source ontology.
+            sourceont = reasoner_man.getOntology()
+
+            # Get the reasoner instance, using HermiT as the default.
+            reasoner = reasoner_man.getReasoner(trow['Reasoner'])
         
             # Get the entity's subclasses or subproperties.
             ontobuilder.logger.info('Adding descendant entities of ' + str(owlent) + '.')
             if isinstance(owlent, OWLClassExpression):
-                signature.addAll(reasoner.getSubClasses(owlent, False).getFlattened())
+                subclasses = reasoner.getSubClasses(owlent, False).getFlattened()
+                # Reasoners can return owl:Nothing as a descendant class, so
+                # check for this and don't add it to the signature.  Also,
+                # getSubClasses() only returns named classes, so we don't need
+                # to worry about anonymous class expressions.
+                for subclass in subclasses:
+                    if not(subclass.equals(sourceont.df.getOWLNothing())):
+                        signature.add(subclass)
+
             elif isinstance(owlent, OWLObjectPropertyExpression):
                 propset = reasoner.getSubObjectProperties(owlent, False).getFlattened()
                 # Note that getSubObjectProperties() can return both
                 # named properties and ObjectInverseOf (i.e., unnamed)
                 # properties, so we need to check the type of each
-                # property before adding it to the module signature.
+                # property before adding it to the module signature.  Also,
+                # reasoners can return owl:BottomObjectProperty, so we need to
+                # check for this and not add it to the signature.
                 for prop in propset:
-                    if isinstance(prop, OWLObjectProperty):
+                    if (
+                        isinstance(prop, OWLObjectProperty) and
+                        not(prop.equals(sourceont.df.getOWLBottomObjectProperty()))
+                    ):
                         signature.add(prop)
-    
 
-class _ReasonerManager:
-    """
-    Manages DL reasoners for ImportModuleBuilder objects.  Given a string
-    designating a reasoner type and a source ontology, _ReasonerManager will
-    return a corresponding reasoner object and ensure that only one instance of
-    each reasoner type is created.
-    """
-    def __init__(self, ontology):
-        self.ontology = ontology
-
-        # A dictionary to keep track of instantiated reasoners.
-        self.reasoners = {}
-
-    def getReasoner(self, reasoner_name):
-        reasoner_name = reasoner_name.lower().strip()
-
-        if reasoner_name not in self.reasoners:
-            if reasoner_name == 'elk':
-                ontobuilder.logger.info('Creating ELK reasoner...')
-                self.reasoners[reasoner_name] = self.ontology.getELKReasoner()
-            elif reasoner_name == 'hermit':
-                ontobuilder.logger.info('Creating HermiT reasoner...')
-                self.reasoners[reasoner_name] = self.ontology.getHermitReasoner()
-            else:
-                raise RuntimeError(
-                    'Unrecognized DL reasoner name: '
-                    + reasoner_name + '.'
-                )
-
-        return self.reasoners[reasoner_name]
-
-    def disposeReasoners(self):
-        for reasoner_name in self.reasoners:
-            self.reasoners[reasoner_name].dispose()
-
-        self.reasoners = {}
+            elif isinstance(owlent, OWLDataProperty):
+                propset = reasoner.getSubDataProperties(owlent, False).getFlattened()
+                # Note that getSubDataProperties() only returns OWLDataProperty
+                # objects, so we don't need to check the type of each property
+                # before adding it to the module signature.  Also, reasoners
+                # can return owl:BottomDataProperty, so we need to check for
+                # this and not add it to the signature.
+                for prop in propset:
+                    if (
+                        not(prop.equals(sourceont.df.getOWLBottomDataProperty()))
+                    ):
+                        signature.add(prop)
 

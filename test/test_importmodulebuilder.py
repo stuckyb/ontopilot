@@ -16,10 +16,15 @@
 
 # Python imports.
 from ontobuilder.importmodulebuilder import ImportModuleBuilder
+from ontobuilder.ontology import Ontology
+from ontobuilder.reasoner_manager import ReasonerManager
+from ontobuilder.tablereader import TableRow
+from test_tablereader import TableStub
 import unittest
 import os.path
 
 # Java imports.
+from java.util import HashSet
 
 
 class TestImportModuleBuilder(unittest.TestCase):
@@ -92,4 +97,65 @@ class TestImportModuleBuilder(unittest.TestCase):
             RuntimeError, 'is not a valid base IRI'
         ):
             self.imb.getModuleIRIStr('http://import.ontology/iri/ontfile.owl')
+
+    def test_addEntityToSignature(self):
+        tr = TableRow(1, TableStub())
+        ont = Ontology('test_data/ontology.owl')
+        reasonerman = ReasonerManager(ont)
+        signature = HashSet()
+        owlclass = ont.getExistingClass('obo:OBTO_0010').getOWLAPIObj()
+
+        # Test adding a class to the signature without also adding its
+        # descendants.
+        tr['Seed descendants'] = 'N'
+        self.imb._addEntityToSignature(owlclass, signature, tr, reasonerman)
+        self.assertEqual(1, signature.size())
+        self.assertTrue(signature.iterator().next().equals(owlclass))
+
+        # Test adding a class and its descendants to the signature.
+        expIRIs = {
+            'http://purl.obolibrary.org/obo/OBTO_0010',
+            'http://purl.obolibrary.org/obo/OBTO_0012'
+        }
+
+        tr['Seed descendants'] = 'Y'
+        tr['Reasoner'] = 'HermiT'
+        signature.clear()
+
+        self.imb._addEntityToSignature(owlclass, signature, tr, reasonerman)
+        actualIRIs = set()
+        for ent in signature:
+            actualIRIs.add(ent.getIRI().toString())
+
+        self.assertEqual(expIRIs, actualIRIs)
+
+        # Test adding an object property and its descendants to the signature.
+        owlprop = ont.getExistingObjectProperty('obo:OBTO_0001').getOWLAPIObj()
+        expIRIs = {
+            'http://purl.obolibrary.org/obo/OBTO_0001'
+        }
+
+        signature.clear()
+
+        self.imb._addEntityToSignature(owlprop, signature, tr, reasonerman)
+        actualIRIs = set()
+        for ent in signature:
+            actualIRIs.add(ent.getIRI().toString())
+
+        self.assertEqual(expIRIs, actualIRIs)
+
+        # Test adding a data property and its descendants to the signature.
+        owlprop = ont.getExistingDataProperty('obo:OBTO_0020').getOWLAPIObj()
+        expIRIs = {
+            'http://purl.obolibrary.org/obo/OBTO_0020'
+        }
+
+        signature.clear()
+
+        self.imb._addEntityToSignature(owlprop, signature, tr, reasonerman)
+        actualIRIs = set()
+        for ent in signature:
+            actualIRIs.add(ent.getIRI().toString())
+
+        self.assertEqual(expIRIs, actualIRIs)
 
