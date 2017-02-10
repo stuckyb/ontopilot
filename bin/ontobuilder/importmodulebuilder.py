@@ -4,12 +4,10 @@
 #
 
 # Python imports.
-import csv
 import os
 from urllib import FancyURLopener
 from urllib2 import HTTPError
 import math
-import logging
 from progressbar import ProgressBar, Percentage, Bar, ETA
 from rfc3987 import rfc3987
 from tablereaderfactory import TableReaderFactory
