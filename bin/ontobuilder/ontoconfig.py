@@ -17,6 +17,23 @@ class ConfigError(Exception):
         Exception.__init__(self, msg)
 
 
+# Strings for identifying supported OWL reasoners.
+REASONER_STRS = ('HermiT', 'ELK')
+
+# Strings for identifying supported types of inferences for generating inferred
+# ontology axioms.
+INFERENCE_TYPES = (
+    'subclasses', 'subdata properties', 'subobject properties', 'types',
+    'equivalent classes', 'disjoint classes', 'inverse object properties',
+    'property values'
+)
+# The inference types to use by default.
+DEFAULT_INFERENCE_TYPES = (
+    'subclasses', 'equivalent classes', 'types', 'subdata properties',
+    'subobject properties'
+)
+
+
 class OntoConfig(RawConfigParser):
     """
     Parses ontology build configuration files and provides convenient access to
@@ -48,28 +65,6 @@ class OntoConfig(RawConfigParser):
 
         self.checkConfig()
 
-    def _getAbsPath(self, pathstr):
-        """
-        Given a path string, returns an equivalent absolute path.  If pathstr
-        is relative, it is interpreted relative to the location of the parsed
-        configuration file.
-        """
-        if path.isabs(pathstr):
-            return path.normpath(pathstr)
-        else:
-            return path.normpath(path.join(self.confdir, pathstr))
-
-    def getOntFileBase(self):
-        """
-        Returns the name of the ontology file without the file extension.
-        """
-        ontfname = path.basename(self.getOntologyFilePath())
-
-        return path.splitext(ontfname)[0]
-
-    def getConfigFilePath(self):
-        return path.abspath(self.conffile)
-
     def getCustom(self, section, option, default=''):
         """
         Equivalent to the standard get() method, except getCustom() includes a
@@ -85,6 +80,9 @@ class OntoConfig(RawConfigParser):
             optval = default
 
         return optval
+
+    def getConfigFilePath(self):
+        return path.abspath(self.conffile)
 
     def checkConfig(self):
         """
@@ -103,6 +101,25 @@ for more information.'
         # The only setting that is always required is the path to the compiled
         # ontology file.
         self.getOntologyFilePath()
+
+    def _getAbsPath(self, pathstr):
+        """
+        Given a path string, returns an equivalent absolute path.  If pathstr
+        is relative, it is interpreted relative to the location of the parsed
+        configuration file.
+        """
+        if path.isabs(pathstr):
+            return path.normpath(pathstr)
+        else:
+            return path.normpath(path.join(self.confdir, pathstr))
+
+    def getOntFileBase(self):
+        """
+        Returns the name of the ontology file without the file extension.
+        """
+        ontfname = path.basename(self.getOntologyFilePath())
+
+        return path.splitext(ontfname)[0]
 
     def getOntologyIRI(self):
         """
@@ -315,4 +332,51 @@ to follow the project folder structure.  Please set the value of the \
         suffix = self.getCustom('Imports', 'import_mod_suffix', default)
 
         return suffix
+
+    def getReasonerStr(self):
+        """
+        Returns the string identifying the reasoner to use.  If this option is
+        not configured, use "HermiT" as the default.
+        """
+        reasoner = self.getCustom('Ontology', 'reasoner', 'HermiT')
+
+        if not(reasoner.lower() in [rstr.lower() for rstr in REASONER_STRS]):
+            raise ConfigError(
+                'Invalid value for the "reasoner" setting in the build configuration file: "{0}".  Supported values are: {1}.'.format(
+                    reasoner, '"' + '", "'.join(REASONER_STRS) + '"'
+                )
+            )
+
+        return reasoner
+
+    def getInferenceTypeStrs(self):
+        """
+        Returns a list of strings identifying the types of inferred axioms to
+        generate when running a reasoner on an ontology.  If this option is not
+        configured, the defaults configured at the top of this file
+        (DEFAULT_INFERENCE_TYPES) will be used.
+        """
+        rawval = self.getCustom('Ontology', 'inferences', '')
+
+        raw_inf_strs = [strval.strip() for strval in rawval.split(',')]
+
+        # Make sure all of the inference types are valid, and ignore empty type
+        # strings (this can happen, e.g., if the raw string contains a comma
+        # without a value on one side of it).
+        inf_strs = []
+        for inf_str in raw_inf_strs:
+            if inf_str != '':
+                if not(inf_str.lower() in INFERENCE_TYPES):
+                    raise ConfigError(
+                        'Invalid inference type for the "inferences" setting in the build configuration file: "{0}".  Supported values are: "{1}".'.format(
+                            inf_str, '", "'.join(INFERENCE_TYPES)
+                        )
+                    )
+                else:
+                    inf_strs.append(inf_str)
+
+        if len(inf_strs) == 0:
+            inf_strs = list(DEFAULT_INFERENCE_TYPES)
+
+        return inf_strs
 
