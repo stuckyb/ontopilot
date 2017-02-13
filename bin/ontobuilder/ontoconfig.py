@@ -1,10 +1,24 @@
 
+# Python imports.
 from ConfigParser import RawConfigParser
 import os.path as path
 import glob
 import urllib, urlparse
 from rfc3987 import rfc3987
 from ontobuilder import logger, TRUE_STRS
+from inferred_axiom_adder import INFERENCE_TYPES
+
+# Java imports.
+
+
+# Strings for identifying supported OWL reasoners.
+REASONER_STRS = ('HermiT', 'ELK')
+
+# The inference types to use by default.
+DEFAULT_INFERENCE_TYPES = (
+    'subclasses', 'equivalent classes', 'types', 'subdata properties',
+    'subobject properties'
+)
 
 
 class ConfigError(Exception):
@@ -15,23 +29,6 @@ class ConfigError(Exception):
     def __init__(self, msg):
         msg = 'Configuration file error:\n  ' + msg
         Exception.__init__(self, msg)
-
-
-# Strings for identifying supported OWL reasoners.
-REASONER_STRS = ('HermiT', 'ELK')
-
-# Strings for identifying supported types of inferences for generating inferred
-# ontology axioms.
-INFERENCE_TYPES = (
-    'subclasses', 'subdata properties', 'subobject properties', 'types',
-    'equivalent classes', 'disjoint classes', 'inverse object properties',
-    'property values'
-)
-# The inference types to use by default.
-DEFAULT_INFERENCE_TYPES = (
-    'subclasses', 'equivalent classes', 'types', 'subdata properties',
-    'subobject properties'
-)
 
 
 class OntoConfig(RawConfigParser):

@@ -17,6 +17,7 @@
 # Python imports.
 from ontobuilder.ontology import Ontology
 from ontobuilder.inferred_axiom_adder import InferredAxiomAdder
+from ontobuilder.inferred_axiom_adder import INFERENCE_TYPES
 from test_ontology import INDIVIDUAL_IRI
 import unittest
 #from testfixtures import LogCapture
@@ -36,20 +37,38 @@ class Test_InferredAxiomAdder(unittest.TestCase):
         self.iaa = InferredAxiomAdder(ont, 'hermit')
 
     def test_getGeneratorsList(self):
+        # Check all supported inference types.
+        inftypes = INFERENCE_TYPES
+
         # For now, just test that we're getting back the expected number of
-        # generators for each reasoner type, rather than trying to check the
-        # types of all returned generators.
-        self.iaa.setReasoner('elk')
+        # unique generators for each combination of reasoner type and set of
+        # inference type strings, rather than trying to check the types of all
+        # returned generators.
+
+        # HermiT should support all types of inferences.
+        self.iaa.setReasoner('hermit')
+        gens_list = self.iaa._getGeneratorsList(inftypes)
+        print gens_list
+        # Convert the generators list to a set to ensure we are only counting
+        # unique values.
         self.assertEqual(
-            4, len(self.iaa._getGeneratorsList(True))
+            8, len(set(gens_list))
         )
 
-        self.iaa.setReasoner('hermit')
+        # ELK only supports a few inference types.
+        self.iaa.setReasoner('elk')
+        gens_list = self.iaa._getGeneratorsList(inftypes)
         self.assertEqual(
-            6, len(self.iaa._getGeneratorsList(True))
+            3, len(set(gens_list))
         )
 
     def test_addInferredAxioms(self):
+        """
+        This does not attempt to exhaustively test every available type of
+        inference.  Instead, it only tests the most commonly used inference
+        types when generating inferred axioms for an ontology: class hierarchy,
+        individual types, and class disjointness.
+        """
         testclassIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
         testclass = self.ont.df.getOWLClass(testclassIRI)
 
@@ -78,7 +97,8 @@ class Test_InferredAxiomAdder(unittest.TestCase):
         )
 
         # Run the reasoner.  Include disjointness axioms.
-        self.iaa.addInferredAxioms(True)
+        inftypes = ['subclasses', 'types', 'disjoint classes']
+        self.iaa.addInferredAxioms(inftypes)
         self.ont.saveOntology('blah.owl')
 
         # Make sure that there are no trivial axioms in the ontology (e.g.,

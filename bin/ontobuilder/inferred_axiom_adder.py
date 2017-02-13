@@ -3,6 +3,7 @@
 #
 
 # Python imports.
+import ontobuilder
 from labelmap import LabelMap
 from obohelper import isOboID, oboIDToIRI
 from ontology_entities import _OntologyClass, _OntologyDataProperty
@@ -35,6 +36,17 @@ from org.semanticweb.owlapi.util import InferredSubObjectPropertyAxiomGenerator
 from org.semanticweb.owlapi.util import InferredClassAssertionAxiomGenerator
 from org.semanticweb.owlapi.util import InferredDisjointClassesAxiomGenerator
 from org.semanticweb.owlapi.util import InferredOntologyGenerator
+from org.semanticweb.owlapi.util import InferredInverseObjectPropertiesAxiomGenerator
+from org.semanticweb.owlapi.util import InferredPropertyAssertionGenerator
+
+
+# Strings for identifying supported types of inferences for generating inferred
+# ontology axioms.
+INFERENCE_TYPES = (
+    'subclasses', 'subdata properties', 'subobject properties', 'types',
+    'equivalent classes', 'disjoint classes', 'inverse object properties',
+    'property values'
+)
 
 
 class InferredAxiomAdder:
@@ -69,43 +81,137 @@ class InferredAxiomAdder:
         """
         self.reasoner = self.ont.getReasonerManager().getReasoner(reasoner_str)
 
-    def _getGeneratorsList(self, include_disjoint):
+    def _getGeneratorsList(self, inference_types):
         """
         Returns a list of AxiomGenerators for a reasoner that match the
         capabilities of the reasoner.
 
-        include_disjoint: Whether to include a disjointness axioms generator.
+        inference_types: A list of strings specifying the kinds of inferred
+            axioms to generate.  Valid values are detailed in the sample
+            configuration file.
         """
-        # By default, only use generators that are supported by the ELK
-        # reasoner.  Assume that all reasoners have these capabilities.
-        generators = [
-            InferredSubClassAxiomGenerator(),
-            InferredEquivalentClassAxiomGenerator(),
-            InferredClassAssertionAxiomGenerator()
-        ]
+        # Get a string for the reasoner class for error reporting.
+        reasoner_name = (
+            self.reasoner.__class__.__module__ + '.'
+            + self.reasoner.__class__.__name__
+        )
 
-        if include_disjoint:
-            generators.append(InferredDisjointClassesAxiomGenerator())
+        # Examine each inference type string, check if it is supported by the
+        # current reasoner, and if so, add an appropriate generator to the list
+        # of generators.
+        generators = []
+        for inference_type in inference_types:
+            if inference_type == 'subclasses':
+                # Check for class hierarchy inferencing support.
+                try:
+                    testent = self.ont.df.getOWLClass(IRI.create('test'))
+                    self.reasoner.getSuperClasses(testent, True)
+                    generators.append(InferredSubClassAxiomGenerator())
+                except UnsupportedOperationException as err:
+                    ontobuilder.logging.warning(
+                        'The reasoner "{0}" does not support subclass inferences.'.format(
+                            reasoner_name
+                        )
+                    )
 
-        # Check for data property hierarchy inferencing support.
-        hasmethod = True
-        try:
-            testprop = self.ont.df.getOWLDataProperty(IRI.create('test'))
-            self.reasoner.getSuperDataProperties(testprop, True)
-        except UnsupportedOperationException as err:
-            hasmethod = False
-        if hasmethod:
-            generators.append(InferredSubDataPropertyAxiomGenerator())
+            elif inference_type == 'equivalent classes':
+                # Check for class equivalency inferencing support.
+                try:
+                    testent = self.ont.df.getOWLClass(IRI.create('test'))
+                    self.reasoner.getEquivalentClasses(testent)
+                    generators.append(InferredEquivalentClassAxiomGenerator())
+                except UnsupportedOperationException as err:
+                    ontobuilder.logging.warning(
+                        'The reasoner "{0}" does not support class equivalency inferences.'.format(
+                            reasoner_name
+                        )
+                    )
 
-        # Check for object property hierarchy inferencing support.
-        hasmethod = True
-        try:
-            testprop = self.ont.df.getOWLObjectProperty(IRI.create('test'))
-            self.reasoner.getSuperObjectProperties(testprop, True)
-        except UnsupportedOperationException as err:
-            hasmethod = False
-        if hasmethod:
-            generators.append(InferredSubObjectPropertyAxiomGenerator())
+            elif inference_type == 'disjoint classes':
+                # Check for class disjointness inferencing support.
+                try:
+                    testent = self.ont.df.getOWLClass(IRI.create('test'))
+                    self.reasoner.getDisjointClasses(testent)
+                    generators.append(InferredDisjointClassesAxiomGenerator())
+                except UnsupportedOperationException as err:
+                    ontobuilder.logging.warning(
+                        'The reasoner "{0}" does not support class disjointness inferences.'.format(
+                            reasoner_name
+                        )
+                    )
+
+            elif inference_type == 'subdata properties':
+                # Check for data property hierarchy inferencing support.
+                try:
+                    testent = self.ont.df.getOWLDataProperty(IRI.create('test'))
+                    self.reasoner.getSuperDataProperties(testent, True)
+                    generators.append(InferredSubDataPropertyAxiomGenerator())
+                except UnsupportedOperationException as err:
+                    ontobuilder.logging.warning(
+                        'The reasoner "{0}" does not support data property hierarchy inferences.'.format(
+                            reasoner_name
+                        )
+                    )
+
+            elif inference_type == 'subobject properties':
+                # Check for object property hierarchy inferencing support.
+                try:
+                    testent = self.ont.df.getOWLObjectProperty(IRI.create('test'))
+                    self.reasoner.getSuperObjectProperties(testent, True)
+                    generators.append(InferredSubObjectPropertyAxiomGenerator())
+                except UnsupportedOperationException as err:
+                    ontobuilder.logging.warning(
+                        'The reasoner "{0}" does not support object property hierarchy inferences.'.format(
+                            reasoner_name
+                        )
+                    )
+
+            elif inference_type == 'inverse object properties':
+                # Check for inverse object property inferencing support.
+                try:
+                    testent = self.ont.df.getOWLObjectProperty(IRI.create('test'))
+                    self.reasoner.getInverseObjectProperties(testent)
+                    generators.append(InferredInverseObjectPropertiesAxiomGenerator())
+                except UnsupportedOperationException as err:
+                    ontobuilder.logging.warning(
+                        'The reasoner "{0}" does not support inverse object property inferences.'.format(
+                            reasoner_name
+                        )
+                    )
+
+            elif inference_type == 'types':
+                # Check for class assertion inferencing support.
+                try:
+                    testent = self.ont.df.getOWLNamedIndividual(IRI.create('test'))
+                    self.reasoner.getTypes(testent, True)
+                    generators.append(InferredClassAssertionAxiomGenerator())
+                except UnsupportedOperationException as err:
+                    ontobuilder.logging.warning(
+                        'The reasoner "{0}" does not support class assertion inferences.'.format(
+                            reasoner_name
+                        )
+                    )
+
+            elif inference_type == 'property values':
+                # Check for individual property value inferencing support.
+                try:
+                    testent = self.ont.df.getOWLNamedIndividual(IRI.create('test'))
+                    dprop = self.ont.df.getOWLDataProperty(IRI.create('dprop'))
+                    oprop = self.ont.df.getOWLObjectProperty(IRI.create('oprop'))
+                    self.reasoner.getDataPropertyValues(testent, dprop)
+                    self.reasoner.getObjectPropertyValues(testent, oprop)
+                    generators.append(InferredPropertyAssertionGenerator())
+                except UnsupportedOperationException as err:
+                    ontobuilder.logging.warning(
+                        'The reasoner "{0}" does not support property assertion inferences.'.format(
+                            reasoner_name
+                        )
+                    )
+
+            else:
+                raise RuntimeError(
+                    'Unsupported inference type: "{0}".'.format(inference_type)
+                )
 
         return generators
 
@@ -138,13 +244,13 @@ class InferredAxiomAdder:
 
         return redundants
 
-    def addInferredAxioms(self, include_disjoint=False, annotate=False):
+    def addInferredAxioms(self, inference_types, annotate=False):
         """
-        Runs a reasoner on this ontology and adds the inferred axioms.  The
-        reasoner instance should be obtained from one of the get*Reasoner()
-        methods of this ontology.
+        Runs a reasoner on this ontology and adds the inferred axioms.
 
-        include_disjoint: Whether to include inferred disjointness axioms.
+        inference_types: A list of strings specifying the kinds of inferred
+            axioms to generate.  Valid values are detailed in the sample
+            configuration file.
         annotate: If true, annotate inferred axioms to mark them as inferred.
         """
         # The general approach is to first get the set of all axioms in the
@@ -160,10 +266,10 @@ class InferredAxiomAdder:
         df = self.ont.df
         oldaxioms = owlont.getAxioms(ImportsEnum.INCLUDED)
 
-        self.reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY)
-        self.reasoner.precomputeInferences(InferenceType.CLASS_ASSERTIONS)
+        #self.reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY)
+        #self.reasoner.precomputeInferences(InferenceType.CLASS_ASSERTIONS)
 
-        generators = self._getGeneratorsList(include_disjoint)
+        generators = self._getGeneratorsList(inference_types)
         iog = InferredOntologyGenerator(self.reasoner, generators)
 
         inferredont = ontman.createOntology()
@@ -180,7 +286,8 @@ class InferredAxiomAdder:
         # Delete trivial axioms (e.g., subclass of owl:Thing, etc.).
         trivial_entities = [
             df.getOWLThing(), df.getOWLNothing(),
-            df.getOWLTopDataProperty(), df.getOWLTopObjectProperty()
+            df.getOWLTopDataProperty(), df.getOWLTopObjectProperty(),
+            df.getOWLBottomDataProperty(), df.getOWLBottomObjectProperty()
         ]
         delaxioms.clear()
         for axiom in inferredont.getAxioms():
