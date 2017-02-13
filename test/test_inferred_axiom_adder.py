@@ -48,7 +48,6 @@ class Test_InferredAxiomAdder(unittest.TestCase):
         # HermiT should support all types of inferences.
         self.iaa.setReasoner('hermit')
         gens_list = self.iaa._getGeneratorsList(inftypes)
-        print gens_list
         # Convert the generators list to a set to ensure we are only counting
         # unique values.
         self.assertEqual(
@@ -96,10 +95,10 @@ class Test_InferredAxiomAdder(unittest.TestCase):
             self.owlont.getDisjointClassesAxioms(testclass).isEmpty()
         )
 
-        # Run the reasoner.  Include disjointness axioms.
+        # Run the reasoner.
         inftypes = ['subclasses', 'types', 'disjoint classes']
         self.iaa.addInferredAxioms(inftypes)
-        self.ont.saveOntology('blah.owl')
+        #self.ont.saveOntology('test_inferred.owl')
 
         # Make sure that there are no trivial axioms in the ontology (e.g.,
         # axioms that involve owl:Thing).
