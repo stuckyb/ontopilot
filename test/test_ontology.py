@@ -24,20 +24,21 @@ from org.semanticweb.owlapi.model import IRI
 from org.semanticweb.owlapi.model.parameters import Imports as ImportsEnum
 
 
+# IRIs of entities in the test ontology.
+OBJPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0001'
+DATAPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0020'
+ANNOTPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0030'
+CLASS_IRI = 'http://purl.obolibrary.org/obo/OBTO_0010'
+INDIVIDUAL_IRI = 'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#individual_002'
+
+# IRI that is not used in the test ontology.
+NULL_IRI = 'http://purl.obolibrary.org/obo/OBTO_9999'
+
+
 class Test_Ontology(unittest.TestCase):
     """
     Tests the Ontology convenience class.
     """
-    # IRIs of entities in the test ontology.
-    OBJPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0001'
-    DATAPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0020'
-    ANNOTPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0030'
-    CLASS_IRI = 'http://purl.obolibrary.org/obo/OBTO_0010'
-    INDIVIDUAL_IRI = 'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#individual_002'
-
-    # IRI that is not used in the test ontology.
-    NULL_IRI = 'http://purl.obolibrary.org/obo/OBTO_9999'
-
     def setUp(self):
         self.ont = Ontology('test_data/ontology.owl')
         self.owlont = self.ont.getOWLOntology()
@@ -90,7 +91,7 @@ class Test_Ontology(unittest.TestCase):
 
     def test_getExistingClass(self):
         self.assertIsNotNone(
-            self.ont.getExistingClass(self.CLASS_IRI)
+            self.ont.getExistingClass(CLASS_IRI)
         )
 
         # Check a class in the imports closure.
@@ -100,114 +101,114 @@ class Test_Ontology(unittest.TestCase):
 
         # Verify that a non-existent entity is not found.
         self.assertIsNone(
-            self.ont.getExistingClass(self.NULL_IRI)
+            self.ont.getExistingClass(NULL_IRI)
         )
 
         # Verify that an existent entity of the wrong type is not returned.
         self.assertIsNone(
-            self.ont.getExistingClass(self.OBJPROP_IRI)
+            self.ont.getExistingClass(OBJPROP_IRI)
         )
 
     def test_getExistingDataProperty(self):
         self.assertIsNotNone(
-            self.ont.getExistingDataProperty(self.DATAPROP_IRI)
+            self.ont.getExistingDataProperty(DATAPROP_IRI)
         )
 
         # Verify that a non-existent entity is not found.
         self.assertIsNone(
-            self.ont.getExistingDataProperty(self.NULL_IRI)
+            self.ont.getExistingDataProperty(NULL_IRI)
         )
 
         # Verify that an existent entity of the wrong type is not returned.
         self.assertIsNone(
-            self.ont.getExistingDataProperty(self.OBJPROP_IRI)
+            self.ont.getExistingDataProperty(OBJPROP_IRI)
         )
 
     def test_getExistingObjectProperty(self):
         self.assertIsNotNone(
-            self.ont.getExistingObjectProperty(self.OBJPROP_IRI)
+            self.ont.getExistingObjectProperty(OBJPROP_IRI)
         )
 
         # Verify that a non-existent entity is not found.
         self.assertIsNone(
-            self.ont.getExistingObjectProperty(self.NULL_IRI)
+            self.ont.getExistingObjectProperty(NULL_IRI)
         )
 
         # Verify that an existent entity of the wrong type is not returned.
         self.assertIsNone(
-            self.ont.getExistingObjectProperty(self.DATAPROP_IRI)
+            self.ont.getExistingObjectProperty(DATAPROP_IRI)
         )
 
     def test_getExistingAnnotationProperty(self):
         self.assertIsNotNone(
-            self.ont.getExistingAnnotationProperty(self.ANNOTPROP_IRI)
+            self.ont.getExistingAnnotationProperty(ANNOTPROP_IRI)
         )
 
         # Verify that a non-existent entity is not found.
         self.assertIsNone(
-            self.ont.getExistingAnnotationProperty(self.NULL_IRI)
+            self.ont.getExistingAnnotationProperty(NULL_IRI)
         )
 
         # Verify that an existent entity of the wrong type is not returned.
         self.assertIsNone(
-            self.ont.getExistingAnnotationProperty(self.OBJPROP_IRI)
+            self.ont.getExistingAnnotationProperty(OBJPROP_IRI)
         )
 
     def test_getExistingProperty(self):
         # Check each property type.
         self.assertIsNotNone(
-            self.ont.getExistingProperty(self.OBJPROP_IRI)
+            self.ont.getExistingProperty(OBJPROP_IRI)
         )
         self.assertIsNotNone(
-            self.ont.getExistingProperty(self.DATAPROP_IRI)
+            self.ont.getExistingProperty(DATAPROP_IRI)
         )
         self.assertIsNotNone(
-            self.ont.getExistingProperty(self.ANNOTPROP_IRI)
+            self.ont.getExistingProperty(ANNOTPROP_IRI)
         )
 
         # Verify that a non-existent entity is not found.
         self.assertIsNone(
-            self.ont.getExistingProperty(self.NULL_IRI)
+            self.ont.getExistingProperty(NULL_IRI)
         )
 
         # Verify that an existent entity of the wrong type is not returned.
         self.assertIsNone(
-            self.ont.getExistingProperty(self.CLASS_IRI)
+            self.ont.getExistingProperty(CLASS_IRI)
         )
 
     def test_getExistingEntity(self):
         # Check each entity type.
         self.assertIsNotNone(
-            self.ont.getExistingEntity(self.OBJPROP_IRI)
+            self.ont.getExistingEntity(OBJPROP_IRI)
         )
         self.assertIsNotNone(
-            self.ont.getExistingEntity(self.DATAPROP_IRI)
+            self.ont.getExistingEntity(DATAPROP_IRI)
         )
         self.assertIsNotNone(
-            self.ont.getExistingEntity(self.ANNOTPROP_IRI)
+            self.ont.getExistingEntity(ANNOTPROP_IRI)
         )
         self.assertIsNotNone(
-            self.ont.getExistingEntity(self.CLASS_IRI)
+            self.ont.getExistingEntity(CLASS_IRI)
         )
 
         # Verify that a non-existent entity is not found.
         self.assertIsNone(
-            self.ont.getExistingEntity(self.NULL_IRI)
+            self.ont.getExistingEntity(NULL_IRI)
         )
 
     def test_getExistingIndividual(self):
         self.assertIsNotNone(
-            self.ont.getExistingIndividual(self.INDIVIDUAL_IRI)
+            self.ont.getExistingIndividual(INDIVIDUAL_IRI)
         )
 
         # Verify that a non-existent entity is not found.
         self.assertIsNone(
-            self.ont.getExistingIndividual(self.NULL_IRI)
+            self.ont.getExistingIndividual(NULL_IRI)
         )
 
         # Verify that an existent entity of the wrong type is not returned.
         self.assertIsNone(
-            self.ont.getExistingIndividual(self.CLASS_IRI)
+            self.ont.getExistingIndividual(CLASS_IRI)
         )
 
     def test_createNewClass(self):
@@ -247,7 +248,7 @@ class Test_Ontology(unittest.TestCase):
         )
 
     def test_removeEntity(self):
-        classobj = self.ont.getExistingClass(self.CLASS_IRI)
+        classobj = self.ont.getExistingClass(CLASS_IRI)
         self.assertIsNotNone(classobj)
 
         # First, delete the class but not its annotations.
@@ -255,11 +256,11 @@ class Test_Ontology(unittest.TestCase):
 
         # Make sure the class has been deleted.
         self.assertIsNone(
-            self.ont.getExistingClass(self.CLASS_IRI)
+            self.ont.getExistingClass(CLASS_IRI)
         )
 
         # Make sure annotations for the target entity have not been deleted.
-        IRIobj = IRI.create(self.CLASS_IRI)
+        IRIobj = IRI.create(CLASS_IRI)
         annot_ax_set = self.owlont.getAnnotationAssertionAxioms(IRIobj)
         self.assertEqual(1, annot_ax_set.size())
 
@@ -267,7 +268,7 @@ class Test_Ontology(unittest.TestCase):
         self.ont.removeEntity(classobj.getOWLAPIObj(), True)
 
         # Make sure annotations for the target entity have been deleted.
-        IRIobj = IRI.create(self.CLASS_IRI)
+        IRIobj = IRI.create(CLASS_IRI)
         annot_ax_set = self.owlont.getAnnotationAssertionAxioms(IRIobj)
         self.assertTrue(annot_ax_set.isEmpty())
 
@@ -315,91 +316,5 @@ class Test_Ontology(unittest.TestCase):
         )
         self.assertTrue(
             self.owlont.isDeclared(mergeclass, ImportsEnum.EXCLUDED)
-        )
-
-    def test_getGeneratorsList(self):
-        # For now, just test that we're getting back the expected number of
-        # generators for each reasoner type, rather than trying to check the
-        # types of all returned generators.
-        reasoner = self.ont.getELKReasoner()
-        self.assertEqual(
-            4, len(self.ont._getGeneratorsList(reasoner, True))
-        )
-        reasoner.dispose()
-
-        reasoner = self.ont.getHermitReasoner()
-        self.assertEqual(
-            6, len(self.ont._getGeneratorsList(reasoner, True))
-        )
-        reasoner.dispose()
-
-    def test_addInferredAxioms(self):
-        testclassIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
-        testclass = self.ont.df.getOWLClass(testclassIRI)
-
-        parentIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
-        grandparentIRI = IRI.create('http://purl.obolibrary.org/obo/OBITO_0001')
-
-        individualIRI = IRI.create(self.INDIVIDUAL_IRI)
-        individual = self.ont.df.getOWLNamedIndividual(individualIRI)
-
-        # Prior to running the reasoner, OBTO_0012 should only have OBITO_0001
-        # as an asserted superclass.
-        axioms = self.owlont.getSubClassAxiomsForSubClass(testclass)
-        self.assertEqual(1, axioms.size())
-        superclass = axioms.iterator().next().getSuperClass().asOWLClass()
-        self.assertTrue(superclass.getIRI().equals(grandparentIRI))
-
-        # Individual individual_002 should only have OBTO_0010 as its type.
-        axioms = self.owlont.getClassAssertionAxioms(individual)
-        self.assertEqual(1, axioms.size())
-        typeclass = axioms.iterator().next().getClassExpression().asOWLClass()
-        self.assertTrue(typeclass.getIRI().equals(parentIRI))
-
-        # Class OBTO_0012 should not have any disjointness axioms.
-        self.assertTrue(
-            self.owlont.getDisjointClassesAxioms(testclass).isEmpty()
-        )
-
-        # Run the reasoner.  Include disjointness axioms.
-        self.ont.addInferredAxioms(self.ont.getELKReasoner(), True)
-        self.ont.saveOntology('blah.owl')
-
-        # Make sure that there are no trivial axioms in the ontology (e.g.,
-        # axioms that involve owl:Thing).
-        self.assertFalse(
-            self.owlont.containsEntityInSignature(self.ont.df.getOWLThing())
-        )
-
-        # After running the reasoner and removing redundant "subclass of"
-        # axioms, OBTO_0012 should only have OBTO_0010 as an asserted
-        # superclass.
-        axioms = self.owlont.getSubClassAxiomsForSubClass(testclass)
-        self.assertEqual(1, axioms.size())
-        superclass = axioms.iterator().next().getSuperClass().asOWLClass()
-        self.assertTrue(superclass.getIRI().equals(parentIRI))
-
-        # Individual individual_002 should now have OBTO_0010, OBTO_0012, and
-        # OBITO_0001 as its types.
-        axioms = self.owlont.getClassAssertionAxioms(individual)
-        self.assertEqual(3, axioms.size())
-        expected_typeiri_strs = {
-            testclassIRI.toString(), parentIRI.toString(),
-            grandparentIRI.toString()
-        }
-        typeiri_strs = set()
-        for axiom in axioms:
-            typeiri_strs.add(
-                axiom.getClassExpression().asOWLClass().getIRI().toString()
-            )
-        self.assertEqual(expected_typeiri_strs, typeiri_strs)
-
-        # Class OBTO_0012 should now be disjoint with OBTO_0011.
-        disjointIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0011')
-        disjointclass = self.ont.df.getOWLClass(disjointIRI)
-        axioms = self.owlont.getDisjointClassesAxioms(testclass)
-        self.assertEqual(1, axioms.size())
-        self.assertTrue(
-            axioms.iterator().next().containsEntityInSignature(disjointclass)
         )
 

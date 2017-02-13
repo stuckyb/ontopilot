@@ -41,7 +41,7 @@ test_modules = [
     'test_owlontologybuilder', 'test_ontology', 'test_delimstr_parser',
     'test_ontology_entities', 'test_ontoconfig', 'test_onto_buildmanager',
     'test_importmodulebuilder', 'test_imports_buildmanager',
-     'test_reasoner_manager'
+    'test_reasoner_manager', 'test_inferred_axiom_adder'
 ]
 
 successful = True
