@@ -40,11 +40,12 @@ test_modules = [
     'test_labelmap', 'test_tablereader', 'test_mshelper',
     'test_owlontologybuilder', 'test_ontology', 'test_delimstr_parser',
     'test_ontology_entities', 'test_ontoconfig', 'test_onto_buildmanager',
-    'test_importmodulebuilder', 'test_imports_buildmanager'
+    'test_importmodulebuilder', 'test_imports_buildmanager',
+     'test_reasoner_manager'
 ]
 
 successful = True
-total = 0
+total = failed = 0
 
 runner = unittest.TextTestRunner(verbosity=2)
 
@@ -53,14 +54,30 @@ for test_module in test_modules:
     res = runner.run(suite)
 
     total += res.testsRun
+    # Get the approximate number of failed tests.  This is an approximation
+    # because a single test might both trigger an exception and an assert*()
+    # failure, depending on how the test is configured.
+    failed += len(res.errors) + len(res.failures)
 
     if not res.wasSuccessful():
         successful = False
 
 
 if successful:
-    print '\n\n' + str(total) + ' tests were run.  All tests completed successfully.\n'
+    if total != 1:
+        print '\n\n{0} tests were run.  All tests completed successfully.\n'.format(total)
+    else:
+        print '\n\n1 test was run.  All tests completed successfully.\n'
 else:
-    print ('\n\nFAILED:  ' + str(total) + 
-            ' tests were run.  One or more tests were unsuccessful.  See output above for details.\n')
+    if total != 1:
+        msgstr = '\n\nFAILED:  {0} tests were run, resulting in '.format(total)
+        if failed == 1:
+            msgstr += '1 test failure or unexpected exception.'
+        else:
+            msgstr += '{0} test failures or unexpected exceptions.'.format(failed)
+        
+        print msgstr + '  See output above for details.\n'
+    else:
+        print ('\n\nFAILED:  1 test was run.  The test was unsuccessful.  See '
+            + 'output above for details.\n')
 
