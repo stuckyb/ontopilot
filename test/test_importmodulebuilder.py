@@ -101,14 +101,13 @@ class TestImportModuleBuilder(unittest.TestCase):
     def test_addEntityToSignature(self):
         tr = TableRow(1, TableStub())
         ont = Ontology('test_data/ontology.owl')
-        reasonerman = ReasonerManager(ont)
         signature = HashSet()
         owlclass = ont.getExistingClass('obo:OBTO_0010').getOWLAPIObj()
 
         # Test adding a class to the signature without also adding its
         # descendants.
         tr['Seed descendants'] = 'N'
-        self.imb._addEntityToSignature(owlclass, signature, tr, reasonerman)
+        self.imb._addEntityToSignature(owlclass, signature, tr, ont)
         self.assertEqual(1, signature.size())
         self.assertTrue(signature.iterator().next().equals(owlclass))
 
@@ -122,7 +121,7 @@ class TestImportModuleBuilder(unittest.TestCase):
         tr['Reasoner'] = 'HermiT'
         signature.clear()
 
-        self.imb._addEntityToSignature(owlclass, signature, tr, reasonerman)
+        self.imb._addEntityToSignature(owlclass, signature, tr, ont)
         actualIRIs = set()
         for ent in signature:
             actualIRIs.add(ent.getIRI().toString())
@@ -137,7 +136,7 @@ class TestImportModuleBuilder(unittest.TestCase):
 
         signature.clear()
 
-        self.imb._addEntityToSignature(owlprop, signature, tr, reasonerman)
+        self.imb._addEntityToSignature(owlprop, signature, tr, ont)
         actualIRIs = set()
         for ent in signature:
             actualIRIs.add(ent.getIRI().toString())
@@ -152,7 +151,7 @@ class TestImportModuleBuilder(unittest.TestCase):
 
         signature.clear()
 
-        self.imb._addEntityToSignature(owlprop, signature, tr, reasonerman)
+        self.imb._addEntityToSignature(owlprop, signature, tr, ont)
         actualIRIs = set()
         for ent in signature:
             actualIRIs.add(ent.getIRI().toString())

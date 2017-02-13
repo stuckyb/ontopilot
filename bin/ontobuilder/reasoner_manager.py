@@ -1,39 +1,10 @@
 
 # Python imports.
-from labelmap import LabelMap
-from obohelper import isOboID, oboIDToIRI
-from ontology_entities import _OntologyClass, _OntologyDataProperty
-from ontology_entities import _OntologyObjectProperty, _OntologyAnnotationProperty
 import ontobuilder
-from rfc3987 import rfc3987
 
 # Java imports.
-from java.io import File, FileOutputStream
-from java.util import HashSet
-from java.lang import UnsupportedOperationException
-from org.semanticweb.owlapi.apibinding import OWLManager
-from org.semanticweb.owlapi.model import IRI, OWLOntologyID
-from org.semanticweb.owlapi.model import AddAxiom, AddImport, RemoveImport
-from org.semanticweb.owlapi.model import SetOntologyID, AxiomType, OWLOntology
-from org.semanticweb.owlapi.model import AddOntologyAnnotation
-from org.semanticweb.owlapi.model import OWLRuntimeException
-from org.semanticweb.owlapi.formats import RDFXMLDocumentFormat
 from org.semanticweb.elk.owlapi import ElkReasonerFactory
 from org.semanticweb import HermiT
-from uk.ac.manchester.cs.owlapi.modularity import SyntacticLocalityModuleExtractor
-from uk.ac.manchester.cs.owlapi.modularity import ModuleType
-from com.google.common.base import Optional
-from org.semanticweb.owlapi.io import OWLOntologyCreationIOException
-from org.semanticweb.owlapi.model import OWLOntologyFactoryNotFoundException
-from org.semanticweb.owlapi.model.parameters import Imports as ImportsEnum
-from org.semanticweb.owlapi.reasoner import InferenceType
-from org.semanticweb.owlapi.util import InferredSubClassAxiomGenerator
-from org.semanticweb.owlapi.util import InferredEquivalentClassAxiomGenerator
-from org.semanticweb.owlapi.util import InferredSubDataPropertyAxiomGenerator
-from org.semanticweb.owlapi.util import InferredSubObjectPropertyAxiomGenerator
-from org.semanticweb.owlapi.util import InferredClassAssertionAxiomGenerator
-from org.semanticweb.owlapi.util import InferredDisjointClassesAxiomGenerator
-from org.semanticweb.owlapi.util import InferredOntologyGenerator
 
 
 class ReasonerManager:
@@ -41,8 +12,7 @@ class ReasonerManager:
     Manages DL reasoners for Ontology objects.  Given a string designating a
     reasoner type and a source ontology, ReasonerManager will return a
     corresponding reasoner object and ensure that only one instance of each
-    reasoner type is created.  ReasonerManager also provides methods to manage
-    generating inferred axioms for a source ontology.
+    reasoner type is created.
     """
     def __init__(self, ontology):
         self.ontology = ontology
@@ -57,15 +27,30 @@ class ReasonerManager:
         return self.ontology
 
     def getReasoner(self, reasoner_name):
+        """
+        Returns an instance of a reasoner matching the value of the string
+        "reasoner_name".  Supported values are "ELK" or "HermiT" (the strings
+        are not case sensitive).  ReasonerManager ensures that reasoner
+        instances are effectively singletons (that is, subsequent requests for
+        the same reasoner type return the same reasoner instance).
+
+        reasoner_name: A string specifying the type of reasoner to instantiate.
+        """
         reasoner_name = reasoner_name.lower().strip()
 
         if reasoner_name not in self.reasoners:
+            owlont = self.getOntology().getOWLOntology()
+
+            rfact = None
             if reasoner_name == 'elk':
                 ontobuilder.logger.info('Creating ELK reasoner...')
-                self.reasoners[reasoner_name] = self.ontology.getELKReasoner()
+                rfact = ElkReasonerFactory()
             elif reasoner_name == 'hermit':
                 ontobuilder.logger.info('Creating HermiT reasoner...')
-                self.reasoners[reasoner_name] = self.ontology.getHermitReasoner()
+                rfact = HermiT.ReasonerFactory()
+
+            if rfact != None:
+                self.reasoners[reasoner_name] = rfact.createReasoner(owlont)
             else:
                 raise RuntimeError(
                     'Unrecognized DL reasoner name: '
@@ -75,6 +60,12 @@ class ReasonerManager:
         return self.reasoners[reasoner_name]
 
     def disposeReasoners(self):
+        """
+        Runs the dispose() operation on all reasoner instances.  Note that this
+        is not implemented as an automatic "destructor" because there is no
+        guarantee that instances of reasoners returned by ReasonerManager will
+        not outlive the ReasonerManager instance.
+        """
         for reasoner_name in self.reasoners:
             self.reasoners[reasoner_name].dispose()
 

@@ -15,7 +15,6 @@ from tablereader import TableRowError
 import ontobuilder
 from ontobuilder import TRUE_STRS
 from ontology import Ontology
-from reasoner_manager import ReasonerManager
 
 # Java imports.
 from java.util import HashSet
@@ -233,7 +232,6 @@ class ImportModuleBuilder:
 
         ontobuilder.logger.info('Loading source ontology from file ' + ontfile + '.')
         sourceont = Ontology(ontfile)
-        reasoner_man = ReasonerManager(sourceont)
 
         signature = HashSet()
         excluded_ents = []
@@ -263,7 +261,7 @@ class ImportModuleBuilder:
                             excluded_ents.append(owlent)
                         else:
                             self._addEntityToSignature(
-                                owlent, signature, row, reasoner_man
+                                owlent, signature, row, sourceont
                             )
 
         if signature.size() == 0:
@@ -280,7 +278,7 @@ class ImportModuleBuilder:
         outputpath = os.path.join(self.outputdir, outputfile)
         module.saveOntology(outputpath)
 
-    def _addEntityToSignature(self, owlent, signature, trow, reasoner_man):
+    def _addEntityToSignature(self, owlent, signature, trow, sourceont):
         """
         Adds an entity to a signature set for an import module extraction.  If
         requested, also finds all descendents of a given ontology entity (class
@@ -289,16 +287,14 @@ class ImportModuleBuilder:
         owlent: An OWL API ontology entity object.
         signature: A Java Set.
         trow: A row from an input table.
-        reasoner_man: A ReasonerManager from which to obtain an OWL reasoner.
+        sourceont: The source ontology.
         """
         signature.add(owlent)
                 
         if trow['Seed descendants'].lower() in TRUE_STRS:
-            # Get the source ontology.
-            sourceont = reasoner_man.getOntology()
-
             # Get the reasoner instance, using HermiT as the default.
-            reasoner = reasoner_man.getReasoner(trow['Reasoner'])
+            reasonerman = sourceont.getReasonerManager()
+            reasoner = reasonerman.getReasoner(trow['Reasoner'])
         
             # Get the entity's subclasses or subproperties.
             ontobuilder.logger.info('Adding descendant entities of ' + str(owlent) + '.')

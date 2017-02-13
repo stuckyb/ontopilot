@@ -8,6 +8,7 @@ from labelmap import LabelMap
 from obohelper import isOboID, oboIDToIRI
 from ontology_entities import _OntologyClass, _OntologyDataProperty
 from ontology_entities import _OntologyObjectProperty, _OntologyAnnotationProperty
+from reasoner_manager import ReasonerManager
 from rfc3987 import rfc3987
 
 # Java imports.
@@ -21,8 +22,6 @@ from org.semanticweb.owlapi.model import SetOntologyID, AxiomType, OWLOntology
 from org.semanticweb.owlapi.model import AddOntologyAnnotation
 from org.semanticweb.owlapi.model import OWLRuntimeException
 from org.semanticweb.owlapi.formats import RDFXMLDocumentFormat
-from org.semanticweb.elk.owlapi import ElkReasonerFactory
-from org.semanticweb import HermiT
 from uk.ac.manchester.cs.owlapi.modularity import SyntacticLocalityModuleExtractor
 from uk.ac.manchester.cs.owlapi.modularity import ModuleType
 from com.google.common.base import Optional
@@ -76,6 +75,8 @@ class Ontology:
         # entities and looking up existing entities.
         self.df = OWLManager.getOWLDataFactory()
 
+        self.reasonerman = ReasonerManager(self)
+
     def getOWLOntology(self):
         """
         Returns the OWL API ontology object contained by this Ontology object.
@@ -87,6 +88,12 @@ class Ontology:
         Returns the OWL API ontology manager object contained by this Ontology.
         """
         return self.ontman
+
+    def getReasonerManager(self):
+        """
+        Returns a ReasonerManager instance for this ontology.
+        """
+        return self.reasonerman
 
     def labelToIRI(self, labeltxt):
         """
@@ -652,8 +659,8 @@ class Ontology:
 
         # Delete trivial axioms (e.g., subclass of owl:Thing, etc.).
         trivial_entities = [
-            self.df.getOWLThing(), self.df.getOWLTopDataProperty(),
-            self.df.getOWLTopObjectProperty()
+            self.df.getOWLThing(), self.df.getOWLNothing(),
+            self.df.getOWLTopDataProperty(), self.df.getOWLTopObjectProperty()
         ]
         delaxioms.clear()
         for axiom in inferredont.getAxioms():
@@ -704,22 +711,6 @@ class Ontology:
         self.ontman.saveOntology(self.ontology, oformat, foutputstream)
         foutputstream.close()
 
-    def getELKReasoner(self):
-        """
-        Returns an instance of an ELK reasoner for this ontology.
-        """
-        rfact = ElkReasonerFactory()
-
-        return rfact.createReasoner(self.getOWLOntology())
-
-    def getHermitReasoner(self):
-        """
-        Returns an instance of a HermiT reasoner for this ontology.
-        """
-        rfact = HermiT.ReasonerFactory()
-
-        return rfact.createReasoner(self.getOWLOntology())
-    
     def extractModule(self, signature, mod_iri):
         """
         Extracts a module that is a subset of the entities in this ontology.
