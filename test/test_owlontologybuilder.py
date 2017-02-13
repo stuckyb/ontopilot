@@ -44,7 +44,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         # among all entities.  Remaining entity-specific values should be
         # defined in the entity-specific test methods.
         self.tr = TableRow(1, None)
-        self.tr['ID'] = 'http://purl.obolibrary.org/obo/OBTO_0011'
+        self.tr['ID'] = 'http://purl.obolibrary.org/obo/OBTO_2000'
         self.tr['Label'] = 'new test entity'
         self.tr['Text definition'] = 'The definition!'
         self.tr['Comments'] = 'The first comment.;"The second; comment."'
@@ -110,7 +110,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the equivalency axioms.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_0011',
+            'http://purl.obolibrary.org/obo/OBTO_2000',
             'http://purl.obolibrary.org/obo/OBTO_1001',
             'http://purl.obolibrary.org/obo/OBTO_1002'
             }
@@ -123,7 +123,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the disjointness axiom.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_0011',
+            'http://purl.obolibrary.org/obo/OBTO_2000',
             'http://purl.obolibrary.org/obo/OBTO_1000'
         }
         actualIRIs = set()
@@ -135,7 +135,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
     def test_addDataProperty(self):
         # Define additional row values.
-        self.tr['Parent'] = 'obo:OBTO_2000'
+        self.tr['Parent'] = 'obo:OBTO_2001'
         self.tr['Domain'] = "'test class 1'; OBITO:0001"
         self.tr['Range'] = 'xsd:float'
         self.tr['Disjoint with'] = 'OBTO:1000;OBTO:1001'
@@ -144,7 +144,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         # Create some additional properties for use in axioms.
         self.test_ont.createNewDataProperty('obo:OBTO_1000')
         self.test_ont.createNewDataProperty('obo:OBTO_1001')
-        self.test_ont.createNewDataProperty('obo:OBTO_2000')
+        self.test_ont.createNewDataProperty('obo:OBTO_2001')
 
         self.oob.addDataProperty(self.tr)
 
@@ -160,7 +160,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the "subproperty of" axioms.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_2000'
+            'http://purl.obolibrary.org/obo/OBTO_2001'
         }
         actualIRIs = set()
         for axiom in self.owlont.getDataSubPropertyAxiomsForSubProperty(new_oaent):
@@ -192,7 +192,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the disjointness axiom.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_0011',
+            'http://purl.obolibrary.org/obo/OBTO_2000',
             'http://purl.obolibrary.org/obo/OBTO_1000',
             'http://purl.obolibrary.org/obo/OBTO_1001'
         }
@@ -209,7 +209,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
     def test_addObjectProperty(self):
         # Define additional row values.
-        self.tr['Parent'] = 'obo:OBTO_2000'
+        self.tr['Parent'] = 'obo:OBTO_2001'
         self.tr['Domain'] = 'obo:OBTO_3000'
         self.tr['Range'] = "'test class 1'; OBITO:0001"
         self.tr['Inverse'] = 'OBTO:1000'
@@ -219,7 +219,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         # Create some additional entities for use in axioms.
         self.test_ont.createNewObjectProperty('obo:OBTO_1000')
         self.test_ont.createNewObjectProperty('obo:OBTO_1001')
-        self.test_ont.createNewObjectProperty('obo:OBTO_2000')
+        self.test_ont.createNewObjectProperty('obo:OBTO_2001')
         self.test_ont.createNewClass('OBTO:3000')
 
         self.oob.addObjectProperty(self.tr)
@@ -236,7 +236,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the "subproperty of" axioms.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_2000'
+            'http://purl.obolibrary.org/obo/OBTO_2001'
         }
         actualIRIs = set()
         for axiom in self.owlont.getObjectSubPropertyAxiomsForSubProperty(new_oaent):
@@ -269,7 +269,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the "inverse of" axioms.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_0011',
+            'http://purl.obolibrary.org/obo/OBTO_2000',
             'http://purl.obolibrary.org/obo/OBTO_1000'
         }
         actualIRIs = set()
@@ -281,7 +281,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the disjointness axiom.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_0011',
+            'http://purl.obolibrary.org/obo/OBTO_2000',
             'http://purl.obolibrary.org/obo/OBTO_1001'
         }
         actualIRIs = set()
@@ -301,10 +301,10 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
     def test_addAnnotationProperty(self):
         # Define additional row values.
-        self.tr['Parent'] = 'obo:OBTO_1000'
+        self.tr['Parent'] = 'obo:OBTO_2001'
 
         # Create an additional property for use in axioms.
-        self.test_ont.createNewAnnotationProperty('obo:OBTO_1000')
+        self.test_ont.createNewAnnotationProperty('obo:OBTO_2001')
 
         self.oob.addAnnotationProperty(self.tr)
 
@@ -320,7 +320,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the "subproperty of" axioms.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_1000'
+            'http://purl.obolibrary.org/obo/OBTO_2001'
         }
         actualIRIs = set()
         for axiom in self.owlont.getSubAnnotationPropertyOfAxioms(new_oaent):

@@ -117,7 +117,7 @@ class Test_OntologyClass(_TestOntologyEntity, unittest.TestCase):
         _TestOntologyEntity.setUp(self)
 
         t_ent = self.test_ont.createNewClass(
-                'http://purl.obolibrary.org/obo/OBTO_0011'
+                'http://purl.obolibrary.org/obo/OBTO_0013'
         )
 
         self._setEntityObject(t_ent)
@@ -179,7 +179,7 @@ class Test_OntologyDataProperty(_TestOntologyEntity, unittest.TestCase):
         _TestOntologyEntity.setUp(self)
 
         t_ent = self.test_ont.createNewDataProperty(
-                'http://purl.obolibrary.org/obo/OBTO_0011'
+                'http://purl.obolibrary.org/obo/OBTO_0021'
         )
 
         self._setEntityObject(t_ent)
@@ -188,10 +188,10 @@ class Test_OntologyDataProperty(_TestOntologyEntity, unittest.TestCase):
         self.assertEqual(DATAPROPERTY_ENTITY, self.t_ent.getTypeConst())
 
     def test_addSuperproperty(self):
-        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0022')
         newprop = self.test_ont.createNewDataProperty(newpropIRI)
 
-        self.t_ent.addSuperproperty('http://purl.obolibrary.org/obo/OBTO_0012')
+        self.t_ent.addSuperproperty('http://purl.obolibrary.org/obo/OBTO_0022')
 
         # Check that the property has the correct superproperty.
         found_prop = False
@@ -231,10 +231,10 @@ class Test_OntologyDataProperty(_TestOntologyEntity, unittest.TestCase):
         self.assertTrue(found_drange)
 
     def test_addDisjointWith(self):
-        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0022')
         newprop = self.test_ont.createNewDataProperty(newpropIRI)
 
-        self.t_ent.addDisjointWith('http://purl.obolibrary.org/obo/OBTO_0012')
+        self.t_ent.addDisjointWith('http://purl.obolibrary.org/obo/OBTO_0022')
 
         # Check that the property has the correct disjointness relationship.
         found_prop = False
@@ -264,7 +264,7 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
         _TestOntologyEntity.setUp(self)
 
         t_ent = self.test_ont.createNewObjectProperty(
-                'http://purl.obolibrary.org/obo/OBTO_0011'
+                'http://purl.obolibrary.org/obo/OBTO_0002'
         )
 
         self._setEntityObject(t_ent)
@@ -273,10 +273,10 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
         self.assertEqual(OBJECTPROPERTY_ENTITY, self.t_ent.getTypeConst())
 
     def test_addSuperproperty(self):
-        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0003')
         newprop = self.test_ont.createNewObjectProperty(newpropIRI)
 
-        self.t_ent.addSuperproperty('http://purl.obolibrary.org/obo/OBTO_0012')
+        self.t_ent.addSuperproperty('http://purl.obolibrary.org/obo/OBTO_0003')
 
         # Check that the property has the correct superproperty.
         found_prop = False
@@ -317,10 +317,10 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
         self.assertTrue(found_class)
 
     def test_addInverse(self):
-        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0003')
         newprop = self.test_ont.createNewObjectProperty(newpropIRI)
 
-        self.t_ent.addInverse('http://purl.obolibrary.org/obo/OBTO_0012')
+        self.t_ent.addInverse('http://purl.obolibrary.org/obo/OBTO_0003')
 
         # Check that the property has the correct inverse.
         found_prop = False
@@ -333,10 +333,10 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
 
 
     def test_addDisjointWith(self):
-        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0003')
         newprop = self.test_ont.createNewObjectProperty(newpropIRI)
 
-        self.t_ent.addDisjointWith('http://purl.obolibrary.org/obo/OBTO_0012')
+        self.t_ent.addDisjointWith('http://purl.obolibrary.org/obo/OBTO_0003')
 
         # Check that the property has the correct disjointness relationship.
         found_prop = False
@@ -426,7 +426,7 @@ class Test_OntologyAnnotationProperty(_TestOntologyEntity, unittest.TestCase):
         _TestOntologyEntity.setUp(self)
 
         t_ent = self.test_ont.createNewAnnotationProperty(
-                'http://purl.obolibrary.org/obo/OBTO_0011'
+                'http://purl.obolibrary.org/obo/OBTO_0031'
         )
 
         self._setEntityObject(t_ent)
@@ -435,10 +435,10 @@ class Test_OntologyAnnotationProperty(_TestOntologyEntity, unittest.TestCase):
         self.assertEqual(ANNOTATIONPROPERTY_ENTITY, self.t_ent.getTypeConst())
 
     def test_addSuperproperty(self):
-        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0032')
         newprop = self.test_ont.createNewAnnotationProperty(newpropIRI)
 
-        self.t_ent.addSuperproperty('http://purl.obolibrary.org/obo/OBTO_0012')
+        self.t_ent.addSuperproperty('http://purl.obolibrary.org/obo/OBTO_0032')
 
         # Check that the property has the correct superproperty.
         found_prop = False

@@ -31,7 +31,7 @@ class TestImportsBuildManager(unittest.TestCase):
     """
     def setUp(self):
         self.oc = OntoConfig('test_data/config.conf')
-        self.oc.set('Imports', 'importsdir', 'imports_src/')
+        self.oc.set('Imports', 'imports_src', 'imports_src/')
         self.oc.set('Build', 'builddir', '.')
 
         self.ibm = ImportsBuildManager(self.oc)

@@ -39,7 +39,7 @@ class TestOntoBuildManager(unittest.TestCase):
         # Test a set of terms file paths that includes wildcards and duplicate
         # file paths (including duplicates caused by expansion).
         termsfilesstr = 'test_table-valid.csv, test_table*.ods, test_table-valid.csv, test_table-valid.*'
-        self.oc.set('Main', 'termsfiles', termsfilesstr)
+        self.oc.set('Ontology', 'termsfiles', termsfilesstr)
 
         exp_fnames = [
             'test_table-valid.csv', 'test_table-valid.ods',
@@ -64,17 +64,17 @@ class TestOntoBuildManager(unittest.TestCase):
         self.oc.set('Ontology', 'base_ontology_file', './ontology.owl')
 
         # Test a terms file that is a valid path but not an actual file.
-        self.oc.set('Main', 'termsfiles', 'test_table-valid.csv, .')
+        self.oc.set('Ontology', 'termsfiles', 'test_table-valid.csv, .')
         with self.assertRaisesRegexp(
             RuntimeError, 'exists, but is not a valid file'
         ):
             self.obm._retrieveAndCheckFilePaths()
 
-        self.oc.set('Main', 'termsfiles', 'test_table-valid.csv')
+        self.oc.set('Ontology', 'termsfiles', 'test_table-valid.csv')
 
         # Test an invalid build directory.
         with self.assertRaisesRegexp(
-            RuntimeError, 'build directory does not exist'
+            RuntimeError, 'directory for the ontology does not exist'
         ):
             self.obm._retrieveAndCheckFilePaths()
 
