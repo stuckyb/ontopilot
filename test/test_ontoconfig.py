@@ -361,13 +361,13 @@ class TestOntoConfig(unittest.TestCase):
         # Verify that reasoner strings are not case sensitive.  If matching
         # were case sensitive, than at least one of the following would throw
         # an exception.
-        self.oc.set('Ontology', 'reasoner', 'HERMIT')
+        self.oc.set('Reasoning', 'reasoner', 'HERMIT')
         self.assertEqual('HERMIT', self.oc.getReasonerStr())
-        self.oc.set('Ontology', 'reasoner', 'hermit')
+        self.oc.set('Reasoning', 'reasoner', 'hermit')
         self.assertEqual('hermit', self.oc.getReasonerStr())
 
         # Verify that invalid strings are properly handled.
-        self.oc.set('Ontology', 'reasoner', 'invalid')
+        self.oc.set('Reasoning', 'reasoner', 'invalid')
         with self.assertRaisesRegexp(
             ConfigError, 'Invalid value for the "reasoner" setting'
         ):
@@ -379,25 +379,25 @@ class TestOntoConfig(unittest.TestCase):
             'subclasses', 'equivalent classes', 'types', 'subdata properties',
             'subobject properties'
         ]
-        self.oc.set('Ontology', 'inferences', '')
+        self.oc.set('Reasoning', 'inferences', '')
         self.assertEqual(exp_strs, self.oc.getInferenceTypeStrs())
 
         # Verify that empty type strings are ignored.
-        self.oc.set('Ontology', 'inferences', ',')
+        self.oc.set('Reasoning', 'inferences', ',')
         self.assertEqual(exp_strs, self.oc.getInferenceTypeStrs())
-        self.oc.set('Ontology', 'inferences', 'subclasses,')
+        self.oc.set('Reasoning', 'inferences', 'subclasses,')
         self.assertEqual(['subclasses'], self.oc.getInferenceTypeStrs())
 
         # Verify that inference type strings are not case sensitive.  If matching
         # were case sensitive, than at least one of the following would throw
         # an exception.
-        self.oc.set('Ontology', 'inferences', 'SUBCLASSES')
+        self.oc.set('Reasoning', 'inferences', 'SUBCLASSES')
         self.assertEqual(['SUBCLASSES'], self.oc.getInferenceTypeStrs())
-        self.oc.set('Ontology', 'inferences', 'subclasses')
+        self.oc.set('Reasoning', 'inferences', 'subclasses')
         self.assertEqual(['subclasses'], self.oc.getInferenceTypeStrs())
 
         # Verify that invalid type strings are properly handled.
-        self.oc.set('Ontology', 'inferences', 'subclasses, invalid')
+        self.oc.set('Reasoning', 'inferences', 'subclasses, invalid')
         with self.assertRaisesRegexp(
             ConfigError, 'Invalid inference type for the "inferences" setting'
         ):

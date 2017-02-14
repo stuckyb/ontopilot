@@ -335,7 +335,7 @@ to follow the project folder structure.  Please set the value of the \
         Returns the string identifying the reasoner to use.  If this option is
         not configured, use "HermiT" as the default.
         """
-        reasoner = self.getCustom('Ontology', 'reasoner', 'HermiT')
+        reasoner = self.getCustom('Reasoning', 'reasoner', 'HermiT')
 
         if not(reasoner.lower() in [rstr.lower() for rstr in REASONER_STRS]):
             raise ConfigError(
@@ -353,7 +353,7 @@ to follow the project folder structure.  Please set the value of the \
         configured, the defaults configured at the top of this file
         (DEFAULT_INFERENCE_TYPES) will be used.
         """
-        rawval = self.getCustom('Ontology', 'inferences', '')
+        rawval = self.getCustom('Reasoning', 'inferences', '')
 
         raw_inf_strs = [strval.strip() for strval in rawval.split(',')]
 
