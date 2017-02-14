@@ -177,3 +177,16 @@ class Test_InferredAxiomAdder(unittest.TestCase):
             axioms.iterator().next().containsEntityInSignature(disjointclass)
         )
 
+    def test_inconsistent(self):
+        """
+        Tests that attempts to add inferred axioms to an inconsistent ontology
+        are handled correctly.
+        """
+        testont = Ontology('test_data/inconsistent.owl')
+        testiaa = InferredAxiomAdder(testont, 'hermit')
+
+        with self.assertRaisesRegexp(
+            RuntimeError, 'The ontology is inconsistent'
+        ):
+            testiaa.addInferredAxioms(['subclasses'])
+

@@ -553,7 +553,9 @@ class Ontology:
         incoherence.  Returns a report object that is a dictionary with two
         elements.  The first, 'is_consistent', is a boolean.  The second,
         'unsatisfiable_classes', is a list of all named unsatisfiable classes,
-        excluding owl:Nothing.
+        excluding owl:Nothing.  Note that if an ontology is inconsistent, it is
+        generally not possible to infer the unsatisfiable classes, so
+        'unsatisfiable_classes' will always be empty.
         """
         report = {
             'unsatisfiable_classes': []

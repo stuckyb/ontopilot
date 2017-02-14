@@ -234,6 +234,15 @@ class InferredAxiomAdder:
             configuration file.
         annotate: If true, annotate inferred axioms to mark them as inferred.
         """
+        # First, make sure that the ontology is consistent; otherwise, all
+        # inference attempts will fail.
+        report = self.ont.checkEntailmentErrors()
+        if not(report['is_consistent']):
+            raise RuntimeError(
+                'The ontology is inconsistent.  Inferred axioms cannot be '
+                + 'generated for inconsistent ontologies.'
+            )
+
         # The general approach is to first get the set of all axioms in the
         # ontology prior to reasoning so that this set can be used for
         # de-duplication later.  Then, inferred axioms are added to a new
@@ -246,9 +255,6 @@ class InferredAxiomAdder:
         ontman = self.ont.ontman
         df = self.ont.df
         oldaxioms = owlont.getAxioms(ImportsEnum.INCLUDED)
-
-        #self.reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY)
-        #self.reasoner.precomputeInferences(InferenceType.CLASS_ASSERTIONS)
 
         generators = self._getGeneratorsList(inference_types)
         iog = InferredOntologyGenerator(self.reasoner, generators)
