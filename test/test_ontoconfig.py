@@ -403,3 +403,18 @@ class TestOntoConfig(unittest.TestCase):
         ):
             self.oc.getInferenceTypeStrs()
 
+    def test_getAnnotateInferred(self):
+        self.assertFalse(self.oc.getAnnotateInferred())
+
+        self.oc.set('Reasoning', 'annotate_inferred', 'false')
+        self.assertFalse(self.oc.getAnnotateInferred())
+
+        self.oc.set('Reasoning', 'annotate_inferred', 'True')
+        self.assertTrue(self.oc.getAnnotateInferred())
+
+        self.oc.set('Reasoning', 'annotate_inferred', 'true')
+        self.assertTrue(self.oc.getAnnotateInferred())
+
+        self.oc.set('Reasoning', 'annotate_inferred', 'yes')
+        self.assertTrue(self.oc.getAnnotateInferred())
+

@@ -377,3 +377,14 @@ to follow the project folder structure.  Please set the value of the \
 
         return inf_strs
 
+    def getAnnotateInferred(self):
+        """
+        Returns True if inferred axioms should be annotated as such; returns
+        False otherwise.
+        """
+        annotate_inferred = self.getCustom(
+            'Reasoning', 'annotate_inferred', 'False'
+        )
+
+        return annotate_inferred.lower() in TRUE_STRS
+
