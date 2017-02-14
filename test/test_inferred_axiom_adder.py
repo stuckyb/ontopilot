@@ -23,7 +23,32 @@ import unittest
 #from testfixtures import LogCapture
 
 # Java imports.
+from java.lang import UnsupportedOperationException
 from org.semanticweb.owlapi.model import IRI
+
+
+class NoOpReasoner:
+    """
+    This is a simple mock reasoner class that implements the OWLReasoner
+    interface by throwing an UnsupportedOperationException for each reasoner
+    method.  In addition, it tracks which methods have been called and the
+    total number of calls.  Note that we do not explicitly subclass
+    OWLReasoner, because doing so would cause the method call interception to
+    fail.  Calls to required interface methods would generate
+    NotImplementedError exceptions and would never hit the __getattr__()
+    method.
+    """
+    def __init__(self):
+        self.total_calls = 0
+        self.methods_called = set()
+
+    def __getattr__(self, name):
+        def stub(*args, **kwargs):
+            self.total_calls += 1
+            self.methods_called.add(name)
+            raise UnsupportedOperationException()
+
+        return stub
 
 
 class Test_InferredAxiomAdder(unittest.TestCase):
@@ -37,36 +62,50 @@ class Test_InferredAxiomAdder(unittest.TestCase):
         self.iaa = InferredAxiomAdder(ont, 'hermit')
 
     def test_getGeneratorsList(self):
-        # Check all supported inference types.
+        # Check all supported inference types.  There are 8 total.
         inftypes = INFERENCE_TYPES
 
-        # For now, just test that we're getting back the expected number of
-        # unique generators for each combination of reasoner type and set of
-        # inference type strings, rather than trying to check the types of all
-        # returned generators.
+        # First, test a mock reasoner with no inference support.  This will
+        # confirm that all inference types are covered by the code for testing
+        # inference support.
+        noopr = NoOpReasoner()
+        self.iaa.reasoner = noopr
+        gens_list = self.iaa._getGeneratorsList(inftypes)
+
+        # Check that the number of reasoner calls and the number of methods
+        # called both match the total number of inference types.
+        self.assertEqual(0, len(gens_list))
+        self.assertEqual(len(INFERENCE_TYPES), noopr.total_calls)
+        self.assertEqual(len(INFERENCE_TYPES), len(noopr.methods_called))
+
+        # With real reasoners, just test that we're getting back the expected
+        # number of unique generators for each combination of reasoner type and
+        # set of inference type strings, rather than trying to check the types
+        # of all returned generators.
 
         # HermiT should support all types of inferences.
         self.iaa.setReasoner('hermit')
         gens_list = self.iaa._getGeneratorsList(inftypes)
         # Convert the generators list to a set to ensure we are only counting
         # unique values.
-        self.assertEqual(
-            8, len(set(gens_list))
-        )
+        self.assertEqual(8, len(set(gens_list)))
 
         # ELK only supports a few inference types.
         self.iaa.setReasoner('elk')
         gens_list = self.iaa._getGeneratorsList(inftypes)
-        self.assertEqual(
-            3, len(set(gens_list))
-        )
+        self.assertEqual(3, len(set(gens_list)))
 
     def test_addInferredAxioms(self):
         """
         This does not attempt to exhaustively test every available type of
         inference.  Instead, it only tests the most commonly used inference
         types when generating inferred axioms for an ontology: class hierarchy,
-        individual types, and class disjointness.
+        individual types, and class disjointness.  Furthermore, the tests
+        implemented here are also designed to test important supporting
+        algorithms, including identifying and removing duplicate axioms,
+        finding and removing redundant subclass axioms, and removing trivial
+        axioms.  Actually generating the inferred axioms is the responsibility
+        of OWL API objects, so this approach to testing should be reasonable.
         """
         testclassIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0012')
         testclass = self.ont.df.getOWLClass(testclassIRI)
