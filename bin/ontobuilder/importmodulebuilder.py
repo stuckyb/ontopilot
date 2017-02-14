@@ -267,7 +267,7 @@ class ImportModuleBuilder:
         if signature.size() == 0:
             raise RuntimeError('No terms to import were found in the terms file.')
         
-        reasoner_man.disposeReasoners()
+        sourceont.getReasonerManager().disposeReasoners()
 
         module = sourceont.extractModule(signature, ont_IRI)
 
