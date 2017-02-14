@@ -30,8 +30,6 @@ compiling the ontology document.')
 argp.add_argument('-r', '--reason', action='store_true', help='If this \
 flag is given, a reasoner will be run on the ontology (ELK by default), and \
 inferred axioms will be added to the compiled ontology document.')
-argp.add_argument('-e', '--reasoner', type=str, required=False, default='ELK',
-        help='The reasoner to use when generating inferred axioms.')
 argp.add_argument('task', type=str, nargs='?', default='ontology', help='The \
 build task to run.  Must be either "init", "imports", or "ontology".')
 argp.add_argument('taskargs', type=str, nargs='*', help='Additional arguments \

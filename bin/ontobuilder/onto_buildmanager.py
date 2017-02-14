@@ -11,6 +11,7 @@ from tablereaderfactory import TableReaderFactory
 from owlontologybuilder import OWLOntologyBuilder, TermDescriptionError
 from ontobuilder import TRUE_STRS
 from imports_buildmanager import ImportsBuildManager
+from inferred_axiom_adder import InferredAxiomAdder
 
 # Java imports.
 from org.semanticweb.owlapi.model import IRI
@@ -214,7 +215,10 @@ class OntoBuildManager:
         if self.prereason:
             print 'Running reasoner and adding inferred axioms...'
             ontology = ontbuilder.getOntology()
-            ontology.addInferredAxioms(ontology.getELKReasoner())
+            inf_types = self.config.getInferenceTypeStrs()
+            annotate_inferred = self.config.getAnnotateInferred()
+            iaa = InferredAxiomAdder(ontology, self.config.getReasonerStr())
+            iaa.addInferredAxioms(inf_types, annotate_inferred)
 
         # Set the ontology ID, if an ontology IRI was provided.
         ontIRI = self.config.getOntologyIRI()
