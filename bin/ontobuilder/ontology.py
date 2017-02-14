@@ -547,12 +547,38 @@ class Ontology:
             # the LabelMap.
             self.labelmap.addOntologyTerms(importont)
 
+    def checkEntailmentErrors(self):
+        """
+        Checks for and reports two common entailment errors: inconsistency and
+        incoherence.  Returns a report object that is a dictionary with two
+        elements.  The first, 'is_consistent', is a boolean.  The second,
+        'unsatisfiable_classes', is a list of all named unsatisfiable classes,
+        excluding owl:Nothing.
+        """
+        report = {
+            'unsatisfiable_classes': []
+        }
+        reasoner = self.getReasonerManager().getReasoner('hermit')
+
+        report['is_consistent'] = reasoner.isConsistent()
+
+        if report['is_consistent']:
+            # If the ontology is inconsistent, any attempts to reason over it
+            # will throw exceptions.
+            owlnothing = self.df.getOWLNothing()
+            unsatisfiables = reasoner.getUnsatisfiableClasses().getEntities()
+            for unsatisfiable in unsatisfiables:
+                if not(unsatisfiable.equals(owlnothing)):
+                    report['unsatisfiable_classes'].append(unsatisfiable)
+
+        return report
+
     def setOntologySource(self, source_iri):
         """
         Sets the value of the "dc:source" annotation property for this ontology.
 
-          source_iri: The IRI of the source ontology.  Can be either an IRI
-                      object or a string.
+        source_iri: The IRI of the source ontology.  Can be either an IRI
+            object or a string.
         """
         sourceIRI = self.expandIRI(source_iri)
 

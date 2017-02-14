@@ -318,3 +318,30 @@ class Test_Ontology(unittest.TestCase):
             self.owlont.isDeclared(mergeclass, ImportsEnum.EXCLUDED)
         )
 
+    def test_checkEntailmentErrors(self):
+        # Check on ontology that is both consistent and coherent.
+        report = self.ont.checkEntailmentErrors()
+        self.assertTrue(report['is_consistent'])
+        self.assertEqual(0, len(report['unsatisfiable_classes']))
+
+        # Check an ontology that is both inconsistent and incoherent.
+        testont = Ontology('test_data/inconsistent.owl')
+        report = testont.checkEntailmentErrors()
+        self.assertFalse(report['is_consistent'])
+        self.assertEqual(0, len(report['unsatisfiable_classes']))
+
+        testont.getReasonerManager().disposeReasoners()
+
+        # Check an ontology that is incoherent but not inconsistent.
+        # Remove the instance of the unsatisfiable class 'test class 2' to make
+        # the ontology consistent.
+        individual = testont.getExistingIndividual('obo:OBTO_9000')
+        testont.removeEntity(individual)
+        unsatisfiable = testont.getExistingClass('obo:OBTO_0011').getOWLAPIObj()
+        report = testont.checkEntailmentErrors()
+        self.assertTrue(report['is_consistent'])
+        self.assertEqual(1, len(report['unsatisfiable_classes']))
+        self.assertTrue(
+            unsatisfiable.equals(report['unsatisfiable_classes'][0])
+        )
+
