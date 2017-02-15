@@ -12,7 +12,9 @@ class ReasonerManager:
     Manages DL reasoners for Ontology objects.  Given a string designating a
     reasoner type and a source ontology, ReasonerManager will return a
     corresponding reasoner object and ensure that only one instance of each
-    reasoner type is created.
+    reasoner type is created.  ReasonerManagers will also ensure that the
+    reasoner instances they manage remain synchronized with their source
+    ontologies by only instantiating non-buffering reasoners.
     """
     def __init__(self, ontology):
         self.ontology = ontology
@@ -50,7 +52,7 @@ class ReasonerManager:
                 rfact = HermiT.ReasonerFactory()
 
             if rfact != None:
-                self.reasoners[reasoner_name] = rfact.createReasoner(owlont)
+                self.reasoners[reasoner_name] = rfact.createNonBufferingReasoner(owlont)
             else:
                 raise RuntimeError(
                     'Unrecognized DL reasoner name: '

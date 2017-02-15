@@ -330,7 +330,9 @@ class Test_Ontology(unittest.TestCase):
         self.assertFalse(report['is_consistent'])
         self.assertEqual(0, len(report['unsatisfiable_classes']))
 
-        testont.getReasonerManager().disposeReasoners()
+        # The ReasonerManager should ensure that reasoner instances track
+        # ontology changes, so the following line should not be needed.
+        #testont.getReasonerManager().disposeReasoners()
 
         # Check an ontology that is incoherent but not inconsistent.
         # Remove the instance of the unsatisfiable class 'test class 2' to make
