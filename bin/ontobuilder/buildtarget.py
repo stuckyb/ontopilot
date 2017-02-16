@@ -77,6 +77,8 @@ product name key: "{2}".'.format(
 
         # Run the build task for this target.
         results = self._run()
+        if results == None:
+            results = {}
 
         # Merge the results of this build target with the products accumulated
         # from lower-level build targets, again making sure we don't have any
@@ -119,6 +121,8 @@ duplicates one of its dependency\'s product name keys: "{1}".'.format(
         build targets on which this target depends will have already been run,
         and the results will be in the dictionary self.products.  This method
         should return a dictionary (which may be empty) of build products.
+        Alternatively, the method can return None (or have no return statement)
+        if no build products need to be passed up the dependency chain.
         """
         return {}
 
