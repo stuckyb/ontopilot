@@ -10,11 +10,11 @@ import glob
 from tablereaderfactory import TableReaderFactory
 from owlontologybuilder import OWLOntologyBuilder, TermDescriptionError
 from ontobuilder import TRUE_STRS
+from buildtarget import BuildTarget
 from imports_buildtarget import ImportsBuildTarget
 from inferred_axiom_adder import InferredAxiomAdder
 
 # Java imports.
-from org.semanticweb.owlapi.model import IRI
 
 
 # Required columns in terms files.
@@ -26,7 +26,7 @@ OPTIONAL_COLS = (
     'Inverse', 'Characteristics', 'Ignore'
 )
         
-class OntoBuildManager:
+class OntoBuildTarget(BuildTarget):
     def __init__(
             self, config, mergeimports=False, prereason=False,
             check_consistency=False, expanddefs=True
@@ -39,11 +39,21 @@ class OntoBuildManager:
             ontology is logically consistent.
         expanddefs: Whether to add IDs to term references in definitions.
         """
+        BuildTarget.__init__(self)
+
         self.config = config
         self.mergeimports = mergeimports
         self.prereason = prereason
         self.check_consistency = check_consistency
         self.expanddefs = expanddefs
+
+        # Set the imports modules as a dependency, regardless of whether we're
+        # using in-source or out-of-source builds.  Either way, it is probably
+        # best for end users to make sure imports modules remain updated.  Of
+        # course, for out-of-source builds, it is up to the user to make sure
+        # the imports modules get copied to their destination location.
+        self.ibt = ImportsBuildTarget(self.config)
+        self.addDependency(self.ibt)
 
     def _getExpandedTermsFilesList(self):
         """
@@ -123,7 +133,10 @@ class OntoBuildManager:
 
         return destpath
 
-    def isBuildNeeded(self):
+    def getBuildNotRequiredMsg(self):
+        return 'The compiled ontology is already up to date.'
+
+    def _isBuildRequired(self):
         """
         Checks if the compiled ontology already exists, and if so, whether file
         modification times indicate that the compiled ontology is already up to
@@ -153,25 +166,28 @@ class OntoBuildManager:
         else:
             return True
 
-    def build(self):
+    def _run(self):
         """
         Runs the build process and produces a compiled OWL ontology file.
         """
+        if not(self._isBuildRequired()):
+            return
+
+        # Get the imports modules IRIs from the imports build target.
+        importsIRIs = self.ibt.getImportsIRIs()
+
         self._retrieveAndCheckFilePaths()
 
         ontbuilder = OWLOntologyBuilder(self.base_ont_path)
-        ibt = ImportsBuildTarget(self.config)
-
         # Add all import modules to the ontology.
-        ontman = ontbuilder.getOntology().getOntologyManager()
         if self.mergeimports:
-            # Merge the axioms from each important module directly into this
+            # Merge the axioms from each import module directly into this
             # ontology (that is, do not use import statements).
-            for importIRI in ibt.getImportsIRIs():
+            for importIRI in importsIRIs:
                 ontbuilder.getOntology().mergeOntology(importIRI)
         else:
-            # Add import declarations for each import modules.
-            for importIRI in ibt.getImportsIRIs():
+            # Add an import declaration for each import module.
+            for importIRI in importsIRIs:
                 ontbuilder.getOntology().addImport(importIRI, True)
 
         # Process each source file.  In this step, entities and label
