@@ -4,17 +4,11 @@
 #
 
 # Python imports.
-import os, glob, shutil
+import os, shutil
 import re
-import urllib, urlparse
-from tablereaderfactory import TableReaderFactory
-from owlontologybuilder import OWLOntologyBuilder, TermDescriptionError
-from ontobuilder import TRUE_STRS
-from imports_buildmanager import ImportsBuildManager
 from ontoconfig import OntoConfig
 
 # Java imports.
-from org.semanticweb.owlapi.model import IRI
 
 
 # Required columns in terms files.
