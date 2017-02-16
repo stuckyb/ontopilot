@@ -10,7 +10,7 @@ import glob
 from tablereaderfactory import TableReaderFactory
 from owlontologybuilder import OWLOntologyBuilder, TermDescriptionError
 from ontobuilder import TRUE_STRS
-from imports_buildmanager import ImportsBuildManager
+from imports_buildtarget import ImportsBuildTarget
 from inferred_axiom_adder import InferredAxiomAdder
 
 # Java imports.
@@ -27,16 +27,22 @@ OPTIONAL_COLS = (
 )
         
 class OntoBuildManager:
-    def __init__(self, config, mergeimports=False, prereason=False, expanddefs=True):
+    def __init__(
+            self, config, mergeimports=False, prereason=False,
+            check_consistency=False, expanddefs=True
+        ):
         """
         config: An OntoConfig instance.
         mergeimports: Whether to merge imported terms into the main ontology.
         prereason: Whether to add inferred axioms to the compiled ontology.
+        check_consistency: Whether to use a reasoner to check if the compiled
+            ontology is logically consistent.
         expanddefs: Whether to add IDs to term references in definitions.
         """
         self.config = config
         self.mergeimports = mergeimports
         self.prereason = prereason
+        self.check_consistency = check_consistency
         self.expanddefs = expanddefs
 
     def _getExpandedTermsFilesList(self):
@@ -154,18 +160,18 @@ class OntoBuildManager:
         self._retrieveAndCheckFilePaths()
 
         ontbuilder = OWLOntologyBuilder(self.base_ont_path)
-        ibm = ImportsBuildManager(self.config)
+        ibt = ImportsBuildTarget(self.config)
 
         # Add all import modules to the ontology.
         ontman = ontbuilder.getOntology().getOntologyManager()
         if self.mergeimports:
             # Merge the axioms from each important module directly into this
             # ontology (that is, do not use import statements).
-            for importIRI in ibm.getImportsIRIs():
+            for importIRI in ibt.getImportsIRIs():
                 ontbuilder.getOntology().mergeOntology(importIRI)
         else:
             # Add import declarations for each import modules.
-            for importIRI in ibm.getImportsIRIs():
+            for importIRI in ibt.getImportsIRIs():
                 ontbuilder.getOntology().addImport(importIRI, True)
 
         # Process each source file.  In this step, entities and label
@@ -211,6 +217,9 @@ class OntoBuildManager:
         # Define all deferred axioms from the source entity descriptions.
         print 'Defining all remaining entity axioms...'
         ontbuilder.processDeferredEntityAxioms(self.expanddefs)
+
+        if self.prereason or self.check_consistency:
+            print 'Checking whether the ontology is logically consistent...'
 
         if self.prereason:
             print 'Running reasoner and adding inferred axioms...'
