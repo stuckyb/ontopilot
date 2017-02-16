@@ -173,12 +173,15 @@ class ImportsBuildTarget(BuildTarget):
         """
         Runs the imports build process and produces import module OWL files.
         """
+        if not(self._isBuildRequired()):
+            return
+
         for row in self.tablerows:
             termsfile_path = row['abs_tfilepath']
-    
+
             if self.mbuilder.isBuildNeeded(row['IRI'], termsfile_path):
                 print ('Building the ' + row['name'] + ' (' + row['IRI']
-                        + ') import module.')
+                    + ') import module.')
                 self.mbuilder.buildModule(row['IRI'], termsfile_path)
             else:
                 print ('The ' + row['name'] + ' (' + row['IRI']
