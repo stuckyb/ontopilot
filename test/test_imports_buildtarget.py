@@ -16,7 +16,7 @@
 
 # Python imports.
 from ontobuilder.ontoconfig import OntoConfig
-from ontobuilder.imports_buildmanager import ImportsBuildManager
+from ontobuilder.imports_buildtarget import ImportsBuildTarget
 from test_tablereader import TableStub
 from ontobuilder.tablereader import TableRow, TableRowError
 import unittest
@@ -25,16 +25,16 @@ import os.path
 # Java imports.
 
 
-class TestImportsBuildManager(unittest.TestCase):
+class TestImportsBuildTarget(unittest.TestCase):
     """
-    Tests the ImportsBuildManager class.
+    Tests the ImportsBuildTarget class.
     """
     def setUp(self):
         self.oc = OntoConfig('test_data/config.conf')
         self.oc.set('Imports', 'imports_src', 'imports_src/')
         self.oc.set('Build', 'builddir', '.')
 
-        self.ibm = ImportsBuildManager(self.oc)
+        self.ibt = ImportsBuildTarget(self.oc)
 
         self.td_path = os.path.abspath('test_data/imports_src/')
 
@@ -46,19 +46,19 @@ class TestImportsBuildManager(unittest.TestCase):
         with self.assertRaisesRegexp(
             TableRowError, 'No input terms file was provided.'
         ):
-            self.ibm._getAbsTermsFilePath(tr)
+            self.ibt._getAbsTermsFilePath(tr)
 
         # Test an invalid terms file path.
         tr['Termsfile'] = 'nonexistent/file.csv'
         with self.assertRaisesRegexp(
             TableRowError, 'Could not find the input terms file'
         ):
-            self.ibm._getAbsTermsFilePath(tr)
+            self.ibt._getAbsTermsFilePath(tr)
 
         # Test a valid terms file path.
         tr['Termsfile'] = 'bco_terms.csv'
         self.assertEqual(
-            self.td_path + '/bco_terms.csv', self.ibm._getAbsTermsFilePath(tr)
+            self.td_path + '/bco_terms.csv', self.ibt._getAbsTermsFilePath(tr)
         )
 
     def test_checkSourceIRI(self):
@@ -69,14 +69,14 @@ class TestImportsBuildManager(unittest.TestCase):
         with self.assertRaisesRegexp(
             TableRowError, 'Invalid source ontology IRI string'
         ):
-            self.ibm._checkSourceIRI(tr)
+            self.ibt._checkSourceIRI(tr)
 
         # Test an invalid source IRI string.
         tr['IRI'] = 'invalid IRI'
         with self.assertRaisesRegexp(
             TableRowError, 'Invalid source ontology IRI string'
         ):
-            self.ibm._checkSourceIRI(tr)
+            self.ibt._checkSourceIRI(tr)
 
     def test_getImportsIRIs(self):
         expected = [
@@ -84,5 +84,5 @@ class TestImportsBuildManager(unittest.TestCase):
             'https://a.sample.iri/to/imports/bco_ontname_import_module.owl'
         ]
 
-        self.assertEqual(expected, self.ibm.getImportsIRIs())
+        self.assertEqual(expected, self.ibt.getImportsIRIs())
 
