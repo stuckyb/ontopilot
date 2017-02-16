@@ -15,13 +15,8 @@
 
 
 # Python imports.
-from ontobuilder.ontoconfig import OntoConfig
-from ontobuilder.imports_buildmanager import ImportsBuildManager
-from test_tablereader import TableStub
-from ontobuilder.tablereader import TableRow, TableRowError
 from ontobuilder.buildtarget import BuildTarget
 import unittest
-import os.path
 
 # Java imports.
 
