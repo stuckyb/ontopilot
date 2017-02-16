@@ -226,7 +226,7 @@ class ImportModuleBuilder:
             try:
                 self.sourceOntologyIRI = ontologyIRI
                 opener.retrieve(ontologyIRI, ontfile, self._updateDownloadProgress)
-            except HTTPError as err:
+            except (IOError, HTTPError) as err:
                 raise RuntimeError('Unable to download the external ontology at "'
                         + ontologyIRI + '": ' + str(err))
 
