@@ -151,7 +151,7 @@ class ImportsBuildTarget(BuildTarget):
         the import module build process).
         """
         mIRIs_list = []
-        for row in tablerows:
+        for row in self.tablerows:
             mIRIs_list.append(self.mbuilder.getModuleIRIStr(row['IRI']))
 
         return mIRIs_list
