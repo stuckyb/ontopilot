@@ -1,7 +1,6 @@
 
 #
-# Manages the process of building an ontology from a base ontology file and
-# zero or more input terms files.
+# Manages the process of creating a new ontology project.
 #
 
 # Python imports.
