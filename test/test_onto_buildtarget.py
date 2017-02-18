@@ -16,22 +16,26 @@
 
 # Python imports.
 from ontobuilder.ontoconfig import OntoConfig
-from ontobuilder.onto_buildmanager import OntoBuildManager
+from ontobuilder.onto_buildtarget import OntoBuildTarget
 import unittest
 import os.path
 
 # Java imports.
 
 
-class TestOntoBuildManager(unittest.TestCase):
+class TestOntoBuildTarget(unittest.TestCase):
     """
-    Tests the supporting ("private") methods of the OntoBuildManager class.
+    Tests the supporting ("private") methods of the OntoBuildTarget class.
     """
     def setUp(self):
         self.oc = OntoConfig('test_data/config.conf')
         self.oc.set('Ontology', 'termsdir', '.')
 
-        self.obm = OntoBuildManager(self.oc)
+        # We need to set the imports source location so that the
+        # ImportsBuildTarget dependency will initialize without error.
+        self.oc.set('Imports', 'imports_src', 'imports_src/')
+
+        self.obt = OntoBuildTarget(self.oc)
 
         self.td_path = os.path.abspath('test_data/')
 
@@ -51,7 +55,7 @@ class TestOntoBuildManager(unittest.TestCase):
         ]
 
         self.assertEqual(
-            sorted(exp_fnames), sorted(self.obm._getExpandedTermsFilesList())
+            sorted(exp_fnames), sorted(self.obt._getExpandedTermsFilesList())
         )
 
     def test_retrieveAndCheckFilePaths(self):
@@ -59,7 +63,7 @@ class TestOntoBuildManager(unittest.TestCase):
         with self.assertRaisesRegexp(
             RuntimeError, 'base ontology file could not be found'
         ):
-            self.obm._retrieveAndCheckFilePaths()
+            self.obt._retrieveAndCheckFilePaths()
 
         self.oc.set('Ontology', 'base_ontology_file', './ontology.owl')
 
@@ -68,7 +72,7 @@ class TestOntoBuildManager(unittest.TestCase):
         with self.assertRaisesRegexp(
             RuntimeError, 'exists, but is not a valid file'
         ):
-            self.obm._retrieveAndCheckFilePaths()
+            self.obt._retrieveAndCheckFilePaths()
 
         self.oc.set('Ontology', 'termsfiles', 'test_table-valid.csv')
 
@@ -76,5 +80,14 @@ class TestOntoBuildManager(unittest.TestCase):
         with self.assertRaisesRegexp(
             RuntimeError, 'directory for the ontology does not exist'
         ):
-            self.obm._retrieveAndCheckFilePaths()
+            self.obt._retrieveAndCheckFilePaths()
+
+    def test_getOutputFilePath(self):
+        self.oc.set('Build', 'insource_builds', 'True')
+        exppath = os.path.join(self.td_path, 'ontology/ontname.owl')
+        self.assertEqual(exppath, self.obt._getOutputFilePath())
+
+        self.oc.set('Build', 'insource_builds', 'False')
+        exppath = os.path.join(self.td_path, 'build/ontname.owl')
+        self.assertEqual(exppath, self.obt._getOutputFilePath())
 
