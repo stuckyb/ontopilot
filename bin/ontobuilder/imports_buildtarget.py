@@ -75,7 +75,7 @@ class ImportsBuildTarget(BuildTarget):
         if self.config.getDoInSourceBuilds():
             if not(os.path.isdir(self.outputdir)):
                 raise RuntimeError(
-                    'The destination directory does not exist: {0}.'.format(self.builddir)
+                    'The destination directory does not exist: {0}.'.format(self.outputdir)
                 )
 
     def _readImportsSource(self):
