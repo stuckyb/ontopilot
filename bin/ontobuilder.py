@@ -8,6 +8,7 @@ from ontobuilder import OntoConfig, ConfigError
 from ontobuilder.basic_buildtargets import InitTarget
 from ontobuilder.imports_buildtarget import ImportsBuildTarget
 from ontobuilder.onto_buildtarget import OntoBuildTarget
+from ontobuilder.modified_onto_buildtarget import ModifiedOntoBuildTarget
 
 
 # Set the format for logging output.
@@ -23,11 +24,11 @@ argp.add_argument('-n', '--no_def_expand', action='store_true', help='If this \
 flag is given, no attempt will be made to modify definition strings by adding \
 the IDs of term labels referenced in the definitions.')
 argp.add_argument('-m', '--merge_imports', action='store_true', help='If this \
-flag is given, imported terms will be merged with the main ontology when \
-compiling the ontology document.')
+flag is given, imported terms will be merged with the main ontology into a \
+new ontology document.')
 argp.add_argument('-r', '--reason', action='store_true', help='If this \
 flag is given, a reasoner will be run on the ontology (ELK by default), and \
-inferred axioms will be added to the compiled ontology document.')
+inferred axioms will be added to a new ontology document.')
 argp.add_argument('task', type=str, nargs='?', default='ontology', help='The \
 build task to run.  Must be either "init", "imports", or "ontology".')
 argp.add_argument('taskargs', type=str, nargs='*', help='Additional arguments \
@@ -51,11 +52,16 @@ else:
         sys.exit(1)
 
     if args.task == 'ontology':
-        target = OntoBuildTarget(
-            config, args.merge_imports, args.reason, not(args.no_def_expand)
-        )
+        if args.merge_imports or args.reason:
+            target = ModifiedOntoBuildTarget(
+                config, args.merge_imports, args.reason
+            )
+        else:
+            target = OntoBuildTarget(config, not(args.no_def_expand))
+
     elif args.task == 'imports':
         target = ImportsBuildTarget(config)
+
     else:
         print '\nUnrecognized build task: {0}.\n'.format(args.task)
         sys.exit(1)

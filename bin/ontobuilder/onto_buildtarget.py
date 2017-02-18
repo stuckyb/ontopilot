@@ -27,24 +27,14 @@ OPTIONAL_COLS = (
 )
         
 class OntoBuildTarget(BuildTarget):
-    def __init__(
-            self, config, mergeimports=False, prereason=False,
-            check_consistency=False, expanddefs=True
-        ):
+    def __init__(self, config, expanddefs=True):
         """
         config: An OntoConfig instance.
-        mergeimports: Whether to merge imported terms into the main ontology.
-        prereason: Whether to add inferred axioms to the compiled ontology.
-        check_consistency: Whether to use a reasoner to check if the compiled
-            ontology is logically consistent.
         expanddefs: Whether to add IDs to term references in definitions.
         """
         BuildTarget.__init__(self)
 
         self.config = config
-        self.mergeimports = mergeimports
-        self.prereason = prereason
-        self.check_consistency = check_consistency
         self.expanddefs = expanddefs
 
         # Set the imports modules as a dependency, regardless of whether we're
@@ -119,18 +109,6 @@ class OntoBuildTarget(BuildTarget):
             ontfilename = os.path.basename(self.config.getOntologyFilePath())
             destpath = os.path.join(self.config.getBuildDir(), ontfilename)
 
-        # If we are merging the import modules into the ontology (rather than
-        # using import statements), modify the file name accordingly.
-        if self.mergeimports:
-            parts = os.path.splitext(destpath)
-            destpath = parts[0] + '-merged' + parts[1]
-
-        # If we are adding inferred axioms to the ontology, modify the file
-        # name accordingly.
-        if self.prereason:
-            parts = os.path.splitext(destpath)
-            destpath = parts[0] + '-reasoned' + parts[1]
-
         return destpath
 
     def getBuildNotRequiredMsg(self):
@@ -179,16 +157,9 @@ class OntoBuildTarget(BuildTarget):
         self._retrieveAndCheckFilePaths()
 
         ontbuilder = OWLOntologyBuilder(self.base_ont_path)
-        # Add all import modules to the ontology.
-        if self.mergeimports:
-            # Merge the axioms from each import module directly into this
-            # ontology (that is, do not use import statements).
-            for importIRI in importsIRIs:
-                ontbuilder.getOntology().mergeOntology(importIRI)
-        else:
-            # Add an import declaration for each import module.
-            for importIRI in importsIRIs:
-                ontbuilder.getOntology().addImport(importIRI, True)
+        # Add an import declaration for each import module.
+        for importIRI in importsIRIs:
+            ontbuilder.getOntology().addImport(importIRI, True)
 
         # Process each source file.  In this step, entities and label
         # annotations are defined, but processing of all other axioms (e.g.,
@@ -233,17 +204,6 @@ class OntoBuildTarget(BuildTarget):
         # Define all deferred axioms from the source entity descriptions.
         print 'Defining all remaining entity axioms...'
         ontbuilder.processDeferredEntityAxioms(self.expanddefs)
-
-        if self.prereason or self.check_consistency:
-            print 'Checking whether the ontology is logically consistent...'
-
-        if self.prereason:
-            print 'Running reasoner and adding inferred axioms...'
-            ontology = ontbuilder.getOntology()
-            inf_types = self.config.getInferenceTypeStrs()
-            annotate_inferred = self.config.getAnnotateInferred()
-            iaa = InferredAxiomAdder(ontology, self.config.getReasonerStr())
-            iaa.addInferredAxioms(inf_types, annotate_inferred)
 
         # Set the ontology ID, if an ontology IRI was provided.
         ontIRI = self.config.getOntologyIRI()
