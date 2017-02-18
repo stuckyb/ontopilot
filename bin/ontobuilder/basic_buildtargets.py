@@ -5,28 +5,11 @@
 
 # Python imports.
 import sys, os
-import glob
-import abc
-from tablereaderfactory import TableReaderFactory
-from owlontologybuilder import OWLOntologyBuilder, TermDescriptionError
-from ontobuilder import TRUE_STRS
 from buildtarget import BuildTarget
-from inferred_axiom_adder import InferredAxiomAdder
 from projectcreator import ProjectCreator
 
 # Java imports.
-from org.semanticweb.owlapi.model import IRI
 
-
-# Required columns in terms files.
-REQUIRED_COLS = ('Type', 'ID')
-
-# Optional columns in terms files.
-OPTIONAL_COLS = (
-    'Comments', 'Parent', 'Subclass of', 'Equivalent to', 'Disjoint with',
-    'Inverse', 'Characteristics', 'Ignore'
-)
-        
 
 class InitTarget(BuildTarget):
     """
