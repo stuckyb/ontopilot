@@ -272,6 +272,13 @@ class Test_Ontology(unittest.TestCase):
         annot_ax_set = self.owlont.getAnnotationAssertionAxioms(IRIobj)
         self.assertTrue(annot_ax_set.isEmpty())
 
+    def test_getImports(self):
+        expected = [
+            'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl'
+        ]
+        imports_IRI_strs = [iri.toString() for iri in self.ont.getImports()]
+        self.assertEqual(expected, imports_IRI_strs)
+
     def test_addImport(self):
         importIRI = IRI.create('http://test.import/iri/ont.owl')
 

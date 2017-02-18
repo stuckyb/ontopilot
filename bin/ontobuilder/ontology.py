@@ -469,6 +469,15 @@ class Ontology:
         newoid = OWLOntologyID(Optional.fromNullable(ontIRI), Optional.absent())
         self.ontman.applyChange(SetOntologyID(self.ontology, newoid))
 
+    def getImports(self):
+        """
+        Returns a list of the IRIs of ontologies that are imported into this
+        ontology (i.e., via OWL import statements).
+        """
+        importslist = list(self.ontology.getDirectImportsDocuments())
+
+        return importslist
+
     def addImport(self, source_iri, load_import=True):
         """
         Adds an OWL import statement to this ontology.
