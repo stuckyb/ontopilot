@@ -36,9 +36,9 @@ class Test_ReasonerManager(unittest.TestCase):
     def test_getReasoner(self):
         """
         For each supported reasoner type, make sure ReasonerManager returns the
-        correct type of reasoner and that reasoner instances are functionally
-        singletons.  Also verifies that reasoner name strings are not case
-        sensitive.
+        correct type of reasoner, that reasoner instances are functionally
+        singletons, and that all reasoners run in non-buffered mode.  Also
+        verifies that reasoner name strings are not case sensitive.
         """
         reasoner = self.rman.getReasoner('ELK')
         self.assertIsInstance(reasoner, ElkReasoner)
