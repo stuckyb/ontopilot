@@ -85,9 +85,9 @@ class TestOntoBuildTarget(unittest.TestCase):
     def test_getOutputFilePath(self):
         self.oc.set('Build', 'insource_builds', 'True')
         exppath = os.path.join(self.td_path, 'ontology/ontname.owl')
-        self.assertEqual(exppath, self.obt._getOutputFilePath())
+        self.assertEqual(exppath, self.obt.getOutputFilePath())
 
         self.oc.set('Build', 'insource_builds', 'False')
         exppath = os.path.join(self.td_path, 'build/ontname.owl')
-        self.assertEqual(exppath, self.obt._getOutputFilePath())
+        self.assertEqual(exppath, self.obt.getOutputFilePath())
 

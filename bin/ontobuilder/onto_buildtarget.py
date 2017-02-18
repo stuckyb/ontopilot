@@ -103,13 +103,13 @@ class OntoBuildTarget(BuildTarget):
         self.termsfile_paths = pathslist
 
         # Verify that the build directory exists.
-        destdir = os.path.dirname(self._getOutputFilePath())
+        destdir = os.path.dirname(self.getOutputFilePath())
         if not(os.path.isdir(destdir)):
             raise RuntimeError(
                 'The destination directory for the ontology does not exist: {0}.'.format(destdir)
             )
 
-    def _getOutputFilePath(self):
+    def getOutputFilePath(self):
         """
         Returns the path of the compiled ontology file.
         """
@@ -142,7 +142,7 @@ class OntoBuildTarget(BuildTarget):
         modification times indicate that the compiled ontology is already up to
         date.  Returns True if the compiled ontology needs to be updated.
         """
-        foutpath = self._getOutputFilePath()
+        foutpath = self.getOutputFilePath()
 
         if os.path.isfile(foutpath):
             mtime = os.path.getmtime(foutpath)
@@ -251,7 +251,7 @@ class OntoBuildTarget(BuildTarget):
             ontbuilder.getOntology().setOntologyID(ontIRI)
 
         # Write the ontology to the output file.
-        fileoutpath = self._getOutputFilePath()
+        fileoutpath = self.getOutputFilePath()
         print 'Writing compiled ontology to ' + fileoutpath + '...'
         ontbuilder.getOntology().saveOntology(fileoutpath)
 
