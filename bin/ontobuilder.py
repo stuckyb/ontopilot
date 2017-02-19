@@ -9,6 +9,7 @@ from ontobuilder.basic_buildtargets import InitTarget
 from ontobuilder.imports_buildtarget import ImportsBuildTarget
 from ontobuilder.onto_buildtarget import OntoBuildTarget
 from ontobuilder.modified_onto_buildtarget import ModifiedOntoBuildTarget
+from ontobuilder.errorcheck_buildtarget import ErrorCheckBuildTarget
 
 
 # Set the format for logging output.
@@ -30,7 +31,8 @@ argp.add_argument('-r', '--reason', action='store_true', help='If this \
 flag is given, a reasoner will be run on the ontology (ELK by default), and \
 inferred axioms will be added to a new ontology document.')
 argp.add_argument('task', type=str, nargs='?', default='ontology', help='The \
-build task to run.  Must be either "init", "imports", or "ontology".')
+build task to run.  Must be either "init", "imports", "ontology", or \
+"errorcheck".')
 argp.add_argument('taskargs', type=str, nargs='*', help='Additional arguments \
 for the specified build task.')
 args = argp.parse_args()
@@ -58,6 +60,9 @@ else:
             )
         else:
             target = OntoBuildTarget(config, not(args.no_def_expand))
+
+    elif args.task == 'errorcheck':
+        target = ErrorCheckBuildTarget(config)
 
     elif args.task == 'imports':
         target = ImportsBuildTarget(config)
