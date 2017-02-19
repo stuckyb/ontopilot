@@ -1,11 +1,7 @@
 
 # Python imports.
 import os
-import glob
-from tablereaderfactory import TableReaderFactory
 from ontology import Ontology
-from owlontologybuilder import OWLOntologyBuilder, TermDescriptionError
-from ontobuilder import TRUE_STRS
 from buildtarget import BuildTarget
 from onto_buildtarget import OntoBuildTarget
 from inferred_axiom_adder import InferredAxiomAdder
@@ -13,15 +9,6 @@ from inferred_axiom_adder import InferredAxiomAdder
 # Java imports.
 
 
-# Required columns in terms files.
-REQUIRED_COLS = ('Type', 'ID')
-
-# Optional columns in terms files.
-OPTIONAL_COLS = (
-    'Comments', 'Parent', 'Subclass of', 'Equivalent to', 'Disjoint with',
-    'Inverse', 'Characteristics', 'Ignore'
-)
-        
 class ModifiedOntoBuildTarget(BuildTarget):
     """
     Manages the process of building an "modified" ontology from the standard
