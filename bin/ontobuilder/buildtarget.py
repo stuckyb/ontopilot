@@ -155,8 +155,9 @@ class BuildTargetWithConfig(BuildTarget):
                 self.config = OntoConfig(args.config_file)
             except IOError as err:
                 raise RuntimeError(
-                    'Please make sure the configuration file exists and that '
-                    'the path ("{0}") is correct.  Use the "-c" '
+                    'Unable to load the project configuration file.  Please '
+                    'make sure the configuration file exists and that the '
+                    'path ("{0}") is correct.  Use the "-c" '
                     '(or "--config_file") option to specify a different '
                     'configuration file or path.'.format(args.config_file)
                 )
