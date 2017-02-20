@@ -11,7 +11,7 @@ from tablereader import TableRowError
 from importmodulebuilder import ImportModuleBuilder
 from ontobuilder import TRUE_STRS
 from rfc3987 import rfc3987
-from buildtarget import BuildTarget
+from buildtarget import BuildTargetWithConfig
 from basic_buildtargets import BuildDirTarget
 
 # Java imports.
@@ -24,18 +24,20 @@ REQUIRED_COLS = ('Termsfile', 'IRI')
 OPTIONAL_COLS = ('Ignore',)
 
 
-class ImportsBuildTarget(BuildTarget):
+class ImportsBuildTarget(BuildTargetWithConfig):
     """
     A build target for compiling the imports modules.
     """
-    def __init__(self, config):
+    def __init__(self, args, config=None):
         """
+        args: A "struct" of configuration options (typically, parsed
+            command-line arguments).  The only required member is 'config_file'
+            (string).
         config: An OntoConfig instance.
         """
-        BuildTarget.__init__(self)
+        BuildTargetWithConfig.__init__(self, args, config)
 
-        self.config = config
-        self.addDependency(BuildDirTarget(self.config))
+        self.addDependency(BuildDirTarget(args, self.config))
 
         # The string builddir is the path to a build directory where, at a
         # minimum, source ontologies can be cached.  If we are doing an

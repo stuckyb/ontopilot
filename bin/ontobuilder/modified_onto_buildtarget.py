@@ -2,33 +2,33 @@
 # Python imports.
 import os
 from ontology import Ontology
-from buildtarget import BuildTarget
+from buildtarget import BuildTargetWithConfig
 from onto_buildtarget import OntoBuildTarget
 from inferred_axiom_adder import InferredAxiomAdder
 
 # Java imports.
 
 
-class ModifiedOntoBuildTarget(BuildTarget):
+class ModifiedOntoBuildTarget(BuildTargetWithConfig):
     """
     Manages the process of building an "modified" ontology from the standard
     compiled ontology.  In this case, "modified" means either with imports
     merged into the main ontology, with inferred axioms added, or both.
     """
-    def __init__(self, config, args):
+    def __init__(self, args, config=None):
         """
-        config: An OntoConfig instance.
         args: A "struct" of configuration options (typically, parsed
-            command-line arguments).  The supported members are 'merge_imports'
-            and 'reason', which must both be booleans.
+            command-line arguments).  The required members are 'merge_imports'
+            (boolean), 'reason' (boolean), 'no_def_expand' (boolean), and
+            'config_file' (string).
+        config (optional): An OntoConfig instance.
         """
-        BuildTarget.__init__(self)
+        BuildTargetWithConfig.__init__(self, args, config)
 
-        self.config = config
         self.mergeimports = args.merge_imports
         self.prereason = args.reason
 
-        self.obt = OntoBuildTarget(self.config, args)
+        self.obt = OntoBuildTarget(args, self.config)
 
         # If we have nothing to do, then there are no dependencies.
         if self.mergeimports or self.prereason:

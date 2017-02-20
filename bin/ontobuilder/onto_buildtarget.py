@@ -10,7 +10,7 @@ import glob
 from tablereaderfactory import TableReaderFactory
 from owlontologybuilder import OWLOntologyBuilder, TermDescriptionError
 from ontobuilder import TRUE_STRS
-from buildtarget import BuildTarget
+from buildtarget import BuildTargetWithConfig
 from imports_buildtarget import ImportsBuildTarget
 from inferred_axiom_adder import InferredAxiomAdder
 
@@ -26,17 +26,15 @@ OPTIONAL_COLS = (
     'Inverse', 'Characteristics', 'Ignore'
 )
         
-class OntoBuildTarget(BuildTarget):
-    def __init__(self, config, args):
+class OntoBuildTarget(BuildTargetWithConfig):
+    def __init__(self, args, config=None):
         """
-        config: An OntoConfig instance.
         args: A "struct" of configuration options (typically, parsed
-            command-line arguments).  The only supported member is
-            'no_def_expand', which must be a boolean.
+            command-line arguments).  The required members are
+            'no_def_expand' (boolean) and 'config_file' (string).
+        config (optional): An OntoConfig instance.
         """
-        BuildTarget.__init__(self)
-
-        self.config = config
+        BuildTargetWithConfig.__init__(self, args, config)
 
         # Determine whether to add IDs to term references in definitions.
         self.expanddefs = not(args.no_def_expand)
@@ -46,7 +44,7 @@ class OntoBuildTarget(BuildTarget):
         # best for end users to make sure imports modules remain updated.  Of
         # course, for out-of-source builds, it is up to the user to make sure
         # the imports modules get copied to their destination location.
-        self.ibt = ImportsBuildTarget(self.config)
+        self.ibt = ImportsBuildTarget(args, self.config)
         self.addDependency(self.ibt)
 
     def _getExpandedTermsFilesList(self):

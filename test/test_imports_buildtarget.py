@@ -34,7 +34,7 @@ class TestImportsBuildTarget(unittest.TestCase):
         self.oc.set('Imports', 'imports_src', 'imports_src/')
         self.oc.set('Build', 'builddir', '.')
 
-        self.ibt = ImportsBuildTarget(self.oc)
+        self.ibt = ImportsBuildTarget(None, self.oc)
 
         self.td_path = os.path.abspath('test_data/imports_src/')
 

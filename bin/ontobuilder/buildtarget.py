@@ -1,8 +1,9 @@
 #
 # Provides high-level management of the imports and ontology build process by
 # providing a framework for implementing discrete build targets.  Each build
-# target is a concrete subclass of the abstract base class BuildTarget, which
-# is defined in this module.  Targets can be linked together in dependency
+# target is a concrete subclass of the abstract base classes BuildTarget or
+# BuildTargetWithConfig (itself a subclass of BuildTarget), both of which are
+# defined in this module.  Targets can be linked together in dependency
 # relationships, and build products from dependencies are (optionally) passed
 # up the dependency chain to their dependent targets so that high-level build
 # targets can directly use the results of low-level build targets.
@@ -10,6 +11,7 @@
 
 # Python imports.
 import abc
+from ontoconfig import OntoConfig
 
 # Java imports.
 
@@ -125,4 +127,39 @@ duplicates one of its dependency\'s product name keys: "{1}".'.format(
         if no build products need to be passed up the dependency chain.
         """
         return {}
+
+
+class BuildTargetWithConfig(BuildTarget):
+    """
+    An abstract base class for build targets that require an instance of a
+    project configuration file.  An OntoConfig instance can either be passed to
+    the constructor, or the constructor will attempt to instantiate a new
+    OntoConfig instance.
+    """
+    def __init__(self, args, config=None):
+        """
+        If config is None, then this constructor will attempt to instantiate an
+        OntoConfig instance from the value of the 'config_file' member of args.
+        If config is not None, then args will not be used.
+
+        args: A "struct" of configuration options (typically, parsed
+            command-line arguments).  The only required member is
+            'config_file', which should provide the path to a configuration
+            file (although this is only used if the config argument is None).
+        config (optional): An OntoConfig instance.
+        """
+        BuildTarget.__init__(self)
+
+        if config == None:
+            try:
+                self.config = OntoConfig(args.config_file)
+            except IOError as err:
+                raise RuntimeError(
+                    'Please make sure the configuration file exists and that '
+                    'the path ("{0}") is correct.  Use the "-c" '
+                    '(or "--config_file") option to specify a different '
+                    'configuration file or path.'.format(args.config_file)
+                )
+        else:
+            self.config = config
 

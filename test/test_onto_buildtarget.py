@@ -41,7 +41,7 @@ class TestOntoBuildTarget(unittest.TestCase):
         self.oc.set('Imports', 'imports_src', 'imports_src/')
 
         args = ArgsType(no_def_expand=False)
-        self.obt = OntoBuildTarget(self.oc, args)
+        self.obt = OntoBuildTarget(args, self.oc)
 
         self.td_path = os.path.abspath('test_data/')
 

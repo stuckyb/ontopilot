@@ -1,25 +1,27 @@
 
 # Python imports.
 from ontology import Ontology
-from buildtarget import BuildTarget
+from buildtarget import BuildTargetWithConfig
 from onto_buildtarget import OntoBuildTarget
 
 # Java imports.
 
 
-class ErrorCheckBuildTarget(BuildTarget):
+class ErrorCheckBuildTarget(BuildTargetWithConfig):
     """
     A build target that checks the main ontology file for common entailment
     errors, including inconsistency and incoherence.
     """
-    def __init__(self, config):
+    def __init__(self, args, config=None):
         """
-        config: An OntoConfig instance.
+        args: A "struct" of configuration options (typically, parsed
+            command-line arguments).  The required members are
+            'no_def_expand' (boolean) and 'config_file' (string).
+        config (optional): An OntoConfig instance.
         """
-        BuildTarget.__init__(self)
+        BuildTargetWithConfig.__init__(self, args, config)
 
-        self.config = config
-        self.obt = OntoBuildTarget(self.config)
+        self.obt = OntoBuildTarget(args, self.config)
 
         self.addDependency(self.obt)
 

@@ -5,7 +5,7 @@
 
 # Python imports.
 import sys, os
-from buildtarget import BuildTarget
+from buildtarget import BuildTarget, BuildTargetWithConfig
 from projectcreator import ProjectCreator
 
 # Java imports.
@@ -59,18 +59,19 @@ test.owl'.format(os.path.basename(sys.argv[0]))
         return {}
 
 
-class BuildDirTarget(BuildTarget):
+class BuildDirTarget(BuildTargetWithConfig):
     """
     A simple build target that ensures other build targets have a suitable
     build directory.
     """
-    def __init__(self, config):
+    def __init__(self, args, config=None):
         """
-        config: An OntoConfig instance.
+        args: A "struct" of configuration options (typically, parsed
+            command-line arguments).  The only required member is 'config_file'
+            (string).
+        config (optional): An OntoConfig instance.
         """
-        BuildTarget.__init__(self)
-
-        self.config = config
+        BuildTargetWithConfig.__init__(self, args, config)
 
     def _isBuildRequired(self):
         """

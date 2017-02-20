@@ -10,6 +10,7 @@ from ontobuilder.imports_buildtarget import ImportsBuildTarget
 from ontobuilder.onto_buildtarget import OntoBuildTarget
 from ontobuilder.modified_onto_buildtarget import ModifiedOntoBuildTarget
 from ontobuilder.errorcheck_buildtarget import ErrorCheckBuildTarget
+from ontobuilder.buildrunner import BuildRunner
 
 
 # Set the format for logging output.
@@ -37,33 +38,26 @@ argp.add_argument('taskargs', type=str, nargs='*', help='Additional arguments \
 for the specified build task.')
 args = argp.parse_args()
 
+buildrunner = BuildRunner()
+buildrunner.addBuildTarget(InitTarget, 'init')
+buildrunner.addBuildTarget(OntoBuildTarget, 'ontology', merge_imports=False, reason=False)
+buildrunner.addBuildTarget(ModifiedOntoBuildTarget, 'ontology')
+
 # Get the specified build target.
 if args.task == 'init':
     target = InitTarget(args)
 else:
-    try:
-        # All other build tasks require a configuration file, so attempt to
-        # instantiate an OntoConfig object.
-        config = OntoConfig(args.config_file)
-    except IOError as err:
-        print '\n', err , '\n'
-        print 'Please make sure the configuration file exists and that the path is correct.  Use the "-c" (or "--config_file") option to specify a different configuration file or path.\n'
-        sys.exit(1)
-    except (ConfigError, RuntimeError) as err:
-        print '\n', err , '\n'
-        sys.exit(1)
-
     if args.task == 'ontology':
         if args.merge_imports or args.reason:
-            target = ModifiedOntoBuildTarget(config, args)
+            target = ModifiedOntoBuildTarget(args, None)
         else:
-            target = OntoBuildTarget(config, args)
+            target = OntoBuildTarget(args, None)
 
     elif args.task == 'errorcheck':
-        target = ErrorCheckBuildTarget(config)
+        target = ErrorCheckBuildTarget(args, None)
 
     elif args.task == 'imports':
-        target = ImportsBuildTarget(config)
+        target = ImportsBuildTarget(args, None)
 
     else:
         print '\nUnrecognized build task: {0}.\n'.format(args.task)
