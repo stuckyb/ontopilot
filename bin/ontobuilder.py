@@ -10,7 +10,7 @@ from ontobuilder.imports_buildtarget import ImportsBuildTarget
 from ontobuilder.onto_buildtarget import OntoBuildTarget
 from ontobuilder.modified_onto_buildtarget import ModifiedOntoBuildTarget
 from ontobuilder.errorcheck_buildtarget import ErrorCheckBuildTarget
-from ontobuilder.buildrunner import BuildRunner
+from ontobuilder.buildtarget_manager import BuildTargetManager
 
 
 # Set the format for logging output.
@@ -38,37 +38,23 @@ argp.add_argument('taskargs', type=str, nargs='*', help='Additional arguments \
 for the specified build task.')
 args = argp.parse_args()
 
-buildrunner = BuildRunner()
-buildrunner.addBuildTarget(InitTarget, 'init')
-buildrunner.addBuildTarget(OntoBuildTarget, 'ontology', merge_imports=False, reason=False)
-buildrunner.addBuildTarget(ModifiedOntoBuildTarget, 'ontology')
+# Define the build targets.
+buildtm = BuildTargetManager()
+buildtm.addBuildTarget(InitTarget, 'init')
+buildtm.addBuildTarget(
+    OntoBuildTarget, 'ontology', merge_imports=False, reason=False
+)
+buildtm.addBuildTarget(ModifiedOntoBuildTarget, 'ontology')
+buildtm.addBuildTarget(ErrorCheckBuildTarget, 'errorcheck')
 
-# Get the specified build target.
-if args.task == 'init':
-    target = InitTarget(args)
-else:
-    if args.task == 'ontology':
-        if args.merge_imports or args.reason:
-            target = ModifiedOntoBuildTarget(args, None)
-        else:
-            target = OntoBuildTarget(args, None)
-
-    elif args.task == 'errorcheck':
-        target = ErrorCheckBuildTarget(args, None)
-
-    elif args.task == 'imports':
-        target = ImportsBuildTarget(args, None)
-
-    else:
-        print '\nUnrecognized build task: {0}.\n'.format(args.task)
-        sys.exit(1)
-
-# Run the build target.
+# Get and run the appropriate build target.
 try:
+    target = buildtm.getBuildTarget(args.task, args)
     if target.isBuildRequired():
         target.run()
     else:
         print '\n', target.getBuildNotRequiredMsg(), '\n'
+        sys.exit(1)
 except RuntimeError as err:
     print '\n', err, '\n'
     sys.exit(1)

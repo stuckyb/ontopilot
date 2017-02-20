@@ -42,7 +42,7 @@ test_modules = [
     'test_ontology_entities', 'test_ontoconfig', 'test_onto_buildtarget',
     'test_importmodulebuilder', 'test_imports_buildtarget',
     'test_reasoner_manager', 'test_inferred_axiom_adder', 'test_buildtarget',
-    'test_modified_onto_buildtarget'
+    'test_modified_onto_buildtarget', 'test_buildtarget_manager'
 ]
 
 successful = True
