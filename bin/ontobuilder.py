@@ -16,7 +16,17 @@ from ontobuilder.buildtarget_manager import BuildTargetManager
 # Set the format for logging output.
 logging.basicConfig(format='\n%(levelname)s: %(message)s\n')
 
-# Define and process the command-line arguments.
+# Define the build targets.
+buildtm = BuildTargetManager()
+buildtm.addBuildTarget(InitTarget, 'init')
+buildtm.addBuildTarget(ImportsBuildTarget, 'imports')
+buildtm.addBuildTarget(
+    OntoBuildTarget, 'ontology', merge_imports=False, reason=False
+)
+buildtm.addBuildTarget(ModifiedOntoBuildTarget, 'ontology')
+buildtm.addBuildTarget(ErrorCheckBuildTarget, 'errorcheck')
+
+# Define the command-line arguments.
 argp = ArgumentParser(description='Builds an OWL ontology or ontology import \
 modules using information from table-based source files.')
 argp.add_argument('-c', '--config_file', type=str, required=False,
@@ -32,20 +42,13 @@ argp.add_argument('-r', '--reason', action='store_true', help='If this \
 flag is given, a reasoner will be run on the ontology (ELK by default), and \
 inferred axioms will be added to a new ontology document.')
 argp.add_argument('task', type=str, nargs='?', default='ontology', help='The \
-build task to run.  Must be either "init", "imports", "ontology", or \
-"errorcheck".')
+build task to run.  Must be either {0}.'.format(
+    buildtm._getBuildTargetNamesStr()
+))
 argp.add_argument('taskargs', type=str, nargs='*', help='Additional arguments \
 for the specified build task.')
-args = argp.parse_args()
 
-# Define the build targets.
-buildtm = BuildTargetManager()
-buildtm.addBuildTarget(InitTarget, 'init')
-buildtm.addBuildTarget(
-    OntoBuildTarget, 'ontology', merge_imports=False, reason=False
-)
-buildtm.addBuildTarget(ModifiedOntoBuildTarget, 'ontology')
-buildtm.addBuildTarget(ErrorCheckBuildTarget, 'errorcheck')
+args = argp.parse_args()
 
 # Get and run the appropriate build target.
 try:
