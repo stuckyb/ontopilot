@@ -32,15 +32,23 @@ COMBINED_PRODUCTS =  {
 
 # Define two dummy concrete build targets to test the build functionality.
 class Target1(BuildTarget):
+    run_cnt = 0
+    def __init__(self, args=None):
+        BuildTarget.__init__(self)
     def _isBuildRequired(self):
         return False
     def _run(self):
+        Target1.run_cnt += 1
         return TARGET1_PRODUCTS
 
 class Target2(BuildTarget):
+    run_cnt = 0
+    def __init__(self, args=None):
+        BuildTarget.__init__(self)
     def _isBuildRequired(self):
         return True
     def _run(self):
+        Target2.run_cnt += 1
         return {'product 2': 'something else'}
 
 
