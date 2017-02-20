@@ -36,6 +36,31 @@ class TestBuildTargetManager(unittest.TestCase):
     def setUp(self):
         pass
 
+    def test_getBuildTargetNamesStr(self):
+        btr = BuildTargetManager()
+
+        # To make sure the string is constructed correctly, test cases with 0,
+        # 1, 2, and 3 build targets defined.
+
+        # 0 build targets.
+        self.assertEqual('', btr._getBuildTargetNamesStr())
+
+        # 1 build target.
+        btr.addBuildTarget(Target1, 'target1')
+        self.assertEqual('"target1"', btr._getBuildTargetNamesStr())
+
+        # 2 build targets.
+        btr.addBuildTarget(Target1, 'target2')
+        self.assertEqual(
+            '"target1" or "target2"', btr._getBuildTargetNamesStr()
+        )
+
+        # 3 build targets.
+        btr.addBuildTarget(Target1, 'target3')
+        self.assertEqual(
+            '"target1", "target2", or "target3"', btr._getBuildTargetNamesStr()
+        )
+
     def test_getMatchingTargets(self):
         btr = BuildTargetManager()
         args = ArgVals()

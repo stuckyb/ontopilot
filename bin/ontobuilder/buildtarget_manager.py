@@ -54,6 +54,23 @@ class BuildTargetManager:
 
         return tnames
 
+    def _getBuildTargetNamesStr(self):
+        """
+        Returns a string containing the valid build target names.
+        """
+        tnames = self._getBuildTargetNames()
+
+        names_str = ''
+        if len(tnames) == 1:
+            names_str = '"' + tnames[0] + '"'
+        elif len(tnames) == 2:
+            names_str = '"' + '" or "'.join(tnames) + '"'
+        elif len(tnames) > 2:
+            names_str = '"' + '", "'.join(tnames[:len(tnames) - 1]) + '", '
+            names_str += 'or "' + tnames[-1] + '"'
+
+        return names_str
+
     def _getMatchingTargets(self, targetname, args):
         """
         Returns a list of all target maps that match the specified target name
@@ -127,10 +144,9 @@ class BuildTargetManager:
         elif len(matches) == 1:
             targetmatch = matches[0]
         else:
-            tnames_str = '"' + '", "'.join(self._getBuildTargetNames()) + '"'
             raise RuntimeError(
                 'Unknown build target: "{0}".  Valid build target names are: '
-                '{1}.'.format(targetname, tnames_str)
+                '{1}.'.format(targetname, self._getBuildTargetNamesStr())
             )
 
         target = targetmatch.tclass(args)
