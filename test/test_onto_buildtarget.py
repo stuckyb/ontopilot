@@ -19,8 +19,13 @@ from ontobuilder.ontoconfig import OntoConfig
 from ontobuilder.onto_buildtarget import OntoBuildTarget
 import unittest
 import os.path
+from collections import namedtuple
 
 # Java imports.
+
+
+# Define a simple "struct" type for simulating command-line arguments.
+ArgsType = namedtuple('args', 'no_def_expand')
 
 
 class TestOntoBuildTarget(unittest.TestCase):
@@ -35,7 +40,8 @@ class TestOntoBuildTarget(unittest.TestCase):
         # ImportsBuildTarget dependency will initialize without error.
         self.oc.set('Imports', 'imports_src', 'imports_src/')
 
-        self.obt = OntoBuildTarget(self.oc)
+        args = ArgsType(no_def_expand=False)
+        self.obt = OntoBuildTarget(self.oc, args)
 
         self.td_path = os.path.abspath('test_data/')
 

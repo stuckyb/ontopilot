@@ -55,11 +55,9 @@ else:
 
     if args.task == 'ontology':
         if args.merge_imports or args.reason:
-            target = ModifiedOntoBuildTarget(
-                config, args.merge_imports, args.reason
-            )
+            target = ModifiedOntoBuildTarget(config, args)
         else:
-            target = OntoBuildTarget(config, not(args.no_def_expand))
+            target = OntoBuildTarget(config, args)
 
     elif args.task == 'errorcheck':
         target = ErrorCheckBuildTarget(config)

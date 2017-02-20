@@ -19,8 +19,13 @@ from ontobuilder.ontoconfig import OntoConfig
 from ontobuilder.modified_onto_buildtarget import ModifiedOntoBuildTarget
 import unittest
 import os.path
+from collections import namedtuple
 
 # Java imports.
+
+
+# Define a simple "struct" type for simulating command-line arguments.
+ArgsType = namedtuple('args', 'merge_imports, reason, no_def_expand')
 
 
 class TestModifiedOntoBuildTarget(unittest.TestCase):
@@ -41,15 +46,18 @@ class TestModifiedOntoBuildTarget(unittest.TestCase):
     def test_isBuildRequired(self):
         # The test coverage here is incomplete and only covers a few cases.
         # More thorough testing would require mocking os module functionality.
-        mobt = ModifiedOntoBuildTarget(self.oc, False, False)
+        args = ArgsType(merge_imports=False, reason=False, no_def_expand=False)
+        mobt = ModifiedOntoBuildTarget(self.oc, args)
         self.assertFalse(mobt._isBuildRequired())
 
-        mobt = ModifiedOntoBuildTarget(self.oc, True, False)
+        args = ArgsType(merge_imports=True, reason=False, no_def_expand=False)
+        mobt = ModifiedOntoBuildTarget(self.oc, args)
         self.assertTrue(mobt._isBuildRequired())
 
     def test_retrieveAndCheckFilePaths(self):
         # Test a nonexistent main ontology file.
-        mobt = ModifiedOntoBuildTarget(self.oc, True, False)
+        args = ArgsType(merge_imports=True, reason=False, no_def_expand=False)
+        mobt = ModifiedOntoBuildTarget(self.oc, args)
         with self.assertRaisesRegexp(
             RuntimeError, 'main compiled ontology file could not be found'
         ):
@@ -58,19 +66,23 @@ class TestModifiedOntoBuildTarget(unittest.TestCase):
     def test_getOutputFilePath(self):
         self.oc.set('Build', 'insource_builds', 'False')
 
-        mobt = ModifiedOntoBuildTarget(self.oc, False, False)
+        args = ArgsType(merge_imports=False, reason=False, no_def_expand=False)
+        mobt = ModifiedOntoBuildTarget(self.oc, args)
         exppath = os.path.join(self.td_path, 'build/ontname.owl')
         self.assertEqual(exppath, mobt.getOutputFilePath())
 
-        mobt = ModifiedOntoBuildTarget(self.oc, True, False)
+        args = ArgsType(merge_imports=True, reason=False, no_def_expand=False)
+        mobt = ModifiedOntoBuildTarget(self.oc, args)
         exppath = os.path.join(self.td_path, 'build/ontname-merged.owl')
         self.assertEqual(exppath, mobt.getOutputFilePath())
 
-        mobt = ModifiedOntoBuildTarget(self.oc, False, True)
+        args = ArgsType(merge_imports=False, reason=True, no_def_expand=False)
+        mobt = ModifiedOntoBuildTarget(self.oc, args)
         exppath = os.path.join(self.td_path, 'build/ontname-reasoned.owl')
         self.assertEqual(exppath, mobt.getOutputFilePath())
 
-        mobt = ModifiedOntoBuildTarget(self.oc, True, True)
+        args = ArgsType(merge_imports=True, reason=True, no_def_expand=False)
+        mobt = ModifiedOntoBuildTarget(self.oc, args)
         exppath = os.path.join(
             self.td_path, 'build/ontname-merged-reasoned.owl'
         )

@@ -15,19 +15,20 @@ class ModifiedOntoBuildTarget(BuildTarget):
     compiled ontology.  In this case, "modified" means either with imports
     merged into the main ontology, with inferred axioms added, or both.
     """
-    def __init__(self, config, mergeimports, prereason):
+    def __init__(self, config, args):
         """
         config: An OntoConfig instance.
-        mergeimports: Whether to merge imported terms into the main ontology.
-        prereason: Whether to add inferred axioms to the compiled ontology.
+        args: A "struct" of configuration options (typically, parsed
+            command-line arguments).  The supported members are 'merge_imports'
+            and 'reason', which must both be booleans.
         """
         BuildTarget.__init__(self)
 
         self.config = config
-        self.mergeimports = mergeimports
-        self.prereason = prereason
+        self.mergeimports = args.merge_imports
+        self.prereason = args.reason
 
-        self.obt = OntoBuildTarget(self.config)
+        self.obt = OntoBuildTarget(self.config, args)
 
         # If we have nothing to do, then there are no dependencies.
         if self.mergeimports or self.prereason:

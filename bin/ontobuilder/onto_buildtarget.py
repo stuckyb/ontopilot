@@ -27,15 +27,19 @@ OPTIONAL_COLS = (
 )
         
 class OntoBuildTarget(BuildTarget):
-    def __init__(self, config, expanddefs=True):
+    def __init__(self, config, args):
         """
         config: An OntoConfig instance.
-        expanddefs: Whether to add IDs to term references in definitions.
+        args: A "struct" of configuration options (typically, parsed
+            command-line arguments).  The only supported member is
+            'no_def_expand', which must be a boolean.
         """
         BuildTarget.__init__(self)
 
         self.config = config
-        self.expanddefs = expanddefs
+
+        # Determine whether to add IDs to term references in definitions.
+        self.expanddefs = not(args.no_def_expand)
 
         # Set the imports modules as a dependency, regardless of whether we're
         # using in-source or out-of-source builds.  Either way, it is probably

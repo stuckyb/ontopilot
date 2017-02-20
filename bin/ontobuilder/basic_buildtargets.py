@@ -17,7 +17,9 @@ class InitTarget(BuildTarget):
     """
     def __init__(self, args):
         """
-        args: Parsed command-line arguments
+        args: A "struct" of configuration options (typically, parsed
+            command-line arguments).  The only supported member is 'taskargs',
+            which must provide the name of the new ontology file.
         """
         BuildTarget.__init__(self)
 
