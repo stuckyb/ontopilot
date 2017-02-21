@@ -30,13 +30,15 @@ COMBINED_PRODUCTS =  {
     'product 2': 'something else'
 }
 
-# Define two dummy concrete build targets to test the build functionality.
+# Define two dummy concrete build targets to test the build functionality.  One
+# of these, Target1, allows manipulating the value of _isBuildRequired().
 class Target1(BuildTarget):
     run_cnt = 0
     def __init__(self, args=None):
         BuildTarget.__init__(self)
+        self.build_required = True
     def _isBuildRequired(self):
-        return False
+        return self.build_required
     def _run(self):
         Target1.run_cnt += 1
         return TARGET1_PRODUCTS
@@ -63,6 +65,7 @@ class TestBuildTarget(unittest.TestCase):
         # Test single targets with no dependencies, one that requires a build
         # and one that does not.
         target1 = Target1()
+        target1.build_required = False
         self.assertFalse(target1.isBuildRequired())
         target2 = Target2()
         self.assertTrue(target2.isBuildRequired())
@@ -75,12 +78,14 @@ class TestBuildTarget(unittest.TestCase):
         # Test a target that does require a build, but with a dependency that
         # does not.
         target1 = Target1()
+        target1.build_required = False
         target2.addDependency(target1)
         self.assertTrue(target2.isBuildRequired())
 
         # Test a target that does not require a build, and with a dependency
         # that also does not.
         target2 = Target1()
+        target2.build_required = False
         target1.addDependency(target2)
         self.assertFalse(target1.isBuildRequired())
 
