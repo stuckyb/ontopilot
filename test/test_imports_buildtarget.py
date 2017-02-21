@@ -43,10 +43,7 @@ class TestImportsBuildTarget(unittest.TestCase):
 
         # Test an empty terms file path.
         tr['Termsfile'] = ''
-        with self.assertRaisesRegexp(
-            TableRowError, 'No input terms file was provided.'
-        ):
-            self.ibt._getAbsTermsFilePath(tr)
+        self.assertEqual('', self.ibt._getAbsTermsFilePath(tr))
 
         # Test an invalid terms file path.
         tr['Termsfile'] = 'nonexistent/file.csv'
@@ -79,8 +76,12 @@ class TestImportsBuildTarget(unittest.TestCase):
             self.ibt._checkSourceIRI(tr)
 
     def test_getImportsIRIs(self):
+        # The source file includes an ignored row, two ontologies for which
+        # import modules will be built, and one for which the entire ontology
+        # will be imported.
         expected = [
             'https://a.sample.iri/to/imports/ro_ontname_import_module.owl',
+            'http://purl.obolibrary.org/obo/iao/ontology-metadata.owl',
             'https://a.sample.iri/to/imports/bco_ontname_import_module.owl'
         ]
 

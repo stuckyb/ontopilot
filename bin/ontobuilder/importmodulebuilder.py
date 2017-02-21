@@ -177,6 +177,11 @@ class ImportModuleBuilder:
         ontologyIRI: The IRI of the imported ontology.
         termsfile_path: The input file containing the terms to import.
         """
+        # If the terms file path is empty, we will just import the entire
+        # source ontology, so there is never any module to build.
+        if termsfile_path == '':
+            return False
+
         # Verify that the terms file exists.
         if not(os.path.isfile(termsfile_path)):
             raise RuntimeError('Could not find the input terms file "'

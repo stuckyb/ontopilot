@@ -1,4 +1,5 @@
 name,IRI,termsfile,Ignore
 Basic Formal Ontology,http://purl.obolibrary.org/obo/bfo.owl,bfo_terms.csv,Y
 Relations Ontology,http://purl.obolibrary.org/obo/ro.owl,ro_terms.csv,
+IAO Ontology Metadata,http://purl.obolibrary.org/obo/iao/ontology-metadata.owl,,
 Biological Collections Ontology,http://purl.obolibrary.org/obo/bco.owl,bco_terms.csv,
