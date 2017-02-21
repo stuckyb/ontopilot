@@ -110,9 +110,6 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
         Runs the build process and produces a new, modified version of the main
         OWL ontology file.
         """
-        if not(self._isBuildRequired()):
-            return
-
         self._retrieveAndCheckFilePaths()
 
         mainont = Ontology(self.obt.getOutputFilePath())

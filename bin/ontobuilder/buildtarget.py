@@ -60,8 +60,12 @@ class BuildTarget:
         # Invalidate any previous build products.
         self.products.clear()
 
+        dependencies_run = False
         for dependency in self.dependencies:
-            results = dependency.run()
+            results = {}
+            if dependency.isBuildRequired():
+                dependencies_run = True
+                results = dependency.run()
 
             # Merge the results with the products dictionary, making sure we
             # don't have any duplicate keys.
@@ -77,9 +81,14 @@ product name key: "{2}".'.format(
                         )
                     )
 
-        # Run the build task for this target.
-        results = self._run()
-        if results == None:
+        # Run the build task for this target.  If we ran any dependencies, we
+        # should always run this build task even if the local
+        # _isBuildRequired() returns False.
+        if self._isBuildRequired() or dependencies_run:
+            results = self._run()
+            if results == None:
+                results = {}
+        else:
             results = {}
 
         # Merge the results of this build target with the products accumulated

@@ -142,6 +142,13 @@ class OntoBuildTarget(BuildTargetWithConfig):
                 if mtime < os.path.getmtime(termsfile):
                     return True
 
+            # Check the modification time of the top-level imports file.  If
+            # this file was changed, and full ontologies were added as imports,
+            # the import modules would not need to be built but we would still
+            # need to rebuild the main ontology.
+            if mtime < os.path.getmtime(self.config.getTopImportsFilePath()):
+                return True
+
             return False
         else:
             return True
@@ -150,9 +157,6 @@ class OntoBuildTarget(BuildTargetWithConfig):
         """
         Runs the build process and produces a compiled OWL ontology file.
         """
-        if not(self._isBuildRequired()):
-            return
-
         # Get the imports modules IRIs from the imports build target.
         importsIRIs = self.ibt.getImportsIRIs()
 

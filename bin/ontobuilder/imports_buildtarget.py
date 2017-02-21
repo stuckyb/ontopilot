@@ -177,9 +177,6 @@ class ImportsBuildTarget(BuildTargetWithConfig):
         """
         Runs the imports build process and produces import module OWL files.
         """
-        if not(self._isBuildRequired()):
-            return
-
         for row in self.tablerows:
             termsfile_path = row['abs_tfilepath']
 
