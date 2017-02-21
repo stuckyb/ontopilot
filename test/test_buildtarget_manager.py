@@ -15,7 +15,7 @@
 
 
 # Python imports.
-from ontobuilder.buildtarget_manager import BuildTargetManager
+from ontobuilder.buildtarget_manager import BuildTargetManager, TargetMap
 from test_buildtarget import Target1, Target2
 import unittest
 
@@ -26,7 +26,9 @@ class ArgVals:
     """
     A simple "struct" for defining argument values.
     """
-    pass
+    def __init__(self, **argvals):
+        for argname in argvals:
+            setattr(self, argname, argvals[argname])
 
 
 class TestBuildTargetManager(unittest.TestCase):
@@ -37,28 +39,49 @@ class TestBuildTargetManager(unittest.TestCase):
         pass
 
     def test_getBuildTargetNamesStr(self):
+        """
+        This unit test also indirectly tests _getBuildTargetNames().
+        """
         btr = BuildTargetManager()
 
         # To make sure the string is constructed correctly, test cases with 0,
         # 1, 2, and 3 build targets defined.
 
         # 0 build targets.
-        self.assertEqual('', btr._getBuildTargetNamesStr())
+        self.assertEqual('', btr.getBuildTargetNamesStr('task'))
 
-        # 1 build target.
-        btr.addBuildTarget(Target1, 'target1')
-        self.assertEqual('"target1"', btr._getBuildTargetNamesStr())
+        # 1 build target.  Add a duplicate to make sure the method only returns
+        # unique task names.
+        btr.addBuildTarget(Target1, task='target1')
+        btr.addBuildTarget(Target1, task='target1')
+        self.assertEqual('"target1"', btr.getBuildTargetNamesStr('task'))
 
         # 2 build targets.
-        btr.addBuildTarget(Target1, 'target2')
+        btr.addBuildTarget(Target1, task='target2')
         self.assertEqual(
-            '"target1" or "target2"', btr._getBuildTargetNamesStr()
+            '"target1" or "target2"', btr.getBuildTargetNamesStr('task')
         )
 
         # 3 build targets.
-        btr.addBuildTarget(Target1, 'target3')
+        btr.addBuildTarget(Target1, task='target3')
         self.assertEqual(
-            '"target1", "target2", or "target3"', btr._getBuildTargetNamesStr()
+            '"target1", "target2", or "target3"', btr.getBuildTargetNamesStr('task')
+        )
+
+        # Now test a case where we have an argument value constraint.
+        btr = BuildTargetManager()
+        btr.addBuildTarget(Target1, task='target1', taskarg='val')
+        btr.addBuildTarget(Target1, task='target1', taskarg='val1')
+        btr.addBuildTarget(Target1, task='target1')
+        btr.addBuildTarget(Target1, task='target2', taskarg='val2')
+        # Check the result without the constraint.
+        self.assertEqual(
+            '"val", "val1", or "val2"', btr.getBuildTargetNamesStr('taskarg')
+        )
+        # Check the result with the constraint.
+        self.assertEqual(
+            '"val" or "val1"',
+            btr.getBuildTargetNamesStr('taskarg', task='target1')
         )
 
     def test_getMatchingTargets(self):
@@ -66,94 +89,139 @@ class TestBuildTargetManager(unittest.TestCase):
         args = ArgVals()
 
         # No build target mappings defined.
-        targets = btr._getMatchingTargets('target1', args)
+        targets = btr._getMatchingTargets(args)
         self.assertEqual([], targets)
 
         # Define one build target mapping.
-        btr.addBuildTarget(Target1, 'target1')
+        btr.addBuildTarget(Target1, task='target1')
 
         # Test a non-matching request.
-        targets = btr._getMatchingTargets('target2', args)
+        args.task = 'target2'
+        targets = btr._getMatchingTargets(args)
         self.assertEqual([], targets)
 
         # Test a matching request.
-        targets = btr._getMatchingTargets('target1', args)
+        args.task = 'target1'
+        targets = btr._getMatchingTargets(args)
         self.assertEqual(1, len(targets))
-        self.assertEqual('target1', targets[0].name)
+        self.assertEqual('target1', targets[0].argvals['task'])
 
         # Test a partial matching request.
-        targets = btr._getMatchingTargets('targ', args)
+        args.task = 'targ'
+        targets = btr._getMatchingTargets(args)
         self.assertEqual(1, len(targets))
-        self.assertEqual('target1', targets[0].name)
+        self.assertEqual('target1', targets[0].argvals['task'])
 
-        # Define two unambiguous build target mappings.
-        btr.addBuildTarget(Target2, 'target2')
+        # Define a second unambiguous build target mapping.
+        btr.addBuildTarget(Target2, task='target2')
 
         # Test a non-matching request.
-        targets = btr._getMatchingTargets('target3', args)
+        args.task = 'target3'
+        targets = btr._getMatchingTargets(args)
         self.assertEqual([], targets)
 
         # Test a matching request.
-        targets = btr._getMatchingTargets('target2', args)
+        args.task = 'target2'
+        targets = btr._getMatchingTargets(args)
         self.assertEqual(1, len(targets))
-        self.assertEqual('target2', targets[0].name)
+        self.assertEqual('target2', targets[0].argvals['task'])
 
         # Test a partial matching request.
-        targets = btr._getMatchingTargets('targ', args)
+        args.task = 'targ'
+        targets = btr._getMatchingTargets(args)
         self.assertEqual(2, len(targets))
 
-        # Define a build target that cannot be disambiguated, with no extra
+        # Define a build target that cannot be disambiguated, with no "extra"
         # argments defined.
-        btr.addBuildTarget(Target2, 'target2')
+        btr.addBuildTarget(Target2, task='target2')
 
         # Test a matching request.
-        targets = btr._getMatchingTargets('target2', args)
-        tnames = [tmapping.name for tmapping in targets]
+        args.task = 'target2'
+        targets = btr._getMatchingTargets(args)
+        tnames = [tmapping.argvals['task'] for tmapping in targets]
         self.assertEqual(['target2', 'target2'], tnames)
 
         # Test a partial matching request.
-        targets = btr._getMatchingTargets('targ', args)
+        args.task = 'targ'
+        targets = btr._getMatchingTargets(args)
         self.assertEqual(3, len(targets))
 
         # Define build targets with differing numbers of arguments.
-        btr.addBuildTarget(Target1, 'target1', arg1=1)
-        btr.addBuildTarget(Target1, 'target1', arg1=1, arg2=2, arg3=3)
-        btr.addBuildTarget(Target1, 'target1', arg1=1, arg2=2)
-        btr.addBuildTarget(Target1, 'target1', arg4=4)
+        btr.addBuildTarget(Target1, task='target1', arg1=1)
+        btr.addBuildTarget(Target1, task='target1', arg1=1, arg2=2, arg3=3)
+        btr.addBuildTarget(Target1, task='target1', arg1=1, arg2=2)
+        btr.addBuildTarget(Target1, task='target1', arg4=4)
 
         # Test an unambiguous case with no arguments.
-        targets = btr._getMatchingTargets('target1', args)
+        args.task = 'target1'
+        targets = btr._getMatchingTargets(args)
         self.assertEqual(1, len(targets))
-        self.assertEqual('target1', targets[0].name)
-        self.assertEqual(0, len(targets[0].argvals))
+        self.assertEqual('target1', targets[0].argvals['task'])
+        self.assertEqual(1, len(targets[0].argvals))
 
-        # Test two cases with one argument that matches only one target mapping
-        # with arguments.
+        # Test two cases with arguments that match only one target mapping with
+        # "extra" arguments.
         args.arg1 = 1
-        targets = btr._getMatchingTargets('target1', args)
+        targets = btr._getMatchingTargets(args)
         self.assertEqual(2, len(targets))
-        self.assertEqual('target1', targets[0].name)
-        self.assertEqual(1, len(targets[0].argvals))
+        self.assertEqual('target1', targets[0].argvals['task'])
+        self.assertEqual(2, len(targets[0].argvals))
         self.assertEqual(1, targets[0].argvals['arg1'])
-        args = ArgVals()
-        args.arg4 = 4
-        targets = btr._getMatchingTargets('target1', args)
+        args = ArgVals(task='target1', arg4=4)
+        targets = btr._getMatchingTargets(args)
         self.assertEqual(2, len(targets))
-        self.assertEqual('target1', targets[0].name)
-        self.assertEqual(1, len(targets[0].argvals))
+        self.assertEqual('target1', targets[0].argvals['task'])
+        self.assertEqual(2, len(targets[0].argvals))
         self.assertEqual(4, targets[0].argvals['arg4'])
 
         # Test a case that matches multiple target mappings with arguments.
-        args = ArgVals()
-        args.arg1 = 1
-        args.arg2 = 2
-        args.arg3 = 3
-        targets = btr._getMatchingTargets('target1', args)
+        args = ArgVals(task='target1', arg1=1, arg2=2, arg3=3)
+        targets = btr._getMatchingTargets(args)
         self.assertEqual(4, len(targets))
-        tnames = [tmapping.name for tmapping in targets]
+        tnames = [tmapping.argvals['task'] for tmapping in targets]
         self.assertEqual(['target1'] * 4, tnames)
         targnums = [len(tmapping.argvals) for tmapping in targets]
-        self.assertEqual([3, 2, 1, 0], targnums)
+        self.assertEqual([4, 3, 2, 1], targnums)
+
+    def test_getAmbiguousTargetErrorMsg(self):
+        btr = BuildTargetManager()
+        matches = [
+            TargetMap(tclass=Target1, argvals={'task': 'target1'}),
+            TargetMap(tclass=Target1, argvals={'task': 'target2'})
+        ]
+
+        # Check the case with no task name argument.
+        args = ArgVals(task='target1')
+        msg = btr._getAmbiguousTargetErrorMsg(args, matches, '')
+        self.assertTrue(
+            msg.startswith(
+                'The command-line arguments could not be unambiguously'
+            )
+        )
+
+        # Check the case where the task name is ambiguous.
+        msg = btr._getAmbiguousTargetErrorMsg(args, matches, 'task')
+        self.assertTrue(
+            'matched more than one build task name' in msg
+        )
+
+        # Check the case where the task name is unambiguous but the remaining
+        # arguments lead to an ambiguous match.
+        matches = [
+            TargetMap(
+                tclass=Target1, argvals={'task': 'target1', 'arg1': 'val1'}
+            ),
+            TargetMap(
+                tclass=Target1, argvals={'task': 'target1', 'arg1': 'val2'}
+            )
+        ]
+        msg = btr._getAmbiguousTargetErrorMsg(args, matches, 'task')
+        self.assertTrue(
+            msg.startswith(
+                'The arguments for the build task "target1" could not be '
+                'unambiguously matched to a single build operation.'
+            )
+        )
 
     def test_getBuildTarget(self):
         btr = BuildTargetManager()
@@ -161,37 +229,40 @@ class TestBuildTargetManager(unittest.TestCase):
         Target1.run_cnt = Target2.run_cnt = 0
 
         # Define the build targets.
-        btr.addBuildTarget(Target1, 'target1')
-        btr.addBuildTarget(Target2, 'target1', arg1=1, arg2=2)
+        btr.addBuildTarget(Target1, task='target1')
+        btr.addBuildTarget(Target2, task='target1', arg1=1, arg2=2)
 
         # Verify that the correct target is run for both target mappings.
-        btr.getBuildTarget('target1', args).run()
+        args.task='target1'
+        btr.getBuildTarget(args).run()
         self.assertEqual(1, Target1.run_cnt)
         self.assertEqual(0, Target2.run_cnt)
         args.arg1 = 1
         args.arg2 = 2
-        btr.getBuildTarget('target1', args).run()
+        btr.getBuildTarget(args).run()
         self.assertEqual(1, Target1.run_cnt)
         self.assertEqual(1, Target2.run_cnt)
 
         # Define an additional target mapping.
-        btr.addBuildTarget(Target1, 'target2')
+        btr.addBuildTarget(Target1, task='target2')
 
         # Test an unambiguous partial target name.
-        btr.getBuildTarget('targ', args).run()
+        args.task = 'targ'
+        btr.getBuildTarget(args).run()
         self.assertEqual(1, Target1.run_cnt)
         self.assertEqual(2, Target2.run_cnt)
 
         # Test an ambiguous match.
-        args = ArgVals()
+        args = ArgVals(task='target')
         with self.assertRaisesRegexp(
-            RuntimeError, "matched more than one build target"
+            RuntimeError, "matched more than one build task name"
         ):
-            btr.getBuildTarget('target', args)
+            btr.getBuildTarget(args, targetname_arg='task')
 
         # Test an invalid target.
+        args.task = 'target4'
         with self.assertRaisesRegexp(
             RuntimeError, "Unknown build target"
         ):
-            btr.getBuildTarget('target4', args)
+            btr.getBuildTarget(args, targetname_arg='task')
 

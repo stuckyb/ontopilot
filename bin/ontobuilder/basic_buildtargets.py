@@ -36,16 +36,10 @@ class InitTarget(BuildTarget):
         """
         Attempts to create a new ontology project.
         """
-        if len(self.args.taskargs) == 0:
+        if self.args.taskarg == '':
             raise RuntimeError(
                 'Please provide the name of the ontology file for the new \
 project.  For example:\n$ {0} init test.owl'.format(os.path.basename(sys.argv[0]))
-            )
-        elif len(self.args.taskargs) > 1:
-            raise RuntimeError(
-                'Too many arguments for the "init" task.  Please provide only \
-the name of the ontology file for the new project.  For example:\n$ {0} init \
-test.owl'.format(os.path.basename(sys.argv[0]))
             )
     
         # Get the path to the project template files directory.
@@ -53,7 +47,7 @@ test.owl'.format(os.path.basename(sys.argv[0]))
             os.path.dirname(os.path.abspath(__file__)), '../../template_files'
         )
     
-        projc = ProjectCreator('.', self.args.taskargs[0], templatedir)
+        projc = ProjectCreator('.', self.args.taskarg, templatedir)
         projc.createProject()
 
         return {}
