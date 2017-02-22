@@ -6,7 +6,9 @@ nearly inevitable given a large enough imports closure.  LableMap takes the
 approach of issuing non-fatal warnings when collisions are encountered while
 building the label lookup table.  However, LabelMap keeps track of all known
 ambiguous labels, and if client code attempts to look up the IRI for an
-ambiguous label, an exception is thrown.
+ambiguous label, an exception is thrown.  To further avoid ambiguous label
+references, cliet code can optionally supply a root IRI string that will be
+used to attempt to disambiguate label collisions.
 """
 
 # Python imports.
@@ -26,7 +28,7 @@ class LabelMap:
         """
         Initializes this LabelMap with an existing ontology.
 
-        ontology: An OWL API OWLOntology object.
+        ontology: An Ontology object (*not* an OWL API OWLOntology object).
         """
         # Dictionary for the labels lookup table.
         self.lmap = {}
@@ -36,15 +38,34 @@ class LabelMap:
         self.ambiglabels = {}
 
         self.ontology = ontology
+        self._makeMap(ontology.getOWLOntology())
 
-        self._makeMap(ontology)
+        # Register as an observer of the ontology so we can track changes
+        # (i.e., adding labels or ontologies to the source ontology).
+        self.ontology.registerObserver('label_added', self.notifyLabelAdded)
+        self.ontology.registerObserver(
+            'ontology_added', self.notifyOntologyAdded
+        )
+
+    def notifyLabelAdded(self, labelstr, subjectIRI):
+        """
+        Responds to 'label_added' event notifications from the source ontology.
+        """
+        self.add(labelstr, subjectIRI)
+
+    def notifyOntologyAdded(self, added_ont):
+        """
+        Responds to 'ontology_added' event notifications from the source
+        ontology.
+        """
+        self.addOntologyTerms(added_ont)
 
     def lookupIRI(self, label, IRI_root=''):
         """
         Retrieve the IRI associated with a given term label.  If IRI_root is
         provided, it will be used to confirm the retrieved IRI and, in the case
-        of ambiguous labels (i.e., labes associated with more than one IRI), it
-        will be used to attempt to disambiguate the label reference.  If the
+        of ambiguous labels (i.e., labels associated with more than one IRI),
+        it will be used to attempt to disambiguate the label reference.  If the
         label (possibly with an IRI_root) is ambiguous, an exception is thrown.
 
         label: A label string.
@@ -52,6 +73,12 @@ class LabelMap:
         Returns: The OWl API IRI object associated with the label.
         """
         if label not in self.ambiglabels:
+            if label not in self.lmap:
+                raise RuntimeError(
+                    'The provided label, "{0}", does not match any labels in '
+                    'the source ontology or its imports closure.'.format(label)
+                )
+
             labelIRI = self.lmap[label]
             if str(labelIRI).startswith(IRI_root):
                 return labelIRI
@@ -72,11 +99,18 @@ class LabelMap:
 
             if matchcnt == 1:
                 return lastmatch
+            elif matchcnt == 0:
+                raise RuntimeError(
+                    'The IRI root <{0}> did not match any entities in the '
+                    'source ontology or its imports closure with the label '
+                    '"{1}".'.format(IRI_root, label)
+                )
             else:
+                owlont = self.ontology.getOWLOntology()
                 raise RuntimeError(
                     'Attempted to use an ambiguous label: The label "' + label
                     + '" is used for multiple terms in the ontology <'
-                    + str(self.ontology.getOntologyID().getOntologyIRI().get())
+                    + str(owlont.getOntologyID().getOntologyIRI().get())
                     + '>, including its imports closure.  The label "' + label
                     + '" is associated with the following IRIs: ' + '<'
                     + '>, <'.join([str(labelIRI) for labelIRI in self.ambiglabels[label]])
@@ -105,10 +139,11 @@ class LabelMap:
         else:
             if not(self.lmap[label].equals(termIRI)):
                 self._addAmbiguousLabel(label, termIRI)
+                owlont = self.ontology.getOWLOntology()
                 logging.warning(
                     'The label "' + label +
                     '" is used for more than one IRI in the ontology <'
-                    + str(self.ontology.getOntologyID().getOntologyIRI().get())
+                    + str(owlont.getOntologyID().getOntologyIRI().get())
                     + '>, including its imports closure.  The label "' + label
                     + '" is associated with the following IRIs: ' + '<'
                     + '>, <'.join([str(labelIRI) for labelIRI in self.ambiglabels[label]])
@@ -118,6 +153,8 @@ class LabelMap:
     def addOntologyTerms(self, ontology):
         """
         Adds terms from an ontology to this LabelMap.
+
+        ontology: An OWL API ontology instance.
         """
         self._makeMap(ontology)
 
@@ -129,6 +166,8 @@ class LabelMap:
         none of the labels are ambiguous; that is, that no label is used for
         more than one IRI.  If an ambiguous label is encountered, a warning is
         issued.
+
+        ontology: An OWL API ontology object.
         """
         for annotation_axiom in ontology.getAxioms(AxiomType.ANNOTATION_ASSERTION, True):
             avalue = annotation_axiom.getValue()

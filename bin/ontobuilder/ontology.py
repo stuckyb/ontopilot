@@ -4,11 +4,11 @@
 #
 
 # Python imports.
-from labelmap import LabelMap
 from obohelper import isOboID, oboIDToIRI
 from ontology_entities import _OntologyClass, _OntologyDataProperty
 from ontology_entities import _OntologyObjectProperty, _OntologyAnnotationProperty
 from reasoner_manager import ReasonerManager
+from observable import Observable
 from rfc3987 import rfc3987
 
 # Java imports.
@@ -38,7 +38,7 @@ from org.semanticweb.owlapi.util import InferredDisjointClassesAxiomGenerator
 from org.semanticweb.owlapi.util import InferredOntologyGenerator
 
 
-class Ontology:
+class Ontology(Observable):
     """
     Provides a high-level interface to the OWL API's ontology object system.
     Conceptually, instances of this class represent a single OWL ontology.
@@ -69,13 +69,20 @@ class Ontology:
             raise RuntimeError('Unrecognized type for initializing an Ontology object: '
                 + str(ontology_source))
 
-        self.labelmap = LabelMap(self.ontology)
-
         # Create an OWL data factory, which is required for creating new OWL
         # entities and looking up existing entities.
         self.df = OWLManager.getOWLDataFactory()
 
         self.reasonerman = ReasonerManager(self)
+
+        # Define the events that external observers can watch.  The events are
+        # as follows.
+        # "label_added": Triggers any time a label axiom is added to the
+        #   ontology.  Arguments are the label text and subject IRI.
+        # "ontology_added": Triggers any time an external ontology is added
+        #   to this ontology, either by importing it or merging it.  The single
+        #   argument is the external ontology instance.
+        self.defineObservableEvents(['label_added', 'ontology_added'])
 
     def getOWLOntology(self):
         """
@@ -94,18 +101,6 @@ class Ontology:
         Returns a ReasonerManager instance for this ontology.
         """
         return self.reasonerman
-
-    def labelToIRI(self, labeltxt):
-        """
-        Given a class label, returns the associated class IRI.
-        """
-        try:
-            cIRI = self.labelmap.lookupIRI(labeltxt)
-        except KeyError:
-            raise RuntimeError('The class label, "' + labeltxt
-                + '", could not be matched to a term IRI.')
-
-        return cIRI
 
     def expandIRI(self, iri):
         """
@@ -407,7 +402,7 @@ class Ontology:
         means an axiom with an OWL class or property as its subject.  The
         argument "owl_axiom" should be an instance of an OWL API axiom object.
         """
-        # If this is a label annotation, update the label lookup dictionary.
+        # If this is a label annotation, notify observers about the new label.
         if owl_axiom.isOfType(AxiomType.ANNOTATION_ASSERTION):
             if owl_axiom.getProperty().isLabel():
                 labeltxt = owl_axiom.getValue().getLiteral()
@@ -418,7 +413,7 @@ class Ontology:
                 if not(isinstance(subjIRI, IRI)):
                     raise RuntimeError('Attempted to add the label "'
                         + labeltxt + '" as an annotation of an anonymous class.')
-                self.labelmap.add(labeltxt, subjIRI)
+                self.notifyObservers('label_added', (labeltxt, subjIRI))
 
         self.ontman.applyChange(AddAxiom(self.ontology, owl_axiom))
 
@@ -510,8 +505,8 @@ class Ontology:
             ) as err:
                 raise RuntimeError('The import module ontology at <{0}> could not be loaded.  Please make sure that the IRI is correct and that the import module ontology is accessible.'.format(source_iri))
 
-            # Add the imported ontology's terms to the LabelMap.
-            self.labelmap.addOntologyTerms(importont)
+            # Notify observers that a new ontology was imported.
+            self.notifyObservers('ontology_added', (importont,))
 
     def mergeOntology(self, source_iri):
         """
@@ -552,9 +547,9 @@ class Ontology:
             self.ontman.applyChange(RemoveImport(owlont, dec))
 
         if del_decs.isEmpty():
-            # If the merged ontology was not already imported, add its terms to
-            # the LabelMap.
-            self.labelmap.addOntologyTerms(importont)
+            # If the merged ontology was not already imported, notify observers
+            # about the merged ontology.
+            self.notifyObservers('ontology_added', (importont,))
 
     def checkEntailmentErrors(self):
         """
