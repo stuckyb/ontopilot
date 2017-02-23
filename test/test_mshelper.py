@@ -42,7 +42,8 @@ class Test_BasicShortFormProvider(unittest.TestCase):
 
 class TestManchesterSyntaxParserHelper(unittest.TestCase):
     """
-    Tests the ManchesterSyntaxParserHelper class.
+    Tests the ManchesterSyntaxParserHelper class.  This also indirectly tests
+    the functionality of _MoreAdvancedEntityChecker.
     """
     def setUp(self):
         self.test_ont = Ontology('test_data/ontology.owl')
@@ -57,6 +58,8 @@ class TestManchesterSyntaxParserHelper(unittest.TestCase):
         # refer to the same class.
         test_exps = [
             "'test class 1'",
+            "obo:'test class 1'",
+            "OBTO:'test class 1'",
             'obo:OBTO_0010',
             'http://purl.obolibrary.org/obo/OBTO_0010',
             '<http://purl.obolibrary.org/obo/OBTO_0010>',
@@ -73,7 +76,8 @@ class TestManchesterSyntaxParserHelper(unittest.TestCase):
         # Test a more complex expression.  In this case, we just verify that
         # the call completes and returns a value.  The check could be more
         # thorough at some point, but that is probably not necessary for now
-        # since the correctness of the return value depends on the OWL API.
+        # since the correctness of the return value depends mostly on the
+        # correctness of the OWL API.
         exps_str = "'test class 1' AND 'imported test class 1'"
         actual = self.msph.parseClassExpression(exps_str)
         self.assertIsNotNone(actual)

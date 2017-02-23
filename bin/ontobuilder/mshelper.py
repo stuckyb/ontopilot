@@ -40,7 +40,7 @@ from org.semanticweb.owlapi.expression import ShortFormEntityChecker
 
 class _BasicShortFormProvider(ShortFormProvider):
     """
-    This class is required by MoreAdvancedEntityChecker to build a functioning
+    This class is required by _MoreAdvancedEntityChecker to build a functioning
     ShortFormEntityChecker.
     """
     def __init__(self):
@@ -61,9 +61,9 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
     """
     This is a replacement for AdvancedEntityChecker that is part of the
     Manchester Syntax parser of the OWL API.  This implementation correctly
-    handles data property names, unlike the OWL API version.  For each get___()
-    function, the general strategy is to first attempt looking up the entity
-    name using the OWL API's ShortFormEntityChecker, which can resolve
+    handles data property names, unlike the OWL API version.  For each
+    getOWL*() method, the general strategy is to first attempt looking up the
+    entity name using the OWL API's ShortFormEntityChecker, which can resolve
     "simpleIRI" names as defined in the MS grammar (these are basically short-
     form IRIs without a prefix).  If this lookup fails, then name resolution
     falls to the lookup services of the Ontology class.
@@ -86,18 +86,18 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
         """
         Attempts to resolve an entity name in a Manchester Syntax statement to
         a valid IRI.  Entity names must be one of the following: rdfs:label
-        (enclosed in single quotes), full IRI, relative IRI, "short form" IRI
-        (no prefix), prefix IRI, or OBO ID.
+        (enclosed in single quotes, with or without a prefix), full IRI,
+        relative IRI, "short form" IRI (no prefix), prefix IRI, or OBO ID.
+
+        name: The identifier to resolve.
+        Returns: An OWL API IRI object.
         """
-        if (name[0] == "'") and (name[-1] == "'"):
-            # Handle rdfs:labels.
-            return self.ontology.labelToIRI(name[1:-1])
-        elif (name[0] == '<') and (name[-1] == '>'):
+        if (name[0] == '<') and (name[-1] == '>'):
             # Handle full IRIs.
             return IRI.create(name[1:-1])
         else:
-            # Handle everything else (prefix IRIs, OBO IDs, etc.).
-            return self.ontology.expandIdentifier(name)
+            # Handle everything else (labels, prefix IRIs, OBO IDs, etc.).
+            return self.ontology.resolveIdentifier(name)
 
     def getOWLClass(self, name):
         classobj = self.sf_checker.getOWLClass(name)
