@@ -221,11 +221,12 @@ class IDResolver:
         entities in an ontology (if an entity does not yet exist, it cannot
         have a label!).
         """
-        if self._isLabel(id_obj):
-            raise RuntimeError(
-                'The identifier "{0}" appears to be an entity label, but '
-                'labels are not allowed in this context.'.format(id_obj)
-            )
+        if isinstance(id_obj, basestring):
+            if self._isLabel(id_obj):
+                raise RuntimeError(
+                    'The identifier "{0}" appears to be an entity label, but '
+                    'labels are not allowed in this context.'.format(id_obj)
+                )
 
         return self.resolveIdentifier(id_obj)
 

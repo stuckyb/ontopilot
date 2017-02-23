@@ -184,6 +184,12 @@ class TestIDResolver(unittest.TestCase):
             str(self.ir.resolveNonlabelIdentifier('obo:OBTO_0001'))
         )
 
+        # Test that an OWL API object works correctly.
+        iriobj = IRI.create('http://purl.obolibrary.org/obo/OBTO_0001')
+        self.assertEqual(
+            str(iriobj), str(self.ir.resolveNonlabelIdentifier(iriobj))
+        )
+
         # Test that a label throws an exception.
         with self.assertRaisesRegexp(RuntimeError, 'labels are not allowed'):
             self.ir.resolveNonlabelIdentifier("obo:'test object property 1'")
