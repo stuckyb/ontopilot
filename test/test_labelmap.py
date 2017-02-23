@@ -17,6 +17,7 @@
 # Python imports.
 from ontobuilder.ontology import Ontology
 from ontobuilder.labelmap import LabelMap
+from ontobuilder.labelmap import InvalidLabelError, AmbiguousLabelError
 import unittest
 from testfixtures import LogCapture
 
@@ -99,7 +100,8 @@ class TestLabelMap(unittest.TestCase):
 
         # Test lookup of an invalid label.
         with self.assertRaisesRegexp(
-            RuntimeError, 'The provided label, "invalid label", does not match'
+            InvalidLabelError,
+            'The provided label, "invalid label", does not match'
         ):
             self.lm.lookupIRI('invalid label')
 
@@ -116,7 +118,7 @@ class TestLabelMap(unittest.TestCase):
 
         # Then use an incorrect root IRI string.
         with self.assertRaisesRegexp(
-            RuntimeError, 'The provided IRI root, .*, does not match'
+            InvalidLabelError, 'The provided IRI root, .*, does not match'
         ):
             self.lm.lookupIRI(
                 'test object property 1',
@@ -142,7 +144,7 @@ class TestLabelMap(unittest.TestCase):
         # Attempt to dereference an ambiguous label.  This should raise an
         # exception.
         with self.assertRaisesRegexp(
-            RuntimeError, 'Attempted to use an ambiguous label'
+            AmbiguousLabelError, 'Attempted to use an ambiguous label'
         ):
             self.lm.lookupIRI('test class 1')
 
@@ -156,7 +158,7 @@ class TestLabelMap(unittest.TestCase):
         # Attempt to dereference an ambiguous label with an IRI root string
         # that is non-unique.  This should raise an exception.
         with self.assertRaisesRegexp(
-            RuntimeError, 'Attempted to use an ambiguous label'
+            AmbiguousLabelError, 'Attempted to use an ambiguous label'
         ):
             self.lm.lookupIRI(
                 'test class 1', 'http://purl.obolibrary.org/obo/'
@@ -165,7 +167,7 @@ class TestLabelMap(unittest.TestCase):
         # Attempt to dereference an ambiguous label with an IRI root string
         # that is invalid.  This should raise an exception.
         with self.assertRaisesRegexp(
-            RuntimeError, 'The IRI root <.*> did not match any entities'
+            InvalidLabelError, 'The IRI root <.*> did not match any entities'
         ):
             self.lm.lookupIRI(
                 'test class 1', 'http://invalid.root/iri/'
@@ -178,7 +180,7 @@ class TestLabelMap(unittest.TestCase):
         """
         # The new label should not yet exist.
         with self.assertRaisesRegexp(
-            RuntimeError, 'The provided label, ".*", does not match'
+            InvalidLabelError, 'The provided label, ".*", does not match'
         ):
             self.lm.lookupIRI('new test class')
 

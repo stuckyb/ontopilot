@@ -19,6 +19,27 @@ from org.semanticweb.owlapi.model import AxiomType
 from org.semanticweb.owlapi.model import OWLLiteral, IRI
 
 
+class LabelError(RuntimeError):
+    """
+    Top-level exception class for all label errors.
+    """
+    pass
+
+class InvalidLabelError(LabelError):
+    """
+    An exception that indicates a label (potentially with an IRI root) could
+    not be matched to any IRIs in the LabelMap.
+    """
+    pass
+
+class AmbiguousLabelError(LabelError):
+    """
+    An exception that indicates a label (potentially with an IRI root) matched
+    more than one IRI in the LabelMap.
+    """
+    pass
+
+
 class LabelMap:
     """
     Maintains a lookup table for an ontology that maps term labels to their
@@ -74,7 +95,7 @@ class LabelMap:
         """
         if label not in self.ambiglabels:
             if label not in self.lmap:
-                raise RuntimeError(
+                raise InvalidLabelError(
                     'The provided label, "{0}", does not match any labels in '
                     'the source ontology or its imports closure.'.format(label)
                 )
@@ -83,7 +104,7 @@ class LabelMap:
             if str(labelIRI).startswith(IRI_root):
                 return labelIRI
             else:
-                raise RuntimeError(
+                raise InvalidLabelError(
                     'The provided IRI root, <' + IRI_root
                     + '>, does not match the IRI associated with the label "'
                     + label + '" (<' + str(labelIRI) + '>.'
@@ -100,14 +121,14 @@ class LabelMap:
             if matchcnt == 1:
                 return lastmatch
             elif matchcnt == 0:
-                raise RuntimeError(
+                raise InvalidLabelError(
                     'The IRI root <{0}> did not match any entities in the '
                     'source ontology or its imports closure with the label '
                     '"{1}".'.format(IRI_root, label)
                 )
             else:
                 owlont = self.ontology.getOWLOntology()
-                raise RuntimeError(
+                raise AmbiguousLabelError(
                     'Attempted to use an ambiguous label: The label "' + label
                     + '" is used for multiple terms in the ontology <'
                     + str(owlont.getOntologyID().getOntologyIRI().get())
