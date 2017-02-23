@@ -12,7 +12,6 @@ from owlontologybuilder import OWLOntologyBuilder, TermDescriptionError
 from ontobuilder import TRUE_STRS
 from buildtarget import BuildTargetWithConfig
 from imports_buildtarget import ImportsBuildTarget
-from inferred_axiom_adder import InferredAxiomAdder
 
 # Java imports.
 

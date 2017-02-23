@@ -9,8 +9,6 @@
 
 
 # Python imports.
-import logging
-import os
 from tablereader import TableRow, BaseTable, BaseTableReader
 import xlrd
 

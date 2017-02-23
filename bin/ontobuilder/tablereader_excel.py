@@ -1,7 +1,5 @@
 
 # Python imports.
-import logging
-import os
 from tablereader import TableRow, BaseTable, BaseTableReader
 
 # Java imports.
@@ -13,7 +11,7 @@ from tablereader import TableRow, BaseTable, BaseTableReader
 # provide this functionality, so we use it instead.
 from java.io import File
 from org.apache.poi.ss.usermodel import WorkbookFactory, CellType
-from org.apache.poi.ss.usermodel import DataFormatter, FormulaEvaluator
+from org.apache.poi.ss.usermodel import DataFormatter
 
 
 class _ExcelTable(BaseTable):

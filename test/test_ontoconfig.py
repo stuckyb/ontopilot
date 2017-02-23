@@ -21,7 +21,6 @@ from testfixtures import LogCapture
 import os.path
 
 # Java imports.
-from org.semanticweb.owlapi.model import IRI
 
 
 class TestOntoConfig(unittest.TestCase):

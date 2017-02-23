@@ -17,10 +17,6 @@
 # Python imports.
 from ontobuilder.tablereader import TableRow
 from ontobuilder.owlontologybuilder import OWLOntologyBuilder
-from ontobuilder.ontology_entities import (
-    CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,
-    ANNOTATIONPROPERTY_ENTITY
-)
 import unittest
 #from testfixtures import LogCapture
 

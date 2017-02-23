@@ -23,7 +23,6 @@ import unittest
 
 # Java imports.
 from org.semanticweb.owlapi.model import IRI
-from org.semanticweb.owlapi.model.parameters import Imports as ImportsEnum
 
 
 # IRIs of entities in the test ontology.

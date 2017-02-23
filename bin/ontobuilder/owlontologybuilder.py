@@ -6,8 +6,7 @@
 
 # Python imports.
 import re
-import logging
-from obohelper import termIRIToOboID, oboIDToIRI
+from obohelper import termIRIToOboID
 from ontology import Ontology
 from ontology_entities import (
     CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,

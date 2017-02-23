@@ -20,7 +20,6 @@ from ontobuilder.obohelper import getIRIForOboPrefix, OBO_BASE_IRI
 import unittest
 
 # Java imports.
-from org.semanticweb.owlapi.model import IRI
 
 
 # Define test values that are valid OBO IDs.

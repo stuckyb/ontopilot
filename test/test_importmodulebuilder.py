@@ -17,7 +17,6 @@
 # Python imports.
 from ontobuilder.importmodulebuilder import ImportModuleBuilder
 from ontobuilder.ontology import Ontology
-from ontobuilder.reasoner_manager import ReasonerManager
 from ontobuilder.tablereader import TableRow
 from test_tablereader import TableStub
 import unittest
