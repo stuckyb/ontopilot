@@ -43,7 +43,7 @@ test_modules = [
     'test_importmodulebuilder', 'test_imports_buildtarget',
     'test_reasoner_manager', 'test_inferred_axiom_adder', 'test_buildtarget',
     'test_modified_onto_buildtarget', 'test_buildtarget_manager',
-    'test_obohelper'
+    'test_obohelper', 'test_idresolver', 'test_observable'
 ]
 
 successful = True
