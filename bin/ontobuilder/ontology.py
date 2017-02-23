@@ -105,6 +105,18 @@ class Ontology(Observable):
         """
         return self.reasonerman
 
+    def resolveLabel(self, labeltxt):
+        """
+        Resolves an entity label (either with or without a prefix) to an
+        absolute IRI.  The label, excluding its prefix, must be enclosed in
+        single quotes (e.g., 'some label' or prefix:'some label').  This method
+        delegates to an IDResolver instance.
+
+        labeltxt: The label to resolve.
+        Returns: An OWL API IRI object.
+        """
+        return self.idr.resolveLabel(labeltxt)
+
     def resolveIdentifier(self, id_obj):
         """
         Converts an object representing an identifier into a fully expanded

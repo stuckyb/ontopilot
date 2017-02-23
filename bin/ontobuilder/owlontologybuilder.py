@@ -112,15 +112,13 @@ class OWLOntologyBuilder:
         """
         self._addGenericAxioms(classobj, classdesc, expanddef)
 
-        # Get the IRI objects of parent classes and add them as parents.
-        for parentID in self.dsparser.parseString(classdesc['Parent']):
-            parentIRI = self._getIRIFromDesc(parentID)
-            if parentIRI != None:
-                classobj.addSuperclass(parentIRI)
-    
-        # Add any subclass of axioms (specified as class expressions in
-        # Manchester Syntax).
-        ms_exps = self.dsparser.parseString(classdesc['Subclass of'])
+        # Add parent classes (i.e., subclass of axioms) specified in the
+        # 'Parent' and 'Subclass of' fields.  Parent classes are specified as
+        # class expressions in Manchester Syntax.
+        ms_exps = (
+            self.dsparser.parseString(classdesc['Parent'])
+            + self.dsparser.parseString(classdesc['Subclass of'])
+        )
         for ms_exp in ms_exps:
             classobj.addSubclassOf(ms_exp)
  
@@ -169,7 +167,7 @@ class OWLOntologyBuilder:
 
         # Get the IRI objects of parent properties and add them as parents.
         for parentID in self.dsparser.parseString(propdesc['Parent']):
-            parentIRI = self._getIRIFromDesc(parentID)
+            parentIRI = self.ontology.resolveIdentifier(parentID)
             if parentIRI != None:
                 propobj.addSuperproperty(parentIRI)
 
@@ -188,7 +186,7 @@ class OWLOntologyBuilder:
         # Add any disjointness axioms.
         propIDs = self.dsparser.parseString(propdesc['Disjoint with'])
         for propID in propIDs:
-            disjIRI = self._getIRIFromDesc(propID)
+            disjIRI = self.ontology.resolveIdentifier(propID)
             if disjIRI != None:
                 propobj.addDisjointWith(disjIRI)
 
@@ -238,7 +236,7 @@ class OWLOntologyBuilder:
 
         # Get the IRI objects of parent properties and add them as parents.
         for parentID in self.dsparser.parseString(propdesc['Parent']):
-            parentIRI = self._getIRIFromDesc(parentID)
+            parentIRI = self.ontology.resolveIdentifier(parentID)
             if parentIRI != None:
                 propobj.addSuperproperty(parentIRI)
 
@@ -257,14 +255,14 @@ class OWLOntologyBuilder:
         # Add any "inverse of" axioms.
         propIDs = self.dsparser.parseString(propdesc['Inverse'])
         for propID in propIDs:
-            inverseIRI = self._getIRIFromDesc(propID)
+            inverseIRI = self.ontology.resolveIdentifier(propID)
             if inverseIRI != None:
                 propobj.addInverse(inverseIRI)
 
         # Add any disjointness axioms.
         propIDs = self.dsparser.parseString(propdesc['Disjoint with'])
         for propID in propIDs:
-            disjIRI = self._getIRIFromDesc(propID)
+            disjIRI = self.ontology.resolveIdentifier(propID)
             if disjIRI != None:
                 propobj.addDisjointWith(disjIRI)
 
@@ -335,7 +333,7 @@ class OWLOntologyBuilder:
 
         # Get the IRI objects of parent properties and add them as parents.
         for parentID in self.dsparser.parseString(propdesc['Parent']):
-            parentIRI = self._getIRIFromDesc(parentID)
+            parentIRI = self.ontology.resolveIdentifier(parentID)
             if parentIRI != None:
                 propobj.addSuperproperty(parentIRI)
 
@@ -370,84 +368,68 @@ class OWLOntologyBuilder:
             # description is only removed from the list/stack if it was
             # processed without an exception being thrown.
             self.entity_trows.pop()
-
-    def _getIRIFromDesc(self, id_desc):
-        """
-        Parses an identifier field from a term description dictionary and
-        returns the matching IRI.  The identifier description, id_desc, can be
-        a term label, OBO ID, prefix IRI, or full IRI.  The general format is:
-        "'term label' (TERM_ID)", or "'term label'", or "TERM_ID".
-        For example: "'whole plant' (PO:0000003)", "'whole plant'", or
-        "PO:0000003".  If both a label and ID are provided, this method will
-        verify that they correspond.  Returns an OWL API IRI object.
-        """
-        tdata = id_desc.strip()
-        if tdata == '':
-            return None
-
-        labelIRI = None
-        tdIRI = None
-    
-        # Check if we have a term label.
-        if tdata.startswith("'"):
-            if tdata.find("'") == tdata.rfind("'"):
-                raise RuntimeError('Missing closing quote in parent class specification: '
-                            + tdata + '".')
-            label = tdata.split("'")[1]
-
-            # Get the class IRI associated with the label.
-            labelIRI = self.ontology.labelToIRI(label)
-    
-            # See if we also have an ID.
-            if tdata.find('(') > -1:
-                tdID = tdata.split('(')[1]
-                if tdID.find(')') > -1:
-                    tdID = tdID.rstrip(')')
-                    tdIRI = self.ontology.expandIdentifier(tdID)
-                else:
-                    raise RuntimeError('Missing closing parenthesis in parent class specification: '
-                            + tdata + '".')
-        else:
-            # We only have an ID.
-            tdIRI = self.ontology.expandIdentifier(tdata)
-    
-        if labelIRI != None:
-            if tdIRI != None:
-                if labelIRI.equals(tdIRI):
-                    return labelIRI
-                else:
-                    raise RuntimeError('Class label does not match ID in parent class specification: '
-                            + tdata + '".')
-            else:
-                return labelIRI
-        else:
-            return tdIRI
     
     def _expandDefinition(self, deftext):
         """
         Modifies a text definition for an ontology term by adding OBO IDs for
         all term labels in braces ('{' and '}') in the definition.  For
         example, if the definition contains the text "A {whole plant} that...",
-        it will be converted to "A whole plant (PO:0000003) that...".  It there
-        is a dollar sign ('$') at the beginning of the label, then output of
-        the label will be suppressed (i.e., only the OBO ID will be included in
-        the expanded definition).
+        it will be converted to "A 'whole plant' (PO:0000003) that...".  If
+        there is a dollar sign ('$') at the beginning of the label, then output
+        of the label will be suppressed (i.e., only the OBO ID will be included
+        in the expanded definition).  Labels inside curly braces can be written
+        with or without enclosing single quotes, and with or without a prefix.
+        If labels are missing one or both quotes, _exandDefinition() will
+        attempt to fix them.
+
+        deftext (str): The text definition to process.
         """
-        labelre = re.compile(r'(\{[$A-Za-z0-9\- _]+\})')
-        defparts = labelre.split(deftext)
+        # Define a regular expression for recognizing labels in curly braces
+        # for the purpose parsing them out of a larger containing string.  Note
+        # that this regular expression cannot include label component subgroups
+        # in parentheses; if it did, they would be included in the elements of
+        # the split string list.  Note that in this regular expression, the '?'
+        # after the '+' qualifier specifies a non-greedy match; this is
+        # required for definitions that contain multiple label elements.
+        label_split_re = re.compile(r'(\{.+?\})')
+
+        # Define a regular expression for parsing labels with or without a
+        # prefix, with or without enclosing single quotes.  Used named groups
+        # to reference the parts of the regular expression match that we need
+        # to work with.
+        labelre = re.compile(
+            r"\{(?P<idonly>\$)?(?P<prefix>[A-Za-z]+(_[A-Za-z]+)?:)?(?P<labeltxt>.+)\}$"
+        )
+        defparts = label_split_re.split(deftext)
 
         newdef = ''
         for defpart in defparts:
-            if labelre.match(defpart) != None:
-                label = defpart.strip("{}")
+            res = labelre.match(defpart)
+            if res != None:
+                id_only = res.group('idonly') != None
 
-                id_only = False
-                if label[0] == '$':
-                    label = label[1:]
-                    id_only = True
+                # Handle cases where the label text is not wrapped in single
+                # quotes.  IDResolver expects label strings to be quoted, so
+                # quotes must be added if they are missing.  To do this, we
+                # parse out the label components (prefix, if present, and
+                # actual label text) and then reassemble the label, making sure
+                # the label text is enclosed in single quotes.
+                if res.group('prefix') != None:
+                    label = res.group('prefix')
+                else:
+                    label = ''
+
+                # Add the label text to the reassembled label string,
+                # attempting to correct any missing single quotes.
+                labeltxt = res.group('labeltxt')
+                if labeltxt[0] != "'":
+                    label += "'"
+                label += labeltxt
+                if labeltxt[-1] != "'":
+                    label += "'"
 
                 # Get the class IRI and OBO ID associated with this label.
-                labelIRI = self.ontology.labelToIRI(label)
+                labelIRI = self.ontology.resolveLabel(label)
                 labelID = termIRIToOboID(labelIRI)
 
                 if not(id_only):

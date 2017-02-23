@@ -329,15 +329,60 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         self.assertEqual(expIRIs, actualIRIs)
 
     def test_expandDefinition(self):
-        # Test an expansion that includes the label text.
-        sourcestr = 'An example definition for {test class 1}.'
-        expstr = 'An example definition for test class 1 (OBTO:0010).'
+        # Test an expansion that includes the label text.  Express the label in
+        # all four different formats that should be supported, plus test cases
+        # with a single missing quote around the label text.
+        unprefixed_testvals = [
+            "An example definition for {'test class 1'}.",
+            'An example definition for {test class 1}.',
+            "An example definition for {'test class 1}.",
+            "An example definition for {test class 1'}."
+        ]
+        prefixed_testvals = [
+            'An example definition for {OBTO:test class 1}.',
+            "An example definition for {OBTO:'test class 1'}.",
+            "An example definition for {OBTO:'test class 1}.",
+            "An example definition for {OBTO:test class 1'}."
+        ]
 
-        self.assertEqual(expstr, self.oob._expandDefinition(sourcestr))
+        for testval in unprefixed_testvals:
+            self.assertEqual(
+                "An example definition for 'test class 1' (OBTO:0010).",
+                self.oob._expandDefinition(testval)
+            )
+
+        for testval in prefixed_testvals:
+            self.assertEqual(
+                "An example definition for OBTO:'test class 1' (OBTO:0010).",
+                self.oob._expandDefinition(testval)
+            )
 
         # Test an expansion for which the label text is suppressed.
         sourcestr = 'An example definition for {$test class 1}.'
         expstr = 'An example definition for (OBTO:0010).'
-
         self.assertEqual(expstr, self.oob._expandDefinition(sourcestr))
+
+        # Test an expansion where the definition contains nothing but a label
+        # text element.
+        self.assertEqual(
+            "'test class 1' (OBTO:0010)",
+            self.oob._expandDefinition('{test class 1}')
+        )
+
+        # Test an expansion with multiple label text elements.
+        sourcestr = 'An example with {test class 1} and {test class 2}.'
+        expstr = (
+            "An example with 'test class 1' (OBTO:0010) and 'test class 2' "
+            "(OBTO:0011)."
+        )
+        self.assertEqual(
+            expstr, self.oob._expandDefinition(sourcestr)
+        )
+
+        # Test an expansion where the definition does not contain any label
+        # text elements.
+        self.assertEqual(
+            "An example definition.",
+            self.oob._expandDefinition('An example definition.')
+        )
 
