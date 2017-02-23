@@ -155,16 +155,16 @@ class _OntologyClass(_OntologyEntity):
         """
         Adds a parent class for this class.
 
-        parent_id: The identifier of the parent class.   Can be either an OWL
-            API IRI object or a string containing: a prefix IRI (i.e., a curie,
-            such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
-            the form "PO:0000003").
+        parent_id: The identifier of the parent class.  Can be either an OWL
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
         """
-        parentIRI = self.ontology.expandIdentifier(parent_id)
-
         # Get the OWLClass object of the parent class, making sure that it is
         # actually defined.
-        parentclass = self.ontology.getExistingClass(parentIRI)
+        parentclass = self.ontology.getExistingClass(parent_id)
         if parentclass == None:
             raise RuntimeError('The designated superclass, ' + str(parent_id)
                     + ', could not be found in the source ontology.')
@@ -239,15 +239,15 @@ class _OntologyDataProperty(_OntologyEntity):
         Adds a parent property for this property.
 
         parent_id: The identifier of the parent property.  Can be either an OWL
-            API IRI object or a string containing: a prefix IRI (i.e., a curie,
-            such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
-            the form "PO:0000003").
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
         """
-        parentIRI = self.ontology.expandIdentifier(parent_id)
-
         # Get the OWL property object of the parent, making sure that it is
         # actually defined.
-        parentprop = self.ontology.getExistingDataProperty(parentIRI)
+        parentprop = self.ontology.getExistingDataProperty(parent_id)
         if parentprop == None:
             raise RuntimeError('The designated superproperty, ' + str(parent_id)
                     + ', could not be found in the source ontology.')
@@ -299,12 +299,14 @@ class _OntologyDataProperty(_OntologyEntity):
         """
         Sets this property as disjoint with another property.
 
-        prop_id: The identifier of a data property.  Can be either an OWL API
-            IRI object or a string containing: a prefix IRI (i.e., a curie,
-            such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
-            the form "PO:0000003").
+        prop_id: The identifier of a data property.  Can be either an OWL
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
         """
-        propIRI = self.ontology.expandIdentifier(prop_id)
+        propIRI = self.ontology.resolveIdentifier(prop_id)
 
         # Get the property object.  We do not require that the property is
         # already declared, because a "disjoint with" axiom might have to be
@@ -351,15 +353,15 @@ class _OntologyObjectProperty(_OntologyEntity):
         Adds a parent property for this property.
 
         parent_id: The identifier of the parent property.  Can be either an OWL
-            API IRI object or a string containing: a prefix IRI (i.e., a curie,
-            such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
-            the form "PO:0000003").
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
         """
-        parentIRI = self.ontology.expandIdentifier(parent_id)
-
         # Get the OWL property object of the parent, making sure that it is
         # actually defined.
-        parentprop = self.ontology.getExistingObjectProperty(parentIRI)
+        parentprop = self.ontology.getExistingObjectProperty(parent_id)
         if parentprop == None:
             raise RuntimeError('The designated superproperty, ' + str(parent_id)
                     + ', could not be found in the source ontology.')
@@ -402,11 +404,13 @@ class _OntologyObjectProperty(_OntologyEntity):
         Creates an inverse axiom for this property.
 
         inverse_id: The identifier of an object property.  Can be either an OWL
-            API IRI object or a string containing: a prefix IRI (i.e., a curie,
-            such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
-            the form "PO:0000003").
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
         """
-        inverseIRI = self.ontology.expandIdentifier(inverse_id)
+        inverseIRI = self.ontology.resolveIdentifier(inverse_id)
 
         # Get the inverse property object.  We do not require that the property
         # is already declared, because an inverse axiom might have to be
@@ -422,11 +426,13 @@ class _OntologyObjectProperty(_OntologyEntity):
         Sets this property as disjoint with another property.
 
         prop_id: The identifier of an object property.  Can be either an OWL
-            API IRI object or a string containing: a prefix IRI (i.e., a curie,
-            such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
-            the form "PO:0000003").
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
         """
-        propIRI = self.ontology.expandIdentifier(prop_id)
+        propIRI = self.ontology.resolveIdentifier(prop_id)
 
         # Get the property object.  We do not require that the property is
         # already declared, because a "disjoint with" axiom might have to be
@@ -515,15 +521,15 @@ class _OntologyAnnotationProperty(_OntologyEntity):
         Adds a parent property for this property.
 
         parent_id: The identifier of the parent property.  Can be either an OWL
-            API IRI object or a string containing: a prefix IRI (i.e., a curie,
-            such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
-            the form "PO:0000003").
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
         """
-        parentIRI = self.ontology.expandIdentifier(parent_id)
-
         # Get the OWL property object of the parent, making sure that it is
         # actually defined.
-        parentprop = self.ontology.getExistingAnnotationProperty(parentIRI)
+        parentprop = self.ontology.getExistingAnnotationProperty(parent_id)
         if parentprop == None:
             raise RuntimeError('The designated superproperty, ' + str(parent_id)
                     + ', could not be found in the source ontology.')

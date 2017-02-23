@@ -5,6 +5,7 @@
 
 # Python imports.
 from obohelper import isOboID, oboIDToIRI
+from idresolver import IDResolver
 from ontology_entities import _OntologyClass, _OntologyDataProperty
 from ontology_entities import _OntologyObjectProperty, _OntologyAnnotationProperty
 from reasoner_manager import ReasonerManager
@@ -84,6 +85,8 @@ class Ontology(Observable):
         #   argument is the external ontology instance.
         self.defineObservableEvents(['label_added', 'ontology_added'])
 
+        self.idr = IDResolver(self)
+
     def getOWLOntology(self):
         """
         Returns the OWL API ontology object contained by this Ontology object.
@@ -102,59 +105,22 @@ class Ontology(Observable):
         """
         return self.reasonerman
 
-    def expandIRI(self, iri):
-        """
-        Expands an IRI string into a full IRI and returns a corresponding OWL
-        API IRI object.  Also accepts OWL API IRI objects, in which case they
-        are returned unaltered.  IRI strings can be either full IRIs, prefix
-        IRIs (i.e. curies, such as "owl:Thing"), or relative IRIs (e.g.,
-        "term_name").  If the IRI string is a prefix IRI or relative IRI, it
-        will be expanded using the prefixes or base defined in the ontology.
-        If the string is not a prefix IRI or relative IRI, then it is assumed
-        to be a full IRI.
-
-        iri: The IRI to expand.  Can be either a string or an OWL API IRI
-            object.  In the latter case, iri is returned as is.
-        """
-        prefix_df = self.ontman.getOntologyFormat(self.ontology).asPrefixOWLOntologyFormat()
-
-        if isinstance(iri, basestring):
-            # Verify that we have a valid IRI string.
-            if rfc3987.match(iri, rule='IRI_reference') == None:
-                raise RuntimeError('Invalid IRI string: "' + iri + '".')
-
-            try:
-                # If iri is not a prefix IRI, the OWL API will throw an
-                # OWLRuntimeException.
-                fullIRI = prefix_df.getIRI(iri)
-            except OWLRuntimeException:
-                fullIRI = IRI.create(iri)
-        elif isinstance(iri, IRI):
-            fullIRI = iri
-        else:
-            raise RuntimeError('Unsupported type for conversion to IRI.')
-
-        return fullIRI
-
-    def expandIdentifier(self, id_obj):
+    def resolveIdentifier(self, id_obj):
         """
         Converts an object representing an identifier into a fully expanded
         IRI.  The argument id_obj can be either an OWL API IRI object or a
-        string containing: a prefix IRI (i.e., a curie, such as "owl:Thing"), a
-        relative IRI, a full IRI, or an OBO ID (e.g., a string of the form
-        "PO:0000003").  Returns an OWL API IRI object.
-        """
-        if isinstance(id_obj, basestring):
-            if isOboID(id_obj):
-                IRIobj = oboIDToIRI(id_obj)
-            else:
-                IRIobj = self.expandIRI(id_obj)
-        elif isinstance(id_obj, IRI):
-            IRIobj = id_obj
-        else:
-            raise RuntimeError('Unsupported type for conversion to IRI.')
+        string containing: a label (with or without a prefix), a prefix IRI
+        (i.e., a curie, such as "owl:Thing"), a relative IRI, a full IRI, a
+        label (either with or without an OBO or IRI prefix), or an OBO ID
+        (e.g., a string of the form "PO:0000003").  Returns an OWL API IRI
+        object.  Labels, except for their prefix, must be enclosed in single
+        quotes (e.g., 'some label' or prefix:'some label').  This method
+        delegates to an IDResolver instance.
 
-        return IRIobj
+        id_obj: The identifier to resolve to an absolute IRI.
+        Returns: An OWL API IRI object.
+        """
+        return self.idr.resolveIdentifier(id_obj)
 
     def getExistingClass(self, class_id):
         """
@@ -164,11 +130,13 @@ class Ontology(Observable):
         class is returned.  Otherwise, None is returned.
 
         class_id: The identifier of the class to search for.  Can be either an
-            OWL API IRI object or a string containing: a prefix IRI (i.e., a
-            curie, such as "owl:Thing"), a relative IRI, a full IRI, or an OBO
-            ID (e.g., a string of the form "PO:0000003").
+            OWL API IRI object or a string containing: a label (with or without
+            a prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a
+            relative IRI, a full IRI, or an OBO ID (e.g., a string of the form
+            "PO:0000003").  Labels should be enclosed in single quotes (e.g.,
+            'label text' or prefix:'label txt').
         """
-        classIRI = self.expandIdentifier(class_id)
+        classIRI = self.resolveIdentifier(class_id)
 
         classobj = self.df.getOWLClass(classIRI)
 
@@ -187,11 +155,13 @@ class Ontology(Observable):
         representing the property is returned.  Otherwise, None is returned.
 
         prop_id: The identifier of the property to search for.  Can be either
-            an OWL API IRI object or a string containing: a prefix IRI (i.e., a
-            curie, such as "owl:Thing"), a full IRI, a relative IRI, or an OBO
-            ID (e.g., a string of the form "PO:0000003").
+            an OWL API IRI object or a string containing: a label (with or
+            without a prefix), a prefix IRI (i.e., a curie, such as
+            "owl:Thing"), a relative IRI, a full IRI, or an OBO ID (e.g., a
+            string of the form "PO:0000003").  Labels should be enclosed in
+            single quotes (e.g., 'label text' or prefix:'label txt').
         """
-        propIRI = self.expandIdentifier(prop_id)
+        propIRI = self.resolveIdentifier(prop_id)
 
         propobj = self.df.getOWLDataProperty(propIRI)
 
@@ -210,11 +180,13 @@ class Ontology(Observable):
         representing the property is returned.  Otherwise, None is returned.
 
         prop_id: The identifier of the property to search for.  Can be either
-            an OWL API IRI object or a string containing: a prefix IRI (i.e., a
-            curie, such as "owl:Thing"), a full IRI, a relative IRI, or an OBO
-            ID (e.g., a string of the form "PO:0000003").
+            an OWL API IRI object or a string containing: a label (with or
+            without a prefix), a prefix IRI (i.e., a curie, such as
+            "owl:Thing"), a relative IRI, a full IRI, or an OBO ID (e.g., a
+            string of the form "PO:0000003").  Labels should be enclosed in
+            single quotes (e.g., 'label text' or prefix:'label txt').
         """
-        propIRI = self.expandIdentifier(prop_id)
+        propIRI = self.resolveIdentifier(prop_id)
 
         propobj = self.df.getOWLObjectProperty(propIRI)
 
@@ -233,11 +205,13 @@ class Ontology(Observable):
         representing the property is returned.  Otherwise, None is returned.
 
         prop_id: The identifier of the property to search for.  Can be either
-            an OWL API IRI object or a string containing: a prefix IRI (i.e., a
-            curie, such as "owl:Thing"), a full IRI, a relative IRI, or an OBO
-            ID (e.g., a string of the form "PO:0000003").
+            an OWL API IRI object or a string containing: a label (with or
+            without a prefix), a prefix IRI (i.e., a curie, such as
+            "owl:Thing"), a relative IRI, a full IRI, or an OBO ID (e.g., a
+            string of the form "PO:0000003").  Labels should be enclosed in
+            single quotes (e.g., 'label text' or prefix:'label txt').
         """
-        propIRI = self.expandIdentifier(prop_id)
+        propIRI = self.resolveIdentifier(prop_id)
 
         propobj = self.df.getOWLAnnotationProperty(propIRI)
 
@@ -258,11 +232,13 @@ class Ontology(Observable):
         properties are not.
 
         prop_id: The identifier of the property to search for.  Can be either
-            an OWL API IRI object or a string containing: a prefix IRI (i.e., a
-            curie, such as "owl:Thing"), a full IRI, a relative IRI, or an OBO
-            ID (e.g., a string of the form "PO:0000003").
+            an OWL API IRI object or a string containing: a label (with or
+            without a prefix), a prefix IRI (i.e., a curie, such as
+            "owl:Thing"), a relative IRI, a full IRI, or an OBO ID (e.g., a
+            string of the form "PO:0000003").  Labels should be enclosed in
+            single quotes (e.g., 'label text' or prefix:'label txt').
         """
-        propIRI = self.expandIdentifier(prop_id)
+        propIRI = self.resolveIdentifier(prop_id)
 
         prop = self.getExistingObjectProperty(propIRI)
         if prop == None:
@@ -283,11 +259,13 @@ class Ontology(Observable):
         None is returned.
         
         ent_id: The identifier of the entity.  Can be either an OWL API IRI
-            object or a string containing: a prefix IRI (i.e., a curie, such as
-            "owl:Thing"), a full IRI, a relative IRI, or an OBO ID (e.g., a
-            string of the form "PO:0000003").
+            object or a string containing: a label (with or without a prefix),
+            a prefix IRI (i.e., a curie, such as "owl:Thing"), a relative IRI,
+            a full IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label text' or
+            prefix:'label txt').
         """
-        eIRI = self.expandIdentifier(ent_id)
+        eIRI = self.resolveIdentifier(ent_id)
 
         entity = self.getExistingClass(eIRI)
         if entity == None:
@@ -304,11 +282,13 @@ class Ontology(Observable):
         individual is returned.  Otherwise, None is returned.
 
         indv_id: The identifier of the individual to search for.  Can be either
-            an OWL API IRI object or a string containing: a prefix IRI (i.e., a
-            curie, such as "owl:Thing"), a full IRI, a relative IRI, or an OBO
-            ID (e.g., a string of the form "PO:0000003").
+            an OWL API IRI object or a string containing: a label (with or
+            without a prefix), a prefix IRI (i.e., a curie, such as
+            "owl:Thing"), a relative IRI, a full IRI, or an OBO ID (e.g., a
+            string of the form "PO:0000003").  Labels should be enclosed in
+            single quotes (e.g., 'label text' or prefix:'label txt').
         """
-        indvIRI = self.expandIdentifier(indv_id)
+        indvIRI = self.resolveIdentifier(indv_id)
 
         indvobj = self.df.getOWLNamedIndividual(indvIRI)
 
@@ -329,7 +309,7 @@ class Ontology(Observable):
             such as "owl:Thing"), a full IRI, a relative IRI, or an OBO ID
             (e.g., a string of the form "PO:0000003").
         """
-        classIRI = self.expandIdentifier(class_id)
+        classIRI = self.idr.resolveNonlabelIdentifier(class_id)
 
         # Get the class object.
         owlclass = self.df.getOWLClass(classIRI)
@@ -349,7 +329,7 @@ class Ontology(Observable):
             such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
             the form "PO:0000003").
         """
-        propIRI = self.expandIdentifier(prop_id)
+        propIRI = self.idr.resolveNonlabelIdentifier(prop_id)
 
         owldprop = self.df.getOWLDataProperty(propIRI)
 
@@ -368,7 +348,7 @@ class Ontology(Observable):
             such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
             the form "PO:0000003").
         """
-        propIRI = self.expandIdentifier(prop_id)
+        propIRI = self.idr.resolveNonlabelIdentifier(prop_id)
 
         owloprop = self.df.getOWLObjectProperty(propIRI)
 
@@ -387,7 +367,7 @@ class Ontology(Observable):
             such as "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of
             the form "PO:0000003").
         """
-        propIRI = self.expandIdentifier(prop_id)
+        propIRI = self.idr.resolveNonlabelIdentifier(prop_id)
 
         owloprop = self.df.getOWLAnnotationProperty(propIRI)
 
@@ -456,10 +436,11 @@ class Ontology(Observable):
         Sets the ID for the ontology (i.e., the value of the "rdf:about"
         attribute).
         
-          ont_iri: The IRI (i.e., ID) of the ontology.  Can be either an IRI
-                   object or a string.
+        ont_iri: The IRI (i.e., ID) of the ontology.  Can be either an IRI
+            object or a string containing a relative IRI, prefix IRI, or full
+            IRI.
         """
-        ontIRI = self.expandIRI(ont_iri)
+        ontIRI = self.idr.expandIRI(ont_iri)
 
         newoid = OWLOntologyID(Optional.fromNullable(ontIRI), Optional.absent())
         self.ontman.applyChange(SetOntologyID(self.ontology, newoid))
@@ -478,11 +459,12 @@ class Ontology(Observable):
         Adds an OWL import statement to this ontology.
 
         source_iri: The IRI of the source ontology.  Can be either an IRI
-            object or a string.
+            object or a string containing a relative IRI, prefix IRI, or full
+            IRI.
         load_import: If True, the new import will be automatically loaded and
             its terms labels will be added to the internal LabelMap.
         """
-        sourceIRI = self.expandIRI(source_iri)
+        sourceIRI = self.idr.expandIRI(source_iri)
         owlont = self.getOWLOntology()
         
         # Check if the imported ontology is already included in an imports
@@ -516,9 +498,10 @@ class Ontology(Observable):
         ontology), the import declaration will be deleted.
 
         source_iri: The IRI of the source ontology.  Can be either an IRI
-            object or a string.
+            object or a string containing a relative IRI, prefix IRI, or full
+            IRI.
         """
-        sourceIRI = self.expandIRI(source_iri)
+        sourceIRI = self.idr.expandIRI(source_iri)
         owlont = self.getOWLOntology()
 
         try:
@@ -584,9 +567,10 @@ class Ontology(Observable):
         Sets the value of the "dc:source" annotation property for this ontology.
 
         source_iri: The IRI of the source ontology.  Can be either an IRI
-            object or a string.
+            object or a string containing a relative IRI, prefix IRI, or full
+            IRI.
         """
-        sourceIRI = self.expandIRI(source_iri)
+        sourceIRI = self.idr.expandIRI(source_iri)
 
         sourceprop = self.df.getOWLAnnotationProperty(self.SOURCE_PROP_IRI)
         s_annot = self.df.getOWLAnnotation(sourceprop, sourceIRI)
@@ -610,9 +594,10 @@ class Ontology(Observable):
 
         signature: A Java Set of all entities to include in the module.
         mod_iri: The IRI for the extracted ontology module.  Can be either an
-            IRI object or a string.
+            IRI object or a string containing a relative IRI, prefix IRI, or
+            full IRI.
         """
-        modIRI = self.expandIRI(mod_iri)
+        modIRI = self.idr.expandIRI(mod_iri)
 
         slme = SyntacticLocalityModuleExtractor(
             self.ontman, self.getOWLOntology(), ModuleType.STAR

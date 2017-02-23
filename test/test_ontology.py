@@ -43,52 +43,6 @@ class Test_Ontology(unittest.TestCase):
         self.ont = Ontology('test_data/ontology.owl')
         self.owlont = self.ont.getOWLOntology()
 
-    def test_labelToIRI(self):
-        expIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
-        self.assertTrue(
-            expIRI.equals(self.ont.labelToIRI('test class 1'))
-        )
-
-    def test_expandIRI(self):
-        expIRI = IRI.create('http://www.w3.org/2000/01/rdf-schema#label')
-
-        # Test full IRIs, prefix IRIs, and IRI objects.
-        testvals = [
-            'http://www.w3.org/2000/01/rdf-schema#label',
-            'rdfs:label',
-            IRI.create('http://www.w3.org/2000/01/rdf-schema#label')
-        ]
-
-        for testval in testvals:
-            self.assertTrue(
-                expIRI.equals(self.ont.expandIRI(testval))
-            )
-
-        # Also test a relative IRI.
-        expIRI = IRI.create('https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#blah')
-        self.assertTrue(
-            expIRI.equals(self.ont.expandIRI('blah'))
-        )
-
-        # Make sure invalid IRI strings are detected.
-        with self.assertRaisesRegexp(RuntimeError, 'Invalid IRI string'):
-            self.ont.expandIRI('BL\nAH')
-
-    def test_expandIdentifier(self):
-        expIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0001')
-        
-        testvals = [
-            'http://purl.obolibrary.org/obo/OBTO_0001',
-            'obo:OBTO_0001',
-            'OBTO:0001',
-            IRI.create('http://purl.obolibrary.org/obo/OBTO_0001')
-        ]
-
-        for testval in testvals:
-            self.assertTrue(
-                expIRI.equals(self.ont.expandIdentifier(testval))
-            )
-
     def test_getExistingClass(self):
         self.assertIsNotNone(
             self.ont.getExistingClass(CLASS_IRI)
