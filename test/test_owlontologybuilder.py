@@ -382,3 +382,31 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
             self.oob._expandDefinition('An example definition.')
         )
 
+        # Define a new, fake IRI prefix.
+        ontman = self.test_ont.getOntologyManager()
+        prefix_df = ontman.getOntologyFormat(self.owlont).asPrefixOWLOntologyFormat()
+        prefix_df.setPrefix('fake:', 'http://this.is/a/fake/root/')
+
+        # Define a new class with the fake root IRI and give it a label.
+        newclass = self.test_ont.createNewClass('fake:ID_0001')
+        newclass.addLabel('new fake class')
+
+        # Test an expansion where the label does not resolve to an OBO IRI but
+        # does map to a prefix IRI.
+        self.assertEqual(
+            "An example 'new fake class' (fake:ID_0001).",
+            self.oob._expandDefinition("An example {'new fake class'}.")
+        )
+
+        # Define a new class with an IRI that does not map to either an OBO ID
+        # or a prefix IRI and give it a label.
+        newclass = self.test_ont.createNewClass('http://another.fake/ID_0001')
+        newclass.addLabel('new fake class 2')
+
+        # Test an expansion where the label does not map to either an OBO IRI
+        # or a prefix IRI.
+        self.assertEqual(
+            "An example 'new fake class 2' (http://another.fake/ID_0001).",
+            self.oob._expandDefinition("An example {'new fake class 2'}.")
+        )
+

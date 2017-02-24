@@ -6,7 +6,7 @@
 
 # Python imports.
 import re
-from obohelper import termIRIToOboID
+from obohelper import termIRIToOboID, OBOIdentiferError
 from ontology import Ontology
 from ontology_entities import (
     CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,
@@ -51,6 +51,12 @@ class OWLOntologyBuilder:
     def __init__(self, base_ont_path):
         # Load the base ontology.
         self.ontology = Ontology(base_ont_path)
+
+        # Get a PrefixDocumentFormat/PrefixManager instance so that we can
+        # generate prefix IRIs for label expansions in text entity definitions.
+        owlont = self.ontology.getOWLOntology()
+        ontman = self.ontology.getOntologyManager()
+        self.prefix_df = ontman.getOntologyFormat(owlont).asPrefixOWLOntologyFormat()
 
         # A list (used as a stack) for caching information in _TableRow objects
         # and their associated ontology entity objects.  Each list entry is
@@ -427,9 +433,20 @@ class OWLOntologyBuilder:
                 if labeltxt[-1] != "'":
                     label += "'"
 
-                # Get the class IRI and OBO ID associated with this label.
+                # Get the class IRI and OBO ID associated with this label.  If
+                # the OBO ID conversion fails, try to convert it to a prefix
+                # IRI, and if that fails, just use the full IRI.
                 labelIRI = self.ontology.resolveLabel(label)
-                labelID = termIRIToOboID(labelIRI)
+                try:
+                    labelID = termIRIToOboID(labelIRI)
+                except OBOIdentiferError:
+                    labelID = ''
+
+                if labelID == '':
+                    labelID = self.prefix_df.getPrefixIRI(labelIRI)
+
+                if labelID == None:
+                    labelID = str(labelIRI)
 
                 if not(id_only):
                     newdef += label + ' '
