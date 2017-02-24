@@ -17,6 +17,7 @@
 # Python imports.
 from ontobuilder.obohelper import isOboID, termIRIToOboID, oboIDToIRI
 from ontobuilder.obohelper import getIRIForOboPrefix, OBO_BASE_IRI
+from ontobuilder.obohelper import OBOIdentiferError
 import unittest
 
 # Java imports.
@@ -95,7 +96,7 @@ class TestOboHelper(unittest.TestCase):
 
         for testval in testvals:
             with self.assertRaisesRegexp(
-                RuntimeError, 'is not an OBO Foundry-compliant IRI'
+                OBOIdentiferError, 'is not an OBO Foundry-compliant IRI'
             ):
                 termIRIToOboID(testval)
 
@@ -109,7 +110,7 @@ class TestOboHelper(unittest.TestCase):
         # Test invalid OBO IDs.
         for testval in invalid_id_testvals:
             with self.assertRaisesRegexp(
-                RuntimeError, 'is not a valid OBO ID'
+                OBOIdentiferError, 'is not a valid OBO ID'
             ):
                 oboIDToIRI(testval)
 
@@ -137,7 +138,7 @@ class TestOboHelper(unittest.TestCase):
 
         for testval in testvals:
             with self.assertRaisesRegexp(
-                RuntimeError, 'is not a valid OBO prefix'
+                OBOIdentiferError, 'is not a valid OBO prefix'
             ):
                 getIRIForOboPrefix(testval)
 
