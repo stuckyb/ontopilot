@@ -25,17 +25,6 @@ import unittest
 from org.semanticweb.owlapi.model import IRI
 
 
-# IRIs of entities in the test ontology.
-OBJPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0001'
-DATAPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0020'
-ANNOTPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0030'
-CLASS_IRI = 'http://purl.obolibrary.org/obo/OBTO_0010'
-INDIVIDUAL_IRI = 'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#individual_002'
-
-# IRI that is not used in the test ontology.
-NULL_IRI = 'http://purl.obolibrary.org/obo/OBTO_9999'
-
-
 class TestIDResolver(unittest.TestCase):
     """
     Tests the IDResolver class.
