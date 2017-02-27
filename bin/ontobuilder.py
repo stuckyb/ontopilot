@@ -10,6 +10,7 @@ from ontobuilder.imports_buildtarget import ImportsBuildTarget
 from ontobuilder.onto_buildtarget import OntoBuildTarget
 from ontobuilder.modified_onto_buildtarget import ModifiedOntoBuildTarget
 from ontobuilder.errorcheck_buildtarget import ErrorCheckBuildTarget
+from ontobuilder.update_base_imports_buildtarget import UpdateBaseImportsBuildTarget
 from ontobuilder.buildtarget_manager import BuildTargetManager
 
 
@@ -25,6 +26,7 @@ buildtm.addBuildTarget(
     reason=False
 )
 buildtm.addBuildTarget(ModifiedOntoBuildTarget, task='make', taskarg='ontology')
+buildtm.addBuildTarget(UpdateBaseImportsBuildTarget, task='update_base')
 buildtm.addBuildTarget(ErrorCheckBuildTarget, task='errorcheck')
 
 # Define the command-line arguments.
