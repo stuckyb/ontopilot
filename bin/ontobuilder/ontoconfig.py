@@ -120,6 +120,46 @@ class OntoConfig(RawConfigParser):
 
         return abspath
 
+    def _splitPathToList(self, pathstr):
+        """
+        Splits a path into a list of its components.
+        """
+        if pathstr == '/':
+            clist = ['/']
+        else:
+            clist = []
+            remainder = pathstr
+            while (remainder != '/') and (remainder != ''):
+                parts = os.path.split(remainder)
+
+                if parts[1] != '':
+                    clist.append(parts[1])
+                if parts[0] == '/':
+                    clist.append(parts[0])
+
+                remainder = parts[0]
+
+            clist.reverse()
+
+        return clist
+
+    def _isSubpathInPath(self, path, subpath):
+        """
+        Tests whether path is a parent path to subpath.  If so, returns True.
+        """
+        p_parts = self._splitPathToList(self._getAbsPath(path))
+        sp_parts = self._splitPathToList(self._getAbsPath(subpath))
+
+        # The subpath must be longer than the parent path.
+        if len(p_parts) >= len(sp_parts):
+            return False
+        
+        for p_part, sp_part in zip(p_parts, sp_parts):
+            if p_part != sp_part:
+                return False
+
+        return True
+
     def getOntFileBase(self):
         """
         Returns the name of the ontology file without the file extension.
@@ -244,46 +284,6 @@ class OntoConfig(RawConfigParser):
 
         return iristr
 
-    def _splitPathToList(self, pathstr):
-        """
-        Splits a path into a list of its components.
-        """
-        if pathstr == '/':
-            clist = ['/']
-        else:
-            clist = []
-            remainder = pathstr
-            while (remainder != '/') and (remainder != ''):
-                parts = os.path.split(remainder)
-
-                if parts[1] != '':
-                    clist.append(parts[1])
-                if parts[0] == '/':
-                    clist.append(parts[0])
-
-                remainder = parts[0]
-
-            clist.reverse()
-
-        return clist
-
-    def _isSubpathInPath(self, path, subpath):
-        """
-        Tests whether path is a parent path to subpath.  If so, returns True.
-        """
-        p_parts = self._splitPathToList(self._getAbsPath(path))
-        sp_parts = self._splitPathToList(self._getAbsPath(subpath))
-
-        # The subpath must be longer than the parent path.
-        if len(p_parts) >= len(sp_parts):
-            return False
-        
-        for p_part, sp_part in zip(p_parts, sp_parts):
-            if p_part != sp_part:
-                return False
-
-        return True
-
     def getOntologyFilePath(self):
         """
         Returns the full path to the base compiled ontology filename.
@@ -390,7 +390,10 @@ class OntoConfig(RawConfigParser):
         # determined by the location of the project configuration file).
         if not(self._isSubpathInPath(self.confdir, pathstr)):
             raise ConfigError(
-                'The compiled imports modules folder ("{0}") is not a subpath of the main project folder ("{1}").  Please modify the value of the imports_dir setting in the project configuration file to correct this error.'.format(pathstr, self.confdir))
+                'The compiled imports modules folder ("{0}") is not a subpath '
+                'of the main project folder ("{1}").  Please modify the value '
+                'of the imports_dir setting in the project configuration file '
+                'to correct this error.'.format(pathstr, self.confdir))
         
         return pathstr
 
@@ -411,20 +414,6 @@ class OntoConfig(RawConfigParser):
 
         return pathstr
     
-    def getLocalModulesBaseIRI(self):
-        """
-        Returns a local file:// base IRI for the compiled import modules.  This
-        can be used, e.g., if no IRI is explicitly provided for either the
-        ontology or the import modules, or if a modules base IRI cannot be
-        automatically generated from the ontology IRI.
-        """
-        abs_path = self.getImportsDir()
-        ontIRIstr = urlparse.urljoin(
-            'file://localhost', urllib.pathname2url(abs_path)
-        )
-
-        return ontIRIstr
-
     def getImportModSuffix(self):
         """
         Returns the suffix string to use for generating import module file
@@ -444,7 +433,9 @@ class OntoConfig(RawConfigParser):
 
         if not(reasoner.lower() in [rstr.lower() for rstr in REASONER_STRS]):
             raise ConfigError(
-                'Invalid value for the "reasoner" setting in the build configuration file: "{0}".  Supported values are: {1}.'.format(
+                'Invalid value for the "reasoner" setting in the build '
+                'configuration file: "{0}".  Supported values are: '
+                '{1}.'.format(
                     reasoner, '"' + '", "'.join(REASONER_STRS) + '"'
                 )
             )
@@ -470,7 +461,9 @@ class OntoConfig(RawConfigParser):
             if inf_str != '':
                 if not(inf_str.lower() in INFERENCE_TYPES):
                     raise ConfigError(
-                        'Invalid inference type for the "inferences" setting in the build configuration file: "{0}".  Supported values are: "{1}".'.format(
+                        'Invalid inference type for the "inferences" setting '
+                        'in the build configuration file: "{0}".  Supported '
+                        'values are: "{1}".'.format(
                             inf_str, '", "'.join(INFERENCE_TYPES)
                         )
                     )

@@ -431,12 +431,6 @@ class TestOntoConfig(unittest.TestCase):
         self.oc.set('Imports', 'top_importsfile', abspath)
         self.assertEqual(abspath, self.oc.getTopImportsFilePath())
 
-    def test_getLocalModulesBaseIRI(self):
-        self.assertEqual(
-            'file://localhost' + self.td_path + '/imports',
-            self.oc.getLocalModulesBaseIRI()
-        )
-
     def test_getImportModSuffix(self):
         # Check an auto-generated suffix.
         self.assertEqual(
