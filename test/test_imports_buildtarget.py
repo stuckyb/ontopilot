@@ -31,6 +31,7 @@ class TestImportsBuildTarget(unittest.TestCase):
     """
     def setUp(self):
         self.oc = OntoConfig('test_data/project.conf')
+        self.oc.set('IRIs', 'dev_base_IRI', 'https://a.sample.iri/to/')
         self.oc.set('Imports', 'imports_src', 'imports_src/')
         self.oc.set('Build', 'builddir', '.')
 

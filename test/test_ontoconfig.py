@@ -28,7 +28,6 @@ class TestOntoConfig(unittest.TestCase):
     Tests the OntoConfig class.
     """
     def setUp(self):
-        self.ontIRIstr = 'https://a.sample.iri/to/ontology/ontname.owl'
         self.termsfiles = ['terms_1.csv', 'terms_2.csv']
         self.mod_baseIRI = 'https://a.sample.iri/to/imports'
 
@@ -43,7 +42,8 @@ class TestOntoConfig(unittest.TestCase):
     def test_getCustom(self):
         # Test an extant option.
         self.assertEqual(
-            self.ontIRIstr, self.oc.getCustom('Ontology', 'ontologyIRI')
+            'ontology/ontname.owl',
+            self.oc.getCustom('Ontology', 'ontology_file')
         )
 
         # Test an extant option that is empty.
