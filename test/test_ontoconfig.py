@@ -161,6 +161,61 @@ class TestOntoConfig(unittest.TestCase):
         ):
             self.oc.getDevBaseIRI()
 
+    def test_getReleaseBaseIRI(self):
+        # Test the default IRI.
+        self.assertEqual(
+            self.oc.getDevBaseIRI(), self.oc.getReleaseBaseIRI()
+        )
+
+        # Test a custom IRI.
+        iristr = 'http://custom.iri/path'
+        self.oc.set('IRIs', 'release_base_IRI', iristr)
+        self.assertEqual(iristr, self.oc.getReleaseBaseIRI())
+
+        # Verify that an invalid IRI string is detected.
+        self.oc.set('IRIs', 'release_base_IRI', '/not/an/absolute/IRI')
+        with self.assertRaisesRegexp(
+            ConfigError, 'Invalid release base IRI string'
+        ):
+            self.oc.getReleaseBaseIRI()
+
+    def test_generateReleaseOntologyFileIRI(self):
+        basename = 'test.owl'
+
+        iristr = 'http://custom.iri/path/'
+        self.oc.set('IRIs', 'release_base_IRI', iristr)
+        self.assertEqual(
+            iristr + basename,
+            self.oc.generateReleaseOntologyFileIRI(basename)
+        )
+
+        iristr = 'http://custom.iri/path'
+        self.oc.set('IRIs', 'release_base_IRI', iristr)
+        self.assertEqual(
+            iristr + '/' + basename,
+            self.oc.generateReleaseOntologyFileIRI(basename)
+        )
+
+    def test_getReleaseOntologyIRI(self):
+        # Test an automatically generated IRI.
+        iristr = 'http://custom.iri/path'
+        self.oc.set('IRIs', 'release_base_IRI', iristr)
+        self.assertEqual(
+            iristr + '/ontname.owl', self.oc.getReleaseOntologyIRI()
+        )
+
+        # Test a custom IRI.
+        iristr = 'http://custom.iri/path/test.owl'
+        self.oc.set('IRIs', 'release_ontology_IRI', iristr)
+        self.assertEqual(iristr, self.oc.getReleaseOntologyIRI())
+
+        # Verify that an invalid IRI string is detected.
+        self.oc.set('IRIs', 'release_ontology_IRI', '/not/an/absolute/IRI')
+        with self.assertRaisesRegexp(
+            ConfigError, 'Invalid release ontology IRI string'
+        ):
+            self.oc.getReleaseOntologyIRI()
+
     def test_getLocalOntologyIRI(self):
         self.assertEqual(
             'file://localhost' + self.td_path + '/ontology/ontname.owl',

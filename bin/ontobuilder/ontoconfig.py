@@ -140,7 +140,8 @@ class OntoConfig(RawConfigParser):
             if rfc3987.match(iristr, rule='absolute_IRI') == None:
                 raise ConfigError(
                     'Invalid development base IRI string in the build '
-                    'configuration file (dev_base_IRI): {0}."'.format(iristr)
+                    'configuration file: {0}.  Please check the value of the '
+                    'setting "dev_base_IRI".'.format(iristr)
                 )
         else:
             # No development base IRI was provided, so try to generate one from
@@ -148,6 +149,67 @@ class OntoConfig(RawConfigParser):
             iristr = urlparse.urljoin(
                 'file://localhost', urllib.pathname2url(self.confdir)
         )
+
+        return iristr
+
+    def getReleaseBaseIRI(self):
+        """
+        Returns the base IRI for released ontology documents and imports
+        modules.
+        """
+        iristr = self.getCustom('IRIs', 'release_base_IRI')
+
+        if iristr != '':
+            # Verify that we have a valid absolute IRI string.
+            if rfc3987.match(iristr, rule='absolute_IRI') == None:
+                raise ConfigError(
+                    'Invalid release base IRI string in the build '
+                    'configuration file: "{0}".  Please check the value of '
+                    'the setting "release_base_IRI".'.format(iristr)
+                )
+        else:
+            # No development base IRI was provided, so use the development base
+            # IRI.
+            iristr = self.getDevBaseIRI()
+
+        return iristr
+
+    def generateReleaseOntologyFileIRI(self, basename):
+        """
+        Generates a release IRI for an ontology file.
+
+        basename: The name of the ontology, without any additional path
+            information.
+        """
+        # Parse the base IRI, extract the path, and add the basename.
+        parts = rfc3987.parse(self.getReleaseBaseIRI(), rule='absolute_IRI')
+        iripath = os.path.join(parts['path'], basename)
+
+        # Generate the complete IRI.
+        parts['path'] = iripath
+        iristr = rfc3987.compose(**parts)
+
+        return iristr
+
+    def getReleaseOntologyIRI(self):
+        """
+        Returns the IRI for the main released ontology.
+        """
+        iristr = self.getCustom('IRIs', 'release_ontology_IRI')
+
+        if iristr != '':
+            # Verify that we have a valid absolute IRI string.
+            if rfc3987.match(iristr, rule='absolute_IRI') == None:
+                raise ConfigError(
+                    'Invalid release ontology IRI string in the build '
+                    'configuration file: "{0}".  Please check the value of '
+                    'the setting "release_ontology_IRI".'.format(iristr)
+                )
+        else:
+            # No release ontology IRI was provided, so generate one from the
+            # release base IRI.
+            ontfname = os.path.basename(self.getOntologyFilePath())
+            iristr = self.generateReleaseOntologyFileIRI(ontfname)
 
         return iristr
 
