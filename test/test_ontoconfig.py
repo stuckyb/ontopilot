@@ -32,7 +32,7 @@ class TestOntoConfig(unittest.TestCase):
         self.termsfiles = ['terms_1.csv', 'terms_2.csv']
         self.mod_baseIRI = 'https://a.sample.iri/to/imports'
 
-        self.oc = OntoConfig('test_data/config.conf')
+        self.oc = OntoConfig('test_data/project.conf')
 
         self.td_path = os.path.abspath('test_data/')
 
@@ -59,7 +59,7 @@ class TestOntoConfig(unittest.TestCase):
 
     def test_getConfigFilePath(self):
         self.assertEqual(
-            self.td_path + '/config.conf',
+            self.td_path + '/project.conf',
             self.oc.getConfigFilePath()
         )
 

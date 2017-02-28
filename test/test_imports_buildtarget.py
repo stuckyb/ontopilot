@@ -30,7 +30,7 @@ class TestImportsBuildTarget(unittest.TestCase):
     Tests the ImportsBuildTarget class.
     """
     def setUp(self):
-        self.oc = OntoConfig('test_data/config.conf')
+        self.oc = OntoConfig('test_data/project.conf')
         self.oc.set('Imports', 'imports_src', 'imports_src/')
         self.oc.set('Build', 'builddir', '.')
 

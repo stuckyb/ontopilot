@@ -42,7 +42,7 @@ class TestModifiedOntoBuildTarget(unittest.TestCase):
     instantiate a new OntoConfig object, it would throw an exception.
     """
     def setUp(self):
-        self.oc = OntoConfig('test_data/config.conf')
+        self.oc = OntoConfig('test_data/project.conf')
         self.oc.set('Ontology', 'termsdir', '.')
 
         # We need to set the imports source location so that the
