@@ -60,7 +60,8 @@ class OntoBuildTarget(BuildTargetWithConfig):
             flist = glob.glob(fpath)
             if len(flist) == 0:
                 raise RuntimeError(
-                    'The source terms/entities file(s) could not be found: {0}.'.format(fpath)
+                    'The source terms/entities file(s) could not be found: '
+                    '{0}.'.format(fpath)
                 )
             for filename in flist:
                 pathsset.add(filename)
@@ -199,7 +200,8 @@ class OntoBuildTarget(BuildTargetWithConfig):
                                 ontbuilder.addAnnotationProperty(t_row)
                             elif typestr == '':
                                 raise TermDescriptionError(
-                                    'The entity type (e.g., "class", "data property") was not specified.',
+                                    'The entity type (e.g., "class", "data '
+                                    'property") was not specified.',
                                     t_row
                                 )
                             else:
@@ -212,15 +214,16 @@ class OntoBuildTarget(BuildTargetWithConfig):
         print 'Defining all remaining entity axioms...'
         ontbuilder.processDeferredEntityAxioms(self.expanddefs)
 
+        fileoutpath = self.getOutputFilePath()
+
         # Set the ontology IRI.
-        ont_basename = os.path.basename(self.config.getOntologyFilePath())
+        ont_basename = os.path.basename(fileoutpath)
         ontIRI = self.config.generateOntologyFileIRI(
             ont_basename, is_release=False
         )
         ontbuilder.getOntology().setOntologyID(ontIRI)
 
         # Write the ontology to the output file.
-        fileoutpath = self.getOutputFilePath()
         print 'Writing compiled ontology to ' + fileoutpath + '...'
         ontbuilder.getOntology().saveOntology(fileoutpath)
 
