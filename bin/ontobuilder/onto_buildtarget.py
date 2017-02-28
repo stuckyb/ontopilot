@@ -89,7 +89,8 @@ class OntoBuildTarget(BuildTargetWithConfig):
         for fpath in pathslist:
             if not(os.path.isfile(fpath)):
                 raise RuntimeError(
-                    'The source terms/entities path "{0}" exists, but is not a valid file.'.format(fpath)
+                    'The source terms/entities path "{0}" exists, but is not '
+                    'a valid file.'.format(fpath)
                 )
         self.termsfile_paths = pathslist
 
@@ -97,7 +98,8 @@ class OntoBuildTarget(BuildTargetWithConfig):
         destdir = os.path.dirname(self.getOutputFilePath())
         if not(os.path.isdir(destdir)):
             raise RuntimeError(
-                'The destination directory for the ontology does not exist: {0}.'.format(destdir)
+                'The destination directory for the ontology does not exist: '
+                '{0}.'.format(destdir)
             )
 
     def getOutputFilePath(self):
@@ -210,10 +212,12 @@ class OntoBuildTarget(BuildTargetWithConfig):
         print 'Defining all remaining entity axioms...'
         ontbuilder.processDeferredEntityAxioms(self.expanddefs)
 
-        # Set the ontology ID, if an ontology IRI was provided.
-        ontIRI = self.config.getOntologyIRI()
-        if ontIRI != '':
-            ontbuilder.getOntology().setOntologyID(ontIRI)
+        # Set the ontology IRI.
+        ont_basename = os.path.basename(self.config.getOntologyFilePath())
+        ontIRI = self.config.generateOntologyFileIRI(
+            ont_basename, is_release=False
+        )
+        ontbuilder.getOntology().setOntologyID(ontIRI)
 
         # Write the ontology to the output file.
         fileoutpath = self.getOutputFilePath()

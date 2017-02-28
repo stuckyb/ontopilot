@@ -179,21 +179,31 @@ class TestOntoConfig(unittest.TestCase):
         ):
             self.oc.getReleaseBaseIRI()
 
-    def test_generateReleaseOntologyFileIRI(self):
+    def test_generateOntologyFileIRI(self):
         basename = 'test.owl'
 
-        iristr = 'http://custom.iri/path/'
-        self.oc.set('IRIs', 'release_base_IRI', iristr)
+        dev_iristr = 'http://custom.iri/dev/'
+        self.oc.set('IRIs', 'dev_base_IRI', dev_iristr)
+
+        release_iristr = 'http://custom.iri/release/'
+        self.oc.set('IRIs', 'release_base_IRI', release_iristr)
+
+        # Test both development and release IRIs.
         self.assertEqual(
-            iristr + basename,
-            self.oc.generateReleaseOntologyFileIRI(basename)
+            dev_iristr + 'ontology/' + basename,
+            self.oc.generateOntologyFileIRI(basename, is_release=False)
+        )
+        self.assertEqual(
+            release_iristr + basename,
+            self.oc.generateOntologyFileIRI(basename, is_release=True)
         )
 
-        iristr = 'http://custom.iri/path'
-        self.oc.set('IRIs', 'release_base_IRI', iristr)
+        # Test a base IRI without a trailing slash.
+        release_iristr = 'http://custom.iri/release'
+        self.oc.set('IRIs', 'release_base_IRI', release_iristr)
         self.assertEqual(
-            iristr + '/' + basename,
-            self.oc.generateReleaseOntologyFileIRI(basename)
+            release_iristr + '/' + basename,
+            self.oc.generateOntologyFileIRI(basename, is_release=True)
         )
 
     def test_getReleaseOntologyIRI(self):
@@ -229,30 +239,6 @@ class TestOntoConfig(unittest.TestCase):
         self.assertEqual(
             iristr + '/custom/dir', self.oc.getImportsDevBaseIRI()
         )
-
-    def test_getLocalOntologyIRI(self):
-        self.assertEqual(
-            'file://localhost' + self.td_path + '/ontology/ontname.owl',
-            self.oc.getLocalOntologyIRI()
-        )
-
-    def test_getOntologyIRI(self):
-        self.assertEqual(self.ontIRIstr, self.oc.getOntologyIRI())
-
-        # Verify that a missing IRI is correctly handled.
-        self.oc.remove_option('Ontology', 'ontologyIRI')
-        self.assertEqual('', self.oc.getOntologyIRI())
-
-        # Verify that a blank IRI string is correctly handled.
-        self.oc.set('Ontology', 'ontologyIRI', '  \t  ')
-        self.assertEqual('', self.oc.getOntologyIRI())
-
-        # Verify that an invalid IRI string is detected.
-        self.oc.set('Ontology', 'ontologyIRI', '/not/an/absolute/IRI')
-        with self.assertRaisesRegexp(
-            ConfigError, 'Invalid ontology IRI string'
-        ):
-            self.oc.getOntologyIRI()
 
     def test_getTermsDir(self):
         # Test the default case.

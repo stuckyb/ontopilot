@@ -174,16 +174,28 @@ class OntoConfig(RawConfigParser):
 
         return iristr
 
-    def generateReleaseOntologyFileIRI(self, basename):
+    def generateOntologyFileIRI(self, basename, is_release=True):
         """
-        Generates a release IRI for an ontology file.
+        Generates either a development or a release IRI for an ontology file.
 
-        basename: The name of the ontology, without any additional path
+        basename: The name of the ontology file, without any additional path
             information.
         """
-        # Parse the base IRI, extract the path, and add the basename.
-        parts = rfc3987.parse(self.getReleaseBaseIRI(), rule='absolute_IRI')
-        iripath = os.path.join(parts['path'], basename)
+        if is_release:
+            baseiri = self.getReleaseBaseIRI()
+            relpath = ''
+        else:
+            baseiri = self.getDevBaseIRI()
+
+            # Get the path to the compiled ontology directory, relative to the
+            # project directory.
+            dirpath = os.path.dirname(self.getOntologyFilePath())
+            relpath = os.path.relpath(dirpath, self.confdir)
+
+        # Parse the base IRI, extract the path, and add the location and
+        # basename.
+        parts = rfc3987.parse(baseiri, rule='absolute_IRI')
+        iripath = os.path.join(parts['path'], relpath, basename)
 
         # Generate the complete IRI.
         parts['path'] = iripath
@@ -209,23 +221,7 @@ class OntoConfig(RawConfigParser):
             # No release ontology IRI was provided, so generate one from the
             # release base IRI.
             ontfname = os.path.basename(self.getOntologyFilePath())
-            iristr = self.generateReleaseOntologyFileIRI(ontfname)
-
-        return iristr
-
-    def getOntologyIRI(self):
-        """
-        Returns the IRI for the main ontology file.
-        """
-        iristr = self.getCustom('Ontology', 'ontologyIRI', '')
-
-        if iristr != '':
-            # Verify that we have a valid absolute IRI string.
-            if rfc3987.match(iristr, rule='absolute_IRI') == None:
-                raise ConfigError(
-                    'Invalid ontology IRI string in the build configuration file: "'
-                    + iristr + '".'
-                )
+            iristr = self.generateOntologyFileIRI(ontfname, is_release=True)
 
         return iristr
 
@@ -247,18 +243,6 @@ class OntoConfig(RawConfigParser):
         iristr = rfc3987.compose(**parts)
 
         return iristr
-
-    def getLocalOntologyIRI(self):
-        """
-        Returns a local file:// IRI for the compiled ontology document.  This
-        can be used, e.g., if no IRI is provided for the ontology.
-        """
-        abs_ontpath = self.getOntologyFilePath()
-        ontIRIstr = urlparse.urljoin(
-            'file://localhost', urllib.pathname2url(abs_ontpath)
-        )
-
-        return ontIRIstr
 
     def _splitPathToList(self, pathstr):
         """
