@@ -216,6 +216,20 @@ class TestOntoConfig(unittest.TestCase):
         ):
             self.oc.getReleaseOntologyIRI()
 
+    def test_getImportsDevBaseIRI(self):
+        # Check the default compiled imports modules location.
+        iristr = 'http://custom.iri/path'
+        self.oc.set('IRIs', 'dev_base_IRI', iristr)
+        self.assertEqual(
+            iristr + '/imports', self.oc.getImportsDevBaseIRI()
+        )
+
+        # Check a custom compiled imports modules location.
+        self.oc.set('Imports', 'imports_dir', 'custom/dir/')
+        self.assertEqual(
+            iristr + '/custom/dir', self.oc.getImportsDevBaseIRI()
+        )
+
     def test_getLocalOntologyIRI(self):
         self.assertEqual(
             'file://localhost' + self.td_path + '/ontology/ontname.owl',
@@ -436,46 +450,6 @@ class TestOntoConfig(unittest.TestCase):
             'file://localhost' + self.td_path + '/imports',
             self.oc.getLocalModulesBaseIRI()
         )
-
-    def test_getModulesBaseIRI(self):
-        # Check auto-generating a modules base IRI.
-        self.assertEqual(
-            'https://a.sample.iri/to/imports', self.oc.getModulesBaseIRI()
-        )
-
-        # Check a custom local imports path.
-        self.oc.set('Imports', 'imports_dir', 'custom/imports')
-        self.assertEqual(
-            'https://a.sample.iri/to/custom/imports', self.oc.getModulesBaseIRI()
-        )
-
-        # Check an empty ontology IRI.
-        self.oc.set('Ontology', 'ontologyIRI', '')
-        self.oc.set('Imports', 'imports_dir', '')
-        exp_localiri = 'file://localhost' + self.td_path + '/imports'
-        self.assertEqual(exp_localiri, self.oc.getModulesBaseIRI())
-
-        # Check an ontology IRI that doesn't match the local ontology path.
-        self.oc.set('Ontology', 'ontologyIRI', 'https://a.sample.iri/to_/ontology/ontology.owl')
-        with LogCapture() as lc:
-            iristr = self.oc.getModulesBaseIRI()
-        # Check the log message.  Unfortunately, LogCapture's check() method
-        # does not support partial string matching, so it would be too
-        # cumbersome to use it here because of the very long log message.
-        logrec = lc.records[0] 
-        self.assertEqual('ontobuilder', logrec.name)
-        self.assertEqual('WARNING', logrec.levelname)
-        self.assertTrue(
-            'Unable to automatically generate a suitable base IRI'
-            in logrec.getMessage()
-        )
-        # Make sure we got back the local file system base IRI.
-        self.assertEqual(exp_localiri, iristr)
-
-        # Check an explicitly provided IRI.
-        altIRI = 'https://a.sample.iri/alt/imports/path'
-        self.oc.set('Imports', 'mod_baseIRI', altIRI)
-        self.assertEqual(altIRI, self.oc.getModulesBaseIRI())
 
     def test_getImportModSuffix(self):
         # Check an auto-generated suffix.

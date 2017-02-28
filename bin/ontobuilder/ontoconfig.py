@@ -229,6 +229,25 @@ class OntoConfig(RawConfigParser):
 
         return iristr
 
+    def getImportsDevBaseIRI(self):
+        """
+        Returns the base IRI to use when generating import modules.
+        """
+        # Get the path to the compiled imports modules directory, relative to
+        # the project directory.
+        importsdir = os.path.relpath(self.getImportsDir(), self.confdir)
+
+        # Parse the development base IRI and add the imports directory to the
+        # path.
+        parts = rfc3987.parse(self.getDevBaseIRI(), rule='absolute_IRI')
+        iripath = os.path.join(parts['path'], importsdir)
+
+        # Generate the complete IRI.
+        parts['path'] = iripath
+        iristr = rfc3987.compose(**parts)
+
+        return iristr
+
     def getLocalOntologyIRI(self):
         """
         Returns a local file:// IRI for the compiled ontology document.  This
@@ -310,7 +329,8 @@ class OntoConfig(RawConfigParser):
 
     def getTermsDir(self):
         """
-        Returns the path to the directory of the terms/entities source files.
+        Returns the absolute path to the directory of the terms/entities source
+        files.
         """
         pathstr = self.getCustom('Ontology', 'termsdir', 'src/terms')
         
@@ -376,7 +396,7 @@ class OntoConfig(RawConfigParser):
 
     def getImportsDir(self):
         """
-        Returns the path to the compiled import modules.
+        Returns the absolute path to the compiled import modules.
         """
         default = 'imports'
         pathstr = self.getCustom('Imports', 'imports_dir', default)
@@ -420,57 +440,6 @@ class OntoConfig(RawConfigParser):
         )
 
         return ontIRIstr
-
-    def getModulesBaseIRI(self):
-        """
-        Returns the base IRI to use when generating import modules.
-        """
-        iristr = self.getCustom('Imports', 'mod_baseIRI', '')
-        ontIRI = self.getOntologyIRI()
-
-        if iristr != '':
-            # Verify that we have a valid absolute IRI string.
-            if rfc3987.match(iristr, rule='absolute_IRI') == None:
-                raise ConfigError(
-                    'Invalid modules base IRI string in the build configuration file: "'
-                    + iristr + '".  Please check the value of the "mod_baseIRI" variable.'
-                )
-        elif ontIRI != '':
-            # Attempt to generate a suitable modules base IRI from the main
-            # ontology IRI.
-
-            # Get the relative path to the ontology document.
-            ontpath = os.path.relpath(self.getOntologyFilePath(), self.confdir)
-
-            # Get the relative path to the imports modules.
-            importspath = os.path.relpath(self.getImportsDir(), self.confdir)
-
-            # Get the path portion of the ontology IRI.
-            parts = rfc3987.parse(ontIRI, rule='absolute_IRI')
-            iripath = parts['path']
-
-            # See if the local, relative ontology document path matches the end
-            # of the IRI path.  If so, we can generate the imports IRI path.
-            if iripath.endswith(ontpath):
-                index = iripath.rfind(ontpath)
-                iripath = os.path.join(iripath[:index], importspath)
-
-                parts['path'] = iripath
-                iristr = rfc3987.compose(**parts)
-            else:
-                logger.warning(
-                    'Unable to automatically generate a suitable base IRI for \
-the import modules because the path in the main ontology IRI does not appear \
-to follow the project folder structure.  Please set the value of the \
-"mod_baseIRI" setting in the build configuration file.'
-                )
-
-        # If all other attempts to get a modules base IRI failed, use a local
-        # file system IRI.
-        if iristr == '':
-            iristr = self.getLocalModulesBaseIRI()
-
-        return iristr
 
     def getImportModSuffix(self):
         """

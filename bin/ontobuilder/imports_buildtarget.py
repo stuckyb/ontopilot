@@ -55,7 +55,7 @@ class ImportsBuildTarget(BuildTargetWithConfig):
 
         # Initialize the ImportModuleBuilder.
         self.mbuilder = ImportModuleBuilder(
-                        self.config.getModulesBaseIRI(),
+                        self.config.getImportsDevBaseIRI(),
                         self.config.getImportModSuffix(), self.builddir,
                         self.outputdir
                     )
