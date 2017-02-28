@@ -42,14 +42,16 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
         fpath = self.obt.getOutputFilePath()
         if not(os.path.isfile(fpath)):
             raise RuntimeError(
-                'The main compiled ontology file could not be found: {0}.'.format(fpath)
+                'The main compiled ontology file could not be found: '
+                '{0}.'.format(fpath)
             )
 
         # Verify that the build directory exists.
         destdir = os.path.dirname(self.getOutputFilePath())
         if not(os.path.isdir(destdir)):
             raise RuntimeError(
-                'The destination directory for the ontology does not exist: {0}.'.format(destdir)
+                'The destination directory for the ontology does not '
+                'exist: {0}.'.format(destdir)
             )
 
     def getOutputFilePath(self):
@@ -126,11 +128,13 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
             entcheck_res = mainont.checkEntailmentErrors()
             if not(entcheck_res['is_consistent']):
                 raise RuntimeError(
-                    'The ontology is inconsistent (that is, it has no \
-models).  This is often caused by the presence of an individual (that is, a \
-class instance) that is explicitly or implicitly a member of two disjoint \
-classes.  It might also indicate an underlying modeling error.  You must \
-correct this problem before inferred axioms can be added to the ontology.'
+                    'The ontology is inconsistent (that is, it has no '
+                    'models).  This is often caused by the presence of an '
+                    'individual (that is, a class instance) that is '
+                    'explicitly or implicitly a member of two disjoint '
+                    'classes.  It might also indicate an underlying modeling '
+                    'error.  You must correct this problem before inferred '
+                    'axioms can be added to the ontology.'
                 )
 
             print 'Running reasoner and adding inferred axioms...'
@@ -139,8 +143,16 @@ correct this problem before inferred axioms can be added to the ontology.'
             iaa = InferredAxiomAdder(mainont, self.config.getReasonerStr())
             iaa.addInferredAxioms(inf_types, annotate_inferred)
 
-        # Write the ontology to the output file.
         fileoutpath = self.getOutputFilePath()
+
+        # Set the ontology IRI.
+        ont_basename = os.path.basename(fileoutpath)
+        ontIRI = self.config.generateOntologyFileIRI(
+            ont_basename, is_release=False
+        )
+        mainont.setOntologyID(ontIRI)
+
+        # Write the ontology to the output file.
         print 'Writing compiled ontology to ' + fileoutpath + '...'
         mainont.saveOntology(fileoutpath)
 
