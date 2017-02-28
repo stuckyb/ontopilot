@@ -1,7 +1,7 @@
 
 # Python imports.
 from ConfigParser import RawConfigParser
-import os.path as path
+import os.path
 import glob
 import urllib, urlparse
 from rfc3987 import rfc3987
@@ -58,7 +58,9 @@ class OntoConfig(RawConfigParser):
             )
 
         self.conffile = filename
-        self.confdir = path.dirname(path.abspath(filename))
+        self.confdir = os.path.dirname(
+            os.path.abspath(os.path.realpath(os.path.expanduser((filename))))
+        )
 
         self.checkConfig()
 
@@ -79,7 +81,7 @@ class OntoConfig(RawConfigParser):
         return optval
 
     def getConfigFilePath(self):
-        return path.abspath(self.conffile)
+        return os.path.abspath(self.conffile)
 
     def checkConfig(self):
         """
@@ -88,11 +90,12 @@ class OntoConfig(RawConfigParser):
         """
         if not(self.has_section('Ontology')):
             raise ConfigError(
-                'The "Ontology" section was not found in the build \
-configuration file.  This section is required and must contain the variables \
-"termsfiles" and "ontologyIRI".  To correct this error, add the line \
-"[Ontology]" to your configuration file.  See the example configuration file \
-for more information.'
+                'The "Ontology" section was not found in the build '
+                'configuration file.  This section is required and must '
+                'contain the variable "ontology_file".  To correct this '
+                'error, add the line "[Ontology]" to your configuration '
+                'file.  See the example configuration file for more '
+                'information.'
             )
 
         # The only setting that is always required is the path to the compiled
@@ -101,22 +104,52 @@ for more information.'
 
     def _getAbsPath(self, pathstr):
         """
-        Given a path string, returns an equivalent absolute path.  If pathstr
-        is relative, it is interpreted relative to the location of the parsed
-        configuration file.
+        Given a path string, returns an equivalent absolute path with all
+        symbolic links resolved and home directory references expanded.  If
+        pathstr is relative, it is interpreted relative to the location of the
+        parsed configuration file.
         """
-        if path.isabs(pathstr):
-            return path.normpath(pathstr)
+        if os.path.isabs(pathstr):
+            abspath = os.path.abspath(os.path.realpath(os.path.expanduser(
+                pathstr
+            )))
         else:
-            return path.normpath(path.join(self.confdir, pathstr))
+            abspath = os.path.abspath(os.path.realpath(os.path.expanduser(
+                os.path.join(self.confdir, pathstr)
+            )))
+
+        return abspath
 
     def getOntFileBase(self):
         """
         Returns the name of the ontology file without the file extension.
         """
-        ontfname = path.basename(self.getOntologyFilePath())
+        ontfname = os.path.basename(self.getOntologyFilePath())
 
-        return path.splitext(ontfname)[0]
+        return os.path.splitext(ontfname)[0]
+
+    def getDevBaseIRI(self):
+        """
+        Returns the base IRI for non-released ontology documents and imports
+        modules.
+        """
+        iristr = self.getCustom('IRIs', 'dev_base_IRI')
+
+        if iristr != '':
+            # Verify that we have a valid absolute IRI string.
+            if rfc3987.match(iristr, rule='absolute_IRI') == None:
+                raise ConfigError(
+                    'Invalid development base IRI string in the build '
+                    'configuration file (dev_base_IRI): {0}."'.format(iristr)
+                )
+        else:
+            # No development base IRI was provided, so try to generate one from
+            # the local file system.
+            iristr = urlparse.urljoin(
+                'file://localhost', urllib.pathname2url(self.confdir)
+        )
+
+        return iristr
 
     def getOntologyIRI(self):
         """
@@ -146,21 +179,72 @@ for more information.'
 
         return ontIRIstr
 
+    def _splitPathToList(self, pathstr):
+        """
+        Splits a path into a list of its components.
+        """
+        if pathstr == '/':
+            clist = ['/']
+        else:
+            clist = []
+            remainder = pathstr
+            while (remainder != '/') and (remainder != ''):
+                parts = os.path.split(remainder)
+
+                if parts[1] != '':
+                    clist.append(parts[1])
+                if parts[0] == '/':
+                    clist.append(parts[0])
+
+                remainder = parts[0]
+
+            clist.reverse()
+
+        return clist
+
+    def _isSubpathInPath(self, path, subpath):
+        """
+        Tests whether path is a parent path to subpath.  If so, returns True.
+        """
+        p_parts = self._splitPathToList(self._getAbsPath(path))
+        sp_parts = self._splitPathToList(self._getAbsPath(subpath))
+
+        # The subpath must be longer than the parent path.
+        if len(p_parts) >= len(sp_parts):
+            return False
+        
+        for p_part, sp_part in zip(p_parts, sp_parts):
+            if p_part != sp_part:
+                return False
+
+        return True
+
     def getOntologyFilePath(self):
         """
-        Returns the full path to the compiled ontology file.  If no name was
-        provided in the configuration file, the name will be extracted from the
-        ontology's IRI, if possible.
+        Returns the full path to the base compiled ontology filename.
         """
         ontfname = self.getCustom('Ontology', 'ontology_file', '')
 
         if ontfname == '':
             raise ConfigError(
-                    'An ontology file name was not provided.  Please set the \
-value of the "ontology_file" setting in the build configuration file.'
+                'An ontology file name was not provided.  Please set the '
+                'value of the "ontology_file" setting in the build '
+                'configuration file.'
             )
 
-        return self._getAbsPath(ontfname)
+        ontbasepath = self._getAbsPath(ontfname)
+
+        # See if the ontology file is inside of the project directory (as
+        # determined by the location of the project configuration file).
+        if not(self._isSubpathInPath(self.confdir, ontbasepath)):
+            raise ConfigError(
+                'The compiled ontology file path ("{0}") is not a subpath of '
+                'the main project folder ("{1}").  Please modify the value of '
+                'the ontology_file setting in the project configuration file '
+                'to correct this error.'.format(ontbasepath, self.confdir)
+            )
+        
+        return ontbasepath
 
     def getTermsDir(self):
         """
@@ -184,7 +268,7 @@ value of the "ontology_file" setting in the build configuration file.'
 
         # Generate the locations of all terms files.
         termsfolder = self.getTermsDir()
-        pathslist = [path.join(termsfolder, fname) for fname in tfileslist]
+        pathslist = [os.path.join(termsfolder, fname) for fname in tfileslist]
 
         return pathslist
 
@@ -236,6 +320,12 @@ value of the "ontology_file" setting in the build configuration file.'
         pathstr = self.getCustom('Imports', 'imports_dir', default)
         pathstr = self._getAbsPath(pathstr)
 
+        # See if the imports directory is inside of the project directory (as
+        # determined by the location of the project configuration file).
+        if not(self._isSubpathInPath(self.confdir, pathstr)):
+            raise ConfigError(
+                'The compiled imports modules folder ("{0}") is not a subpath of the main project folder ("{1}").  Please modify the value of the imports_dir setting in the project configuration file to correct this error.'.format(pathstr, self.confdir))
+        
         return pathstr
 
     def getTopImportsFilePath(self):
@@ -246,12 +336,12 @@ value of the "ontology_file" setting in the build configuration file.'
         if pathstr != '':
             pathstr = self._getAbsPath(pathstr)
         else:
-            pattern = path.join(self.getImportsSrcDir(), 'imported_ontologies.*')
+            pattern = os.path.join(self.getImportsSrcDir(), 'imported_ontologies.*')
             plist = glob.glob(pattern)
             if len(plist) > 0:
                 pathstr = plist[0]
             else:
-                pathstr = path.join(self.getImportsSrcDir(), 'imported_ontologies.csv')
+                pathstr = os.path.join(self.getImportsSrcDir(), 'imported_ontologies.csv')
 
         return pathstr
     
@@ -288,10 +378,10 @@ value of the "ontology_file" setting in the build configuration file.'
             # ontology IRI.
 
             # Get the relative path to the ontology document.
-            ontpath = path.relpath(self.getOntologyFilePath(), self.confdir)
+            ontpath = os.path.relpath(self.getOntologyFilePath(), self.confdir)
 
             # Get the relative path to the imports modules.
-            importspath = path.relpath(self.getImportsDir(), self.confdir)
+            importspath = os.path.relpath(self.getImportsDir(), self.confdir)
 
             # Get the path portion of the ontology IRI.
             parts = rfc3987.parse(ontIRI, rule='absolute_IRI')
@@ -301,7 +391,7 @@ value of the "ontology_file" setting in the build configuration file.'
             # of the IRI path.  If so, we can generate the imports IRI path.
             if iripath.endswith(ontpath):
                 index = iripath.rfind(ontpath)
-                iripath = path.join(iripath[:index], importspath)
+                iripath = os.path.join(iripath[:index], importspath)
 
                 parts['path'] = iripath
                 iristr = rfc3987.compose(**parts)

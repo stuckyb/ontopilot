@@ -36,6 +36,10 @@ class TestOntoConfig(unittest.TestCase):
 
         self.td_path = os.path.abspath('test_data/')
 
+        # If we define custom failure messages, append them to the end of the
+        # default failure message.
+        self.longMessage = True
+
     def test_getCustom(self):
         # Test an extant option.
         self.assertEqual(
@@ -93,6 +97,69 @@ class TestOntoConfig(unittest.TestCase):
         self.assertEqual(
             self.td_path + '/' + relpath, self.oc._getAbsPath(relpath)
         )
+
+    def test_splitPathToList(self):
+        testvals = [
+            {'exp': [], 'path': ''},
+            {'exp': ['/'], 'path': '/'},
+            {'exp': ['test'], 'path': 'test'},
+            {'exp': ['/', 'test'], 'path': '/test'},
+            {'exp': ['/', 'test'], 'path': '/test/'},
+            {'exp': ['/', 'test', 'path'], 'path': '/test/path'},
+            {'exp': ['/', 'test', 'path'], 'path': '/test/path/'},
+            {'exp': ['test'], 'path': 'test'},
+            {'exp': ['test', 'path'], 'path': 'test/path'},
+            {'exp': ['test', 'path'], 'path': 'test/path/'}
+        ]
+
+        for testval in testvals:
+            self.assertEqual(
+                testval['exp'], self.oc._splitPathToList(testval['path']),
+                msg='Input path: "{0}".'.format(testval['path'])
+            )
+
+    def test_isSubpathInPath(self):
+        testvals = [
+            {'exp': False, 'ppath': '', 'spath': ''},
+            {'exp': False, 'ppath': '', 'spath': '/test/path'},
+            {'exp': False, 'ppath': '/test/path', 'spath': '/test/path'},
+            {'exp': False, 'ppath': '/test/path', 'spath': '/test/path/'},
+            {'exp': False, 'ppath': '/test/path/', 'spath': '/test/path'},
+            {'exp': False, 'ppath': '/test/path/', 'spath': '/test/path/'},
+            {'exp': False, 'ppath': '/test/path/long', 'spath': '/test/path'},
+            {'exp': False, 'ppath': '/test/path', 'spath': '/alt/path/long'},
+            {'exp': True, 'ppath': '/', 'spath': '/test/path/long'},
+            {'exp': True, 'ppath': '/test/path', 'spath': '/test/path/long'},
+            {'exp': False, 'ppath': 'relpath', 'spath': 'relpath'},
+            {'exp': True, 'ppath': 'relpath', 'spath': 'relpath/long'},
+        ]
+
+        for testval in testvals:
+            self.assertEqual(
+                testval['exp'],
+                self.oc._isSubpathInPath(testval['ppath'], testval['spath']),
+                msg='ppath: "{0}", spath: "{1}".'.format(
+                    testval['ppath'], testval['spath']
+                )
+            )
+
+    def test_getDevBaseIRI(self):
+        # Test the default, automatically generated local file system IRI.
+        self.assertEqual(
+            'file://localhost' + self.td_path, self.oc.getDevBaseIRI()
+        )
+
+        # Test a custom IRI.
+        iristr = 'http://custom.iri/path'
+        self.oc.set('IRIs', 'dev_base_IRI', iristr)
+        self.assertEqual(iristr, self.oc.getDevBaseIRI())
+
+        # Verify that an invalid IRI string is detected.
+        self.oc.set('IRIs', 'dev_base_IRI', '/not/an/absolute/IRI')
+        with self.assertRaisesRegexp(
+            ConfigError, 'Invalid development base IRI string'
+        ):
+            self.oc.getDevBaseIRI()
 
     def test_getLocalOntologyIRI(self):
         self.assertEqual(
@@ -216,6 +283,15 @@ class TestOntoConfig(unittest.TestCase):
         ):
             self.oc.getOntologyFilePath()
 
+        # Test that a path outside of the project directory is correctly
+        # detected.
+        self.oc.set('Ontology', 'ontology_file', '/home/ontname.owl')
+        with self.assertRaisesRegexp(
+            ConfigError,
+            'The compiled ontology file path (.*) is not a subpath of the main project folder'
+        ):
+            self.oc.getOntologyFilePath()
+
     def test_getBaseOntologyPath(self):
         # Test the default case.
         self.assertEqual(
@@ -271,10 +347,14 @@ class TestOntoConfig(unittest.TestCase):
             self.oc.getImportsDir()
         )
 
-        # Test a custom absolute file path.
-        abspath = '/an/absolute/path/imports'
-        self.oc.set('Imports', 'imports_dir', abspath)
-        self.assertEqual(abspath, self.oc.getImportsDir())
+        # Test that a path outside of the project directory is correctly
+        # detected.
+        self.oc.set('Imports', 'imports_dir', '/home/imports')
+        with self.assertRaisesRegexp(
+            ConfigError,
+            'The compiled imports modules folder (.*) is not a subpath of the main project folder'
+        ):
+            self.oc.getImportsDir()
 
     def test_getTopImportsFilePath(self):
         # Test the default case.
