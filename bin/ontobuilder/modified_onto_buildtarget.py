@@ -54,6 +54,13 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
                 'exist: {0}.'.format(destdir)
             )
 
+    def getOntoBuildTarget(self):
+        """
+        Returns the instance of OntoBuildTarget on which this build target
+        depends.
+        """
+        return self.obt
+
     def getOutputFilePath(self):
         """
         Returns the path of the enhanced ontology file.
@@ -146,10 +153,7 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
         fileoutpath = self.getOutputFilePath()
 
         # Set the ontology IRI.
-        ont_basename = os.path.basename(fileoutpath)
-        ontIRI = self.config.generateOntologyFileIRI(
-            ont_basename, is_release=False
-        )
+        ontIRI = self.config.generateDevIRI(fileoutpath)
         mainont.setOntologyID(ontIRI)
 
         # Write the ontology to the output file.

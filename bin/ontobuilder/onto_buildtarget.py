@@ -217,10 +217,7 @@ class OntoBuildTarget(BuildTargetWithConfig):
         fileoutpath = self.getOutputFilePath()
 
         # Set the ontology IRI.
-        ont_basename = os.path.basename(fileoutpath)
-        ontIRI = self.config.generateOntologyFileIRI(
-            ont_basename, is_release=False
-        )
+        ontIRI = self.config.generateDevIRI(fileoutpath)
         ontbuilder.getOntology().setOntologyID(ontIRI)
 
         # Write the ontology to the output file.

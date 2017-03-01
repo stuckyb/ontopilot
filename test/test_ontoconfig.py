@@ -143,6 +143,9 @@ class TestOntoConfig(unittest.TestCase):
                 )
             )
 
+    def test_getOntFileBase(self):
+        self.assertEqual('ontname', self.oc.getOntFileBase())
+
     def test_getDevBaseIRI(self):
         # Test the default, automatically generated local file system IRI.
         self.assertEqual(
@@ -179,31 +182,67 @@ class TestOntoConfig(unittest.TestCase):
         ):
             self.oc.getReleaseBaseIRI()
 
-    def test_generateOntologyFileIRI(self):
-        basename = 'test.owl'
+    def test_generatePathIRI(self):
+        baseIRI = 'http://custom.iri/dev/'
 
+        # Test a relative path.
+        pathstr = 'ontology/test.owl'
+        self.assertEqual(
+            baseIRI + pathstr, self.oc._generatePathIRI(pathstr, baseIRI)
+        )
+
+        # Test an absolute path.
+        pathstr = self.td_path + '/ontology/test.owl'
+        self.assertEqual(
+            baseIRI + 'ontology/test.owl',
+            self.oc._generatePathIRI(pathstr, baseIRI)
+        )
+
+        # Test a relative path that is outside the project directory.
+        pathstr = '../ontology/test.owl'
+        with self.assertRaisesRegexp(
+            ConfigError, 'is not a subpath of the main project folder'
+        ):
+            self.oc._generatePathIRI(pathstr, baseIRI)
+
+        # Test an absolute path that is outside the project directory.
+        pathstr = '/ontology/test.owl'
+        with self.assertRaisesRegexp(
+            ConfigError, 'is not a subpath of the main project folder'
+        ):
+            self.oc._generatePathIRI(pathstr, baseIRI)
+
+    def test_generateDevIRI(self):
         dev_iristr = 'http://custom.iri/dev/'
         self.oc.set('IRIs', 'dev_base_IRI', dev_iristr)
 
+        pathstr = 'ontology/test.owl'
+        self.assertEqual(
+            dev_iristr + 'ontology/test.owl', self.oc.generateDevIRI(pathstr)
+        )
+
+    def test_generateReleaseIRI(self):
         release_iristr = 'http://custom.iri/release/'
         self.oc.set('IRIs', 'release_base_IRI', release_iristr)
 
-        # Test both development and release IRIs.
+        pathstr = 'ontology/test.owl'
         self.assertEqual(
-            dev_iristr + 'ontology/' + basename,
-            self.oc.generateOntologyFileIRI(basename, is_release=False)
-        )
-        self.assertEqual(
-            release_iristr + basename,
-            self.oc.generateOntologyFileIRI(basename, is_release=True)
+            release_iristr + 'ontology/test.owl',
+            self.oc.generateReleaseIRI(pathstr)
         )
 
-        # Test a base IRI without a trailing slash.
-        release_iristr = 'http://custom.iri/release'
-        self.oc.set('IRIs', 'release_base_IRI', release_iristr)
+    def test_getImportsDevBaseIRI(self):
+        # Check the default compiled imports modules location.
+        iristr = 'http://custom.iri/path'
+        self.oc.set('IRIs', 'dev_base_IRI', iristr)
         self.assertEqual(
-            release_iristr + '/' + basename,
-            self.oc.generateOntologyFileIRI(basename, is_release=True)
+            iristr + '/imports', self.oc.getImportsDevBaseIRI()
+        )
+
+        # Check a custom compiled imports modules location.
+        self.oc.set('Imports', 'imports_dir', 'custom/dir/')
+        self.assertEqual(
+            iristr + '/custom/dir', self.oc.getImportsDevBaseIRI()
         )
 
     def test_getReleaseOntologyIRI(self):
@@ -226,19 +265,48 @@ class TestOntoConfig(unittest.TestCase):
         ):
             self.oc.getReleaseOntologyIRI()
 
-    def test_getImportsDevBaseIRI(self):
-        # Check the default compiled imports modules location.
-        iristr = 'http://custom.iri/path'
-        self.oc.set('IRIs', 'dev_base_IRI', iristr)
+    def test_getOntologyFilePath(self):
+        # Test an explicitly provided file name.
         self.assertEqual(
-            iristr + '/imports', self.oc.getImportsDevBaseIRI()
+            os.path.join(self.td_path, 'ontology/ontname.owl'),
+            self.oc.getOntologyFilePath()
         )
 
-        # Check a custom compiled imports modules location.
-        self.oc.set('Imports', 'imports_dir', 'custom/dir/')
+        # Test that a blank path is correctly detected.
+        self.oc.set('Ontology', 'ontology_file', '')
+        with self.assertRaisesRegexp(
+            ConfigError, 'An ontology file name was not provided'
+        ):
+            self.oc.getOntologyFilePath()
+
+        # Test that a path outside of the project directory is correctly
+        # detected.
+        self.oc.set('Ontology', 'ontology_file', '/home/ontname.owl')
+        with self.assertRaisesRegexp(
+            ConfigError,
+            'The compiled ontology file path (.*) is not a subpath of the main project folder'
+        ):
+            self.oc.getOntologyFilePath()
+
+    def test_getBaseOntologyPath(self):
+        # Test the default case.
         self.assertEqual(
-            iristr + '/custom/dir', self.oc.getImportsDevBaseIRI()
+            self.td_path + '/src/ontname-base.owl',
+            self.oc.getBaseOntologyPath()
         )
+
+        # Test a custom relative file path and name.
+        relpath = 'rel/path/custom-base.owl'
+        self.oc.set('Ontology', 'base_ontology_file', relpath)
+        self.assertEqual(
+            self.td_path + '/' + relpath,
+            self.oc.getBaseOntologyPath()
+        )
+
+        # Test a custom absolute file path and name.
+        abspath = '/an/absolute/path/custom-base.owl'
+        self.oc.set('Ontology', 'base_ontology_file', abspath)
+        self.assertEqual(abspath, self.oc.getBaseOntologyPath())
 
     def test_getTermsDir(self):
         # Test the default case.
@@ -320,52 +388,6 @@ class TestOntoConfig(unittest.TestCase):
         abspath = '/an/absolute/path/build'
         self.oc.set('Build', 'builddir', abspath)
         self.assertEqual(abspath, self.oc.getBuildDir())
-
-    def test_getOntFileBase(self):
-        self.assertEqual('ontname', self.oc.getOntFileBase())
-
-    def test_getOntologyFilePath(self):
-        # Test an explicitly provided file name.
-        self.assertEqual(
-            os.path.join(self.td_path, 'ontology/ontname.owl'),
-            self.oc.getOntologyFilePath()
-        )
-
-        # Test that a blank path is correctly detected.
-        self.oc.set('Ontology', 'ontology_file', '')
-        with self.assertRaisesRegexp(
-            ConfigError, 'An ontology file name was not provided'
-        ):
-            self.oc.getOntologyFilePath()
-
-        # Test that a path outside of the project directory is correctly
-        # detected.
-        self.oc.set('Ontology', 'ontology_file', '/home/ontname.owl')
-        with self.assertRaisesRegexp(
-            ConfigError,
-            'The compiled ontology file path (.*) is not a subpath of the main project folder'
-        ):
-            self.oc.getOntologyFilePath()
-
-    def test_getBaseOntologyPath(self):
-        # Test the default case.
-        self.assertEqual(
-            self.td_path + '/src/ontname-base.owl',
-            self.oc.getBaseOntologyPath()
-        )
-
-        # Test a custom relative file path and name.
-        relpath = 'rel/path/custom-base.owl'
-        self.oc.set('Ontology', 'base_ontology_file', relpath)
-        self.assertEqual(
-            self.td_path + '/' + relpath,
-            self.oc.getBaseOntologyPath()
-        )
-
-        # Test a custom absolute file path and name.
-        abspath = '/an/absolute/path/custom-base.owl'
-        self.oc.set('Ontology', 'base_ontology_file', abspath)
-        self.assertEqual(abspath, self.oc.getBaseOntologyPath())
 
     def test_getImportsSrcDir(self):
         # Test the default case.

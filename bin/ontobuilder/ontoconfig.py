@@ -79,9 +79,18 @@ class OntoConfig(RawConfigParser):
             optval = default
 
         return optval
+    
+    def getProjectDir(self):
+        """
+        Returns the path to the project's root directory, as determined by the
+        location of the configuration file.
+        """
+        return self.confdir
 
     def getConfigFilePath(self):
-        return os.path.abspath(self.conffile)
+        return os.path.abspath(os.path.realpath(os.path.expanduser(
+            self.conffile
+        )))
 
     def checkConfig(self):
         """
@@ -214,34 +223,74 @@ class OntoConfig(RawConfigParser):
 
         return iristr
 
-    def generateOntologyFileIRI(self, basename, is_release=True):
+    def _generatePathIRI(self, pathstr, baseIRI):
         """
-        Generates either a development or a release IRI for an ontology file.
+        Generates an IRI for a path to a file or directory in the project.  The
+        path must be a subpath of the main project directory.  If pathstr is a
+        relative path, it is interpreted relative to the main project
+        directory.  No attempt is made to confirm that the path is actually
+        valid, so this method works just as well to generate IRIs for paths
+        that do not (or do not yet) exist.
 
-        basename: The name of the ontology file, without any additional path
-            information.
+        pathstr: The path for which to create a corresponding development IRI.
+        basIRI: The base IRI string to use when generating the final IRI.
         """
-        if is_release:
-            baseiri = self.getReleaseBaseIRI()
-            relpath = ''
+        # See if the path is inside of the project directory (as determined by
+        # the location of the project configuration file).
+        if not(self._isSubpathInPath(self.confdir, pathstr)):
+            raise ConfigError(
+                'The path "{0}" is not a subpath of the main project folder '
+                '("{1}"), so no corresponding IRI can be automatically '
+                'generated.'.format(pathstr, self.confdir)
+            )
+        
+        if os.path.isabs(pathstr):
+            # Convert the path to a path relative to the project directory.
+            relpath = os.path.relpath(pathstr, self.confdir)
         else:
-            baseiri = self.getDevBaseIRI()
+            relpath = pathstr
 
-            # Get the path to the compiled ontology directory, relative to the
-            # project directory.
-            dirpath = os.path.dirname(self.getOntologyFilePath())
-            relpath = os.path.relpath(dirpath, self.confdir)
-
-        # Parse the base IRI, extract the path, and add the location and
-        # basename.
-        parts = rfc3987.parse(baseiri, rule='absolute_IRI')
-        iripath = os.path.join(parts['path'], relpath, basename)
+        # Parse the development base IRI and add the relative path.
+        parts = rfc3987.parse(baseIRI, rule='absolute_IRI')
+        iripath = os.path.join(parts['path'], relpath)
 
         # Generate the complete IRI.
         parts['path'] = iripath
         iristr = rfc3987.compose(**parts)
 
         return iristr
+
+    def generateDevIRI(self, pathstr):
+        """
+        Generates a development IRI for a path to a file or directory in the
+        project.  The path must be a subpath of the main project directory.  If
+        pathstr is a relative path, it is interpreted relative to the main
+        project directory.  No attempt is made to confirm that the path is
+        actually valid, so this method works just as well to generate IRIs for
+        paths that do not (or do not yet) exist.
+
+        pathstr: The path for which to create a corresponding development IRI.
+        """
+        return self._generatePathIRI(pathstr, self.getDevBaseIRI())
+
+    def generateReleaseIRI(self, pathstr):
+        """
+        Generates a release IRI for a path to a file or directory in the
+        project.  The path must be a subpath of the main project directory.  If
+        pathstr is a relative path, it is interpreted relative to the main
+        project directory.  No attempt is made to confirm that the path is
+        actually valid, so this method works just as well to generate IRIs for
+        paths that do not (or do not yet) exist.
+
+        pathstr: The path for which to create a corresponding release IRI.
+        """
+        return self._generatePathIRI(pathstr, self.getReleaseBaseIRI())
+
+    def getImportsDevBaseIRI(self):
+        """
+        Returns the base IRI to use when generating import modules.
+        """
+        return self.generateDevIRI(self.getImportsDir())
 
     def getReleaseOntologyIRI(self):
         """
@@ -261,26 +310,7 @@ class OntoConfig(RawConfigParser):
             # No release ontology IRI was provided, so generate one from the
             # release base IRI.
             ontfname = os.path.basename(self.getOntologyFilePath())
-            iristr = self.generateOntologyFileIRI(ontfname, is_release=True)
-
-        return iristr
-
-    def getImportsDevBaseIRI(self):
-        """
-        Returns the base IRI to use when generating import modules.
-        """
-        # Get the path to the compiled imports modules directory, relative to
-        # the project directory.
-        importsdir = os.path.relpath(self.getImportsDir(), self.confdir)
-
-        # Parse the development base IRI and add the imports directory to the
-        # path.
-        parts = rfc3987.parse(self.getDevBaseIRI(), rule='absolute_IRI')
-        iripath = os.path.join(parts['path'], importsdir)
-
-        # Generate the complete IRI.
-        parts['path'] = iripath
-        iristr = rfc3987.compose(**parts)
+            iristr = self.generateReleaseIRI(ontfname)
 
         return iristr
 
@@ -310,6 +340,18 @@ class OntoConfig(RawConfigParser):
             )
         
         return ontbasepath
+
+    def getBaseOntologyPath(self):
+        """
+        Returns the path to the base ontology file.  If no such value is
+        explicitly provided in the configuration file, a sensible default is
+        used.
+        """
+        default = 'src/' + self.getOntFileBase() + '-base.owl'
+        baseontpath = self.getCustom('Ontology', 'base_ontology_file', default)
+        baseontpath = self._getAbsPath(baseontpath)
+
+        return baseontpath
 
     def getTermsDir(self):
         """
@@ -356,18 +398,6 @@ class OntoConfig(RawConfigParser):
 
         return pathstr
 
-    def getBaseOntologyPath(self):
-        """
-        Returns the path to the base ontology file.  If no such value is
-        explicitly provided in the configuration file, a sensible default is
-        used.
-        """
-        default = 'src/' + self.getOntFileBase() + '-base.owl'
-        baseontpath = self.getCustom('Ontology', 'base_ontology_file', default)
-        baseontpath = self._getAbsPath(baseontpath)
-
-        return baseontpath
-
     def getImportsSrcDir(self):
         """
         Returns the path to the directory of the import modules sources.
@@ -405,12 +435,16 @@ class OntoConfig(RawConfigParser):
         if pathstr != '':
             pathstr = self._getAbsPath(pathstr)
         else:
-            pattern = os.path.join(self.getImportsSrcDir(), 'imported_ontologies.*')
+            pattern = os.path.join(
+                self.getImportsSrcDir(), 'imported_ontologies.*'
+            )
             plist = glob.glob(pattern)
             if len(plist) > 0:
                 pathstr = plist[0]
             else:
-                pathstr = os.path.join(self.getImportsSrcDir(), 'imported_ontologies.csv')
+                pathstr = os.path.join(
+                    self.getImportsSrcDir(), 'imported_ontologies.csv'
+                )
 
         return pathstr
     
