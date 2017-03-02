@@ -103,6 +103,13 @@ class OntoBuildTarget(BuildTargetWithConfig):
                 '{0}.'.format(destdir)
             )
 
+    def getImportsBuildTarget(self):
+        """
+        Returns the ImportsBuildTarget instance on which this build target
+        depends.
+        """
+        return self.ibt
+
     def getOutputFilePath(self):
         """
         Returns the path of the compiled ontology file.
