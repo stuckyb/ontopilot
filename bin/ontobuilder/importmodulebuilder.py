@@ -85,7 +85,7 @@ class ImportModuleBuilder:
         # the same as builddir.
         self.builddir = os.path.abspath(builddir)
         if outputdir != '':
-            self.outputdir = os.path.abspath(outputdir)
+            self.outputdir = os.path.abspath(os.path.realpath(outputdir))
         else:
             self.outputdir = self.builddir
 
@@ -107,7 +107,11 @@ class ImportModuleBuilder:
             if not(os.path.exists(self.ontcachedir)):
                 os.mkdir(self.ontcachedir)
             else:
-                raise RuntimeError('A file with the name of the ontology cache directory already exists: {0}.  Please delete or rename the conflicting file.'.format(self.ontcachedir))
+                raise RuntimeError(
+                    'A file with the name of the ontology cache directory '
+                    'already exists: {0}.  Please delete or rename the '
+                    'conflicting file.'.format(self.ontcachedir)
+                )
 
         # Check the output directory, if it is different from the build directory.
         if self.builddir != self.outputdir:
@@ -146,6 +150,14 @@ class ImportModuleBuilder:
 
         return outputfile
 
+    def getModulePath(self, ontologyIRI):
+        """
+        Returns the full path of the compiled import module file.
+        """
+        outputfile = self._getOutputFileName(ontologyIRI)
+
+        return os.path.join(self.outputdir, outputfile)
+
     def getModuleIRIStr(self, ontologyIRI):
         """
         Returns the IRI string that will be used for an import module.
@@ -163,7 +175,10 @@ class ImportModuleBuilder:
         try:
             parts = rfc3987.parse(self.base_IRI, rule='absolute_IRI')
         except ValueError as err:
-            raise RuntimeError('"{0}" is not a valid base IRI for generating import module IRIs.'.format(self.base_IRI))
+            raise RuntimeError(
+                '"{0}" is not a valid base IRI for generating import module '
+                'IRIs.'.format(self.base_IRI)
+            )
 
         newpath = os.path.join(parts['path'], outputfile)
         parts['path'] = newpath
@@ -187,8 +202,7 @@ class ImportModuleBuilder:
             raise RuntimeError('Could not find the input terms file "'
                     + termsfile_path + '".')
 
-        outputfile = self._getOutputFileName(ontologyIRI)
-        outputpath = os.path.join(self.outputdir, outputfile)
+        outputpath = self.getModulePath(ontologyIRI)
     
         # If the output file already exists and the terms file was not
         # modified/created more recently, there is nothing to do.
@@ -221,8 +235,8 @@ class ImportModuleBuilder:
         ontfile = os.path.basename(ontologyIRI)
         ontfile = os.path.join(self.ontcachedir, ontfile)
 
-        # Generate the file name and IRI for the output ontology OWL file.
-        outputfile = self._getOutputFileName(ontologyIRI)
+        # Generate the path and IRI for the output ontology OWL file.
+        outputpath = self.getModulePath(ontologyIRI)
         ont_IRI = IRI.create(self.getModuleIRIStr(ontologyIRI))
 
         # Verify that the source ontology file exists; if not, download it.
@@ -280,7 +294,6 @@ class ImportModuleBuilder:
         for ent in excluded_ents:
             module.removeEntity(ent)
 
-        outputpath = os.path.join(self.outputdir, outputfile)
         module.saveOntology(outputpath)
 
     def _addEntityToSignature(self, owlent, signature, trow, sourceont):

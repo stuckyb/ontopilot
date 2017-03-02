@@ -68,6 +68,31 @@ class TestImportModuleBuilder(unittest.TestCase):
                 testval[0], self.imb._getOutputFileName(testval[1])
             )
 
+    def test_getModulePath(self):
+        outputdir = self.td_path + '/imports'
+
+        # Define the list of test values.  Each tuple is in the order
+        # (expected_path, import_IRI).
+        testvals = [
+            (
+                outputdir + '/ontfile_import_module.owl',
+                'http://import.ontology/iri/ontfile.owl'
+            ),
+            (
+                outputdir + '/ontfile_import_module.owl',
+                'http://import.ontology/iri/ontfile'
+            ),
+            (
+                outputdir + '/_import_module.owl',
+                'http://import.ontology/iri/ontfile/'
+            )
+        ]
+
+        for testval in testvals:
+            self.assertEqual(
+                testval[0], self.imb.getModulePath(testval[1])
+            )
+
     def test_getModuleIRIStr(self):
         # Define the list of test values.  Each tuple is in the order
         # (expected_module_IRI, base_IRI, import_IRI).
