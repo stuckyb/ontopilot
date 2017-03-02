@@ -26,7 +26,7 @@ class _ArgsType:
 
 # Define a simple "struct" type for gathering file path and IRI information.
 FileInfo = namedtuple(
-    'FileInfo', ['sourcepath', 'destpath', 'destIRI', 'versionIRI']
+    'FileInfo', ['sourcepath', 'destpath', 'oldIRI', 'destIRI', 'versionIRI']
 )
 
 
@@ -61,13 +61,14 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         self.addDependency(self.mobt_merged)
         self.addDependency(self.mobt_merged_reasoned)
 
-    def _generateImportFileInfo(self, sourcepath):
+    def _generateImportFileInfo(self, sourcepath, old_iri):
         """
         Generates and returns a FileInfo object for a release import module
         file.  Note that the release directory name attribute must be set
         before this method is called.
 
         sourcepath: The location of the source import module file.
+        old_iri (str): The old (current) IRI of the import module.
         """
         # Get the path to the module, relative to the main project location.
         mod_relpath = os.path.relpath(sourcepath, self.config.getProjectDir())
@@ -79,8 +80,8 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         versionIRI = self.config.generateReleaseIRI(destpath)
 
         finfo = FileInfo(
-            sourcepath=sourcepath, destpath=destpath, destIRI=destIRI,
-            versionIRI=versionIRI
+            sourcepath=sourcepath, destpath=destpath, oldIRI=old_iri,
+            destIRI=destIRI, versionIRI=versionIRI
         )
 
         return finfo
@@ -114,8 +115,8 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         versionIRI = self.config.generateReleaseIRI(destpath)
 
         finfo = FileInfo(
-            sourcepath=sourcepath, destpath=destpath, destIRI=destIRI,
-            versionIRI=versionIRI
+            sourcepath=sourcepath, destpath=destpath, oldIRI='',
+            destIRI=destIRI, versionIRI=versionIRI
         )
 
         return finfo
@@ -165,7 +166,9 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         importsinfos = ibt.getImportsInfo()
         for importsinfo in importsinfos:
             self.imports_fileinfos.append(
-                self._generateImportFileInfo(importsinfo.filename)
+                self._generateImportFileInfo(
+                    importsinfo.filename, importsinfo.iristr
+                )
             )
 
     def getBuildNotRequiredMsg(self):
@@ -243,5 +246,12 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         for fileinfo in self.ont_fileinfos:
             ont = Ontology(fileinfo.sourcepath)
             ont.setOntologyID(fileinfo.destIRI, fileinfo.versionIRI)
+
+            # Update the IRIs of any released import modules that are
+            # explicitly imported by the ontology.
+            for ifinfo in self.imports_fileinfos:
+                if ont.hasImport(ifinfo.oldIRI):
+                    ont.updateImportIRI(ifinfo.oldIRI, ifinfo.versionIRI)
+
             ont.saveOntology(fileinfo.destpath)
 
