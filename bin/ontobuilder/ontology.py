@@ -431,18 +431,28 @@ class Ontology(Observable):
 
             self.ontman.removeAxioms(ont, del_axioms)
 
-    def setOntologyID(self, ont_iri):
+    def setOntologyID(self, ont_iri, version_iri=''):
         """
-        Sets the ID for the ontology (i.e., the value of the "rdf:about"
-        attribute).
+        Sets the ID for the ontology (i.e., the values of the ontology IRI and
+        version IRI).
         
         ont_iri: The IRI (i.e., ID) of the ontology.  Can be either an IRI
+            object or a string containing a relative IRI, prefix IRI, or full
+            IRI.
+        version_iri: The version IRI of the ontology.  Can be either an IRI
             object or a string containing a relative IRI, prefix IRI, or full
             IRI.
         """
         ontIRI = self.idr.expandIRI(ont_iri)
 
-        newoid = OWLOntologyID(Optional.fromNullable(ontIRI), Optional.absent())
+        if version_iri != '':
+            verIRI = self.idr.expandIRI(version_iri)
+        else:
+            verIRI = None
+
+        newoid = OWLOntologyID(
+            Optional.fromNullable(ontIRI), Optional.fromNullable(verIRI)
+        )
         self.ontman.applyChange(SetOntologyID(self.ontology, newoid))
 
     def getImports(self):

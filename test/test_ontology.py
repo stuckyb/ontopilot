@@ -308,3 +308,17 @@ class Test_Ontology(unittest.TestCase):
             unsatisfiable.equals(report['unsatisfiable_classes'][0])
         )
 
+    def test_setOntologyID(self):
+        ont_iri = 'http://a.test.iri/main'
+        ver_iri = 'http://a.test.iri/version'
+
+        self.ont.setOntologyID(ont_iri)
+        ontid = self.owlont.getOntologyID()
+        self.assertEqual(ont_iri, str(ontid.getOntologyIRI().get()))
+        self.assertIsNone(ontid.getVersionIRI().orNull())
+
+        self.ont.setOntologyID(ont_iri, ver_iri)
+        ontid = self.owlont.getOntologyID()
+        self.assertEqual(ont_iri, str(ontid.getOntologyIRI().get()))
+        self.assertEqual(ver_iri, str(ontid.getVersionIRI().get()))
+
