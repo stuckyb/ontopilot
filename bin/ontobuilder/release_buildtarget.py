@@ -61,6 +61,30 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         self.addDependency(self.mobt_merged)
         self.addDependency(self.mobt_merged_reasoned)
 
+    def _generateImportFileInfo(self, sourcepath):
+        """
+        Generates and returns a FileInfo object for a release import module
+        file.  Note that the release directory name attribute must be set
+        before this method is called.
+
+        sourcepath: The location of the source import module file.
+        """
+        # Get the path to the module, relative to the main project location.
+        mod_relpath = os.path.relpath(sourcepath, self.config.getProjectDir())
+
+        destpath = os.path.join(self.release_dir, mod_relpath)
+
+        destIRI = self.config.generateReleaseIRI(mod_relpath)
+
+        versionIRI = self.config.generateReleaseIRI(destpath)
+
+        finfo = FileInfo(
+            sourcepath=sourcepath, destpath=destpath, destIRI=destIRI,
+            versionIRI=versionIRI
+        )
+
+        return finfo
+
     def _generateOntologyFileInfo(self, sourcepath, suffix, is_main):
         """
         Generates and returns a FileInfo object for a release ontology file.
@@ -98,18 +122,17 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
 
     def _generateBuildInfo(self):
         """
-        Generates the paths and IRIs needed to build the release.  Sets two
+        Generates the paths and IRIs needed to build the release.  Sets three
         class attributes: release_dir, which the absolute local path of the
-        release directory, fileinfos, which is a list of FileInfo objects that
-        describe how to build the release components.
+        release directory, and ont_fileinfos and imports_fileinfos, which are
+        lists of FileInfo objects that describe how to build the release
+        components.
         """
         # Generate the release directory name.
         datestr = datetime.date.today().isoformat()
         self.release_dir = os.path.join(
             self.config.getProjectDir(), 'releases', datestr
         )
-
-        self.fileinfos = []
 
         # Parse the base ontology file name.
         ofnparts = os.path.splitext(
@@ -118,18 +141,32 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
 
         # Gather the ontology file information.  Get the compiled main ontology
         # file path from one of the modified ontology dependencies.
+        self.ont_fileinfos = []
+
         spath = self.mobt_merged.getOntoBuildTarget().getOutputFilePath()
-        self.fileinfos.append(
+        self.ont_fileinfos.append(
             self._generateOntologyFileInfo(spath, '-raw', False)
         )
 
         spath = self.mobt_merged.getOutputFilePath()
-        self.fileinfos.append(
+        self.ont_fileinfos.append(
             self._generateOntologyFileInfo(spath, '-merged', False)
         )
 
         spath = self.mobt_merged_reasoned.getOutputFilePath()
-        self.fileinfos.append(self._generateOntologyFileInfo(spath, '', True))
+        self.ont_fileinfos.append(
+            self._generateOntologyFileInfo(spath, '', True)
+        )
+
+        # Gather the imports file information.
+        self.imports_fileinfos = []
+
+        ibt = self.mobt_merged.getOntoBuildTarget().getImportsBuildTarget()
+        importsinfos = ibt.getImportsInfo()
+        for importsinfo in importsinfos:
+            self.imports_fileinfos.append(
+                self._generateImportFileInfo(importsinfo.filename)
+            )
 
     def getBuildNotRequiredMsg(self):
         return 'The release files are already up to date.'
@@ -144,11 +181,38 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         """
         self._generateBuildInfo()
 
-        for fileinfo in self.fileinfos:
+        for fileinfo in (self.ont_fileinfos + self.imports_fileinfos):
             if not(os.path.isfile(fileinfo.destpath)):
                 return True
 
         return False
+
+    def _makeReleaseDirs(self, dirpath):
+        """
+        Attempts to create one or more directories in a path string.  If a
+        non-directory file system object with same name already exists, or if
+        directory creation fails for some other reason, an exception will be
+        thrown.
+        """
+        if os.path.exists(dirpath):
+            if not(os.path.isdir(dirpath)):
+                raise RuntimeError(
+                    'A file with the same name as the build folder/directory, '
+                    '"{0}", already exists.  Please delete, move, or rename '
+                    'the conflicting file before '
+                    'continuing.'.format(dirpath)
+                )
+
+        if not(os.path.exists(dirpath)):
+            try:
+                os.makedirs(dirpath)
+            except OSError:
+                raise RuntimeError(
+                    'The release folder/directory, "{0}", could not be '
+                    'created.  Please make sure that you have permission to '
+                    'create new files and directories in the project '
+                    'location.'.format(dirpath)
+                )
 
     def _run(self):
         """
@@ -158,28 +222,25 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         # ensures that _isBuildRequired() will always be called prior to this
         # method, so generateBuildInfo() will have already been run.
 
-        if os.path.exists(self.release_dir):
-            if not(os.path.isdir(self.release_dir)):
-                raise RuntimeError(
-                    'A file with the same name as the build folder/directory, '
-                    '"{0}", already exists.  Please delete, move, or rename '
-                    'the conflicting file before '
-                    'continuing.'.format(self.release_dir)
-                )
-
+        # Create the main release directory, if needed.
         if not(os.path.exists(self.release_dir)):
-            try:
-                os.makedirs(self.release_dir)
-            except OSError:
-                raise RuntimeError(
-                    'The release folder/directory, "{0}", could not be '
-                    'created.  Please make sure that you have permission to '
-                    'create new files and directories in the project '
-                    'location.'.format(self.release_dir)
-                )
+            self._makeReleaseDirs(self.release_dir)
 
-        # Create the release ontology files and imports files.
-        for fileinfo in self.fileinfos:
+        # Get the path to the released imports modules directory and create it,
+        # if needed.
+        if len(self.imports_fileinfos) > 0:
+            dirpath = os.path.dirname(self.imports_fileinfos[0].destpath)
+            if not(os.path.exists(dirpath)):
+                self._makeReleaseDirs(dirpath)
+
+        # Create the release import module files.
+        for fileinfo in self.imports_fileinfos:
+            ont = Ontology(fileinfo.sourcepath)
+            ont.setOntologyID(fileinfo.destIRI, fileinfo.versionIRI)
+            ont.saveOntology(fileinfo.destpath)
+
+        # Create the release ontology files.
+        for fileinfo in self.ont_fileinfos:
             ont = Ontology(fileinfo.sourcepath)
             ont.setOntologyID(fileinfo.destIRI, fileinfo.versionIRI)
             ont.saveOntology(fileinfo.destpath)
