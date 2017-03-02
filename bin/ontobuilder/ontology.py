@@ -439,9 +439,9 @@ class Ontology(Observable):
         ont_iri: The IRI (i.e., ID) of the ontology.  Can be either an IRI
             object or a string containing a relative IRI, prefix IRI, or full
             IRI.
-        version_iri: The version IRI of the ontology.  Can be either an IRI
-            object or a string containing a relative IRI, prefix IRI, or full
-            IRI.
+        version_iri (optional): The version IRI of the ontology.  Can be either
+            an IRI object or a string containing a relative IRI, prefix IRI, or
+            full IRI.
         """
         ontIRI = self.idr.expandIRI(ont_iri)
 
@@ -454,6 +454,19 @@ class Ontology(Observable):
             Optional.fromNullable(ontIRI), Optional.fromNullable(verIRI)
         )
         self.ontman.applyChange(SetOntologyID(self.ontology, newoid))
+
+    def hasImport(self, import_iri):
+        """
+        Returns True if this ontology has the specified ontology as a direct
+        import.  Returns False otherwise.
+
+        import_iri: The IRI of an ontology.  Can be either an IRI object or a
+            string containing a relative IRI, prefix IRI, or full IRI.
+        """
+        importIRI = self.idr.expandIRI(import_iri)
+        owlont = self.getOWLOntology()
+        
+        return owlont.getDirectImportsDocuments().contains(importIRI)
 
     def getImports(self):
         """
@@ -495,10 +508,59 @@ class Ontology(Observable):
                 OWLOntologyFactoryNotFoundException,
                 OWLOntologyCreationIOException
             ) as err:
-                raise RuntimeError('The import module ontology at <{0}> could not be loaded.  Please make sure that the IRI is correct and that the import module ontology is accessible.'.format(source_iri))
+                raise RuntimeError(
+                    'The import module ontology at <{0}> could not be '
+                    'loaded.  Please make sure that the IRI is correct and '
+                    'that the import module ontology is '
+                    'accessible.'.format(source_iri)
+                )
 
             # Notify observers that a new ontology was imported.
             self.notifyObservers('ontology_added', (importont,))
+
+    def updateImportIRI(self, old_iri, new_iri):
+        """
+        Updates the IRI of an ontology that is a direct import of this
+        ontology.  The *contents* of the ontology should be exactly the same;
+        this method should only be used to update the IRI of an imported
+        ontology if its location changes.  If the specified "old" IRI is not a
+        direct import of this ontology, an exception is thrown.
+
+        old_iri: The old IRI of the imported ontology.  Can be either an IRI
+            object or a string containing a relative IRI, prefix IRI, or full
+            IRI.
+        new_iri: The new IRI of the imported ontology.  Can be either an IRI
+            object or a string containing a relative IRI, prefix IRI, or full
+            IRI.
+        """
+        oldIRI = self.idr.expandIRI(old_iri)
+        newIRI = self.idr.expandIRI(new_iri)
+
+        owlont = self.getOWLOntology()
+
+        # Gather all import statements that refer to the old IRI.  Delete them
+        # after looping over the ontology's imports declarations rather than in
+        # the loop to avoid the risk of invalidating the iteration.
+        del_decs = []
+        for importsdec in owlont.getImportsDeclarations():
+            if importsdec.getIRI().equals(oldIRI):
+                del_decs.append(importsdec)
+
+        if len(del_decs) == 0:
+            raise RuntimeError(
+                'The IRI <{0}> is not a direct import of the target ontology, '
+                'so the import IRI could not be updated.'.format(old_iri)
+            )
+
+        # Delete the old declaration(s).
+        for dec in del_decs:
+            self.ontman.applyChange(RemoveImport(owlont, dec))
+
+        # Add an import statement for the new IRI.
+        importdec = self.df.getOWLImportsDeclaration(newIRI)
+        self.ontman.applyChange(
+            AddImport(owlont, importdec)
+        )
 
     def mergeOntology(self, source_iri):
         """
@@ -520,7 +582,11 @@ class Ontology(Observable):
             OWLOntologyFactoryNotFoundException,
             OWLOntologyCreationIOException
         ) as err:
-            raise RuntimeError('The import module ontology at <{0}> could not be loaded.  Please make sure that the IRI is correct and that the import module ontology is accessible.'.format(source_iri))
+            raise RuntimeError(
+                'The import module ontology at <{0}> could not be loaded.  '
+                'Please make sure that the IRI is correct and that the import '
+                'module ontology is accessible.'.format(source_iri)
+            )
 
         # Add the axioms from the external ontology to this ontology.
         axiomset = importont.getAxioms(ImportsEnum.EXCLUDED)
@@ -531,15 +597,15 @@ class Ontology(Observable):
         # invalidated imports declarations into a set so that they can be
         # deleted after looping over an ontology's imports declarations rather
         # than in the loop, to avoid the risk of invalidating the iteration.
-        del_decs = HashSet()
+        del_decs = []
         for importsdec in owlont.getImportsDeclarations():
             if importsdec.getIRI().equals(sourceIRI):
-                del_decs.add(importsdec)
+                del_decs.append(importsdec)
 
         for dec in del_decs:
             self.ontman.applyChange(RemoveImport(owlont, dec))
 
-        if del_decs.isEmpty():
+        if len(del_decs) == 0:
             # If the merged ontology was not already imported, notify observers
             # about the merged ontology.
             self.notifyObservers('ontology_added', (importont,))

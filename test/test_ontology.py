@@ -226,6 +226,12 @@ class Test_Ontology(unittest.TestCase):
         annot_ax_set = self.owlont.getAnnotationAssertionAxioms(IRIobj)
         self.assertTrue(annot_ax_set.isEmpty())
 
+    def test_hasImport(self):
+        import_iri = 'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl'
+
+        self.assertFalse(self.ont.hasImport('http://not.an.import/iri'))
+        self.assertTrue(self.ont.hasImport(import_iri))
+
     def test_getImports(self):
         expected = [
             'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl'
@@ -247,6 +253,25 @@ class Test_Ontology(unittest.TestCase):
         self.assertTrue(
             self.owlont.getDirectImportsDocuments().contains(importIRI)
         )
+
+    def test_updateImportIRI(self):
+        old_iri = 'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl'
+        new_iri = 'http://a.new.iri/replacement'
+
+        self.assertTrue(self.ont.hasImport(old_iri))
+        self.assertFalse(self.ont.hasImport(new_iri))
+
+        self.ont.updateImportIRI(old_iri, new_iri)
+
+        self.assertFalse(self.ont.hasImport(old_iri))
+        self.assertTrue(self.ont.hasImport(new_iri))
+
+        # Verify that an attempt to update an IRI for which there is not an
+        # import statement is correctly handled.
+        with self.assertRaisesRegexp(
+            RuntimeError, 'the import IRI could not be updated'
+        ):
+            self.ont.updateImportIRI('http://iri.with.no/import', old_iri)
 
     def test_mergeOntology(self):
         mergeiri_str = 'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl'
