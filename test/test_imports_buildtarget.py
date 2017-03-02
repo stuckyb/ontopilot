@@ -16,7 +16,7 @@
 
 # Python imports.
 from ontobuilder.ontoconfig import OntoConfig
-from ontobuilder.imports_buildtarget import ImportsBuildTarget
+from ontobuilder.imports_buildtarget import ImportsBuildTarget, ModuleInfo
 from test_tablereader import TableStub
 from ontobuilder.tablereader import TableRow, TableRowError
 import unittest
@@ -37,7 +37,8 @@ class TestImportsBuildTarget(unittest.TestCase):
 
         self.ibt = ImportsBuildTarget(None, self.oc)
 
-        self.td_path = os.path.abspath('test_data/imports_src/')
+        self.td_path = os.path.abspath('test_data/')
+        self.isrc_path = os.path.abspath('test_data/imports_src/')
 
     def test_getAbsTermsFilePath(self):
         tr = TableRow(1, TableStub())
@@ -56,7 +57,8 @@ class TestImportsBuildTarget(unittest.TestCase):
         # Test a valid terms file path.
         tr['Termsfile'] = 'bco_terms.csv'
         self.assertEqual(
-            self.td_path + '/bco_terms.csv', self.ibt._getAbsTermsFilePath(tr)
+            self.isrc_path + '/bco_terms.csv',
+            self.ibt._getAbsTermsFilePath(tr)
         )
 
     def test_checkSourceIRI(self):
@@ -76,15 +78,24 @@ class TestImportsBuildTarget(unittest.TestCase):
         ):
             self.ibt._checkSourceIRI(tr)
 
-    def test_getImportsIRIs(self):
+    def test_getImportsInfo(self):
         # The source file includes an ignored row, two ontologies for which
         # import modules will be built, and one for which the entire ontology
         # will be imported.
         expected = [
-            'https://a.sample.iri/to/imports/ro_ontname_import_module.owl',
-            'http://purl.obolibrary.org/obo/iao/ontology-metadata.owl',
-            'https://a.sample.iri/to/imports/bco_ontname_import_module.owl'
+            ModuleInfo(
+                filename=self.td_path + '/ro_ontname_import_module.owl',
+                iristr='https://a.sample.iri/to/imports/ro_ontname_import_module.owl'
+            ),
+            ModuleInfo(
+                filename='',
+                iristr='http://purl.obolibrary.org/obo/iao/ontology-metadata.owl'
+            ),
+            ModuleInfo(
+                filename=self.td_path + '/bco_ontname_import_module.owl',
+                iristr='https://a.sample.iri/to/imports/bco_ontname_import_module.owl'
+            )
         ]
 
-        self.assertEqual(expected, self.ibt.getImportsIRIs())
+        self.assertEqual(expected, self.ibt.getImportsInfo())
 
