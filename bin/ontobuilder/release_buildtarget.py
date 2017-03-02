@@ -33,7 +33,7 @@ FileInfo = namedtuple(
 class ReleaseBuildTarget(BuildTargetWithConfig):
     """
     Manages the process of building a complete release version of the compiled
-    ontology, imports modules, and source files.
+    ontology and imports modules.
     """
     def __init__(self, args, config=None):
         """
@@ -61,19 +61,31 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         self.addDependency(self.mobt_merged)
         self.addDependency(self.mobt_merged_reasoned)
 
+    def _generateReleaseDirPath(self):
+        """
+        Returns the path for the release directory.
+        """
+        datestr = datetime.date.today().isoformat()
+        release_dir = os.path.join(
+            self.config.getProjectDir(), 'releases', datestr
+        )
+
+        return release_dir
+
     def _generateImportFileInfo(self, sourcepath, old_iri):
         """
         Generates and returns a FileInfo object for a release import module
-        file.  Note that the release directory name attribute must be set
-        before this method is called.
+        file.
 
         sourcepath: The location of the source import module file.
         old_iri (str): The old (current) IRI of the import module.
         """
+        release_dir = self._generateReleaseDirPath()
+
         # Get the path to the module, relative to the main project location.
         mod_relpath = os.path.relpath(sourcepath, self.config.getProjectDir())
 
-        destpath = os.path.join(self.release_dir, mod_relpath)
+        destpath = os.path.join(release_dir, mod_relpath)
 
         destIRI = self.config.generateReleaseIRI(mod_relpath)
 
@@ -89,20 +101,20 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
     def _generateOntologyFileInfo(self, sourcepath, suffix, is_main):
         """
         Generates and returns a FileInfo object for a release ontology file.
-        Note that the release directory name attribute must be set before this
-        method is called.
 
         sourcepath: The location of the source ontology file.
         suffix (str): The suffix to attach to the base ontology file name.
         is_main (bool): Whether this is the main ontology file.
         """
+        release_dir = self._generateReleaseDirPath()
+
         # Parse the base ontology file name.
         ofnparts = os.path.splitext(
             os.path.basename(self.config.getOntologyFilePath())
         )
 
         destpath = os.path.join(
-            self.release_dir, ofnparts[0] + suffix + ofnparts[1]
+            release_dir, ofnparts[0] + suffix + ofnparts[1]
         )
 
         if is_main:
@@ -129,12 +141,6 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         lists of FileInfo objects that describe how to build the release
         components.
         """
-        # Generate the release directory name.
-        datestr = datetime.date.today().isoformat()
-        self.release_dir = os.path.join(
-            self.config.getProjectDir(), 'releases', datestr
-        )
-
         # Parse the base ontology file name.
         ofnparts = os.path.splitext(
             os.path.basename(self.config.getOntologyFilePath())
@@ -225,9 +231,11 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         # ensures that _isBuildRequired() will always be called prior to this
         # method, so generateBuildInfo() will have already been run.
 
+        release_dir = self._generateReleaseDirPath()
+
         # Create the main release directory, if needed.
-        if not(os.path.exists(self.release_dir)):
-            self._makeReleaseDirs(self.release_dir)
+        if not(os.path.exists(release_dir)):
+            self._makeReleaseDirs(release_dir)
 
         # Get the path to the released imports modules directory and create it,
         # if needed.
