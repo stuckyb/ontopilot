@@ -245,12 +245,14 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
                 self._makeReleaseDirs(dirpath)
 
         # Create the release import module files.
+        print 'Creating release import modules...'
         for fileinfo in self.imports_fileinfos:
             ont = Ontology(fileinfo.sourcepath)
             ont.setOntologyID(fileinfo.destIRI, fileinfo.versionIRI)
             ont.saveOntology(fileinfo.destpath)
 
         # Create the release ontology files.
+        print 'Creating release ontology files...'
         for fileinfo in self.ont_fileinfos:
             ont = Ontology(fileinfo.sourcepath)
             ont.setOntologyID(fileinfo.destIRI, fileinfo.versionIRI)
