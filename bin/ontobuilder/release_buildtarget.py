@@ -39,8 +39,8 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         """
         args: A "struct" of configuration options (typically, parsed
             command-line arguments).  The required members are 'merge_imports'
-            (boolean), 'reason' (boolean), 'no_def_expand' (boolean), and
-            'config_file' (string).
+            (boolean), 'reason' (boolean), 'no_def_expand' (boolean),
+            'release_date' (string), and 'config_file' (string).
         config (optional): An OntoConfig instance.
         """
         BuildTargetWithConfig.__init__(self, args, config)
@@ -61,11 +61,25 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         self.addDependency(self.mobt_merged)
         self.addDependency(self.mobt_merged_reasoned)
 
-    def _generateReleaseDirPath(self):
+        self.release_dir = self._generateReleaseDirPath(args.release_date)
+
+    def _generateReleaseDirPath(self, datestr):
         """
         Returns the path for the release directory.
         """
-        datestr = datetime.date.today().isoformat()
+        if datestr == '':
+            datestr = datetime.date.today().isoformat()
+        else:
+            # Check that the date string is in the format YYYY-MM-DD.
+            try:
+                datetime.datetime.strptime(datestr, '%Y-%m-%d')
+            except ValueError:
+                raise ValueError(
+                    'The custom release date string, "{0}", is invalid.  The '
+                    'string must be in the format YYYY-MM-DD and must '
+                    'represent a valid date.'.format(datestr)
+                )
+
         release_dir = os.path.join(
             self.config.getProjectDir(), 'releases', datestr
         )
@@ -80,12 +94,10 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         sourcepath: The location of the source import module file.
         old_iri (str): The old (current) IRI of the import module.
         """
-        release_dir = self._generateReleaseDirPath()
-
         # Get the path to the module, relative to the main project location.
         mod_relpath = os.path.relpath(sourcepath, self.config.getProjectDir())
 
-        destpath = os.path.join(release_dir, mod_relpath)
+        destpath = os.path.join(self.release_dir, mod_relpath)
 
         destIRI = self.config.generateReleaseIRI(mod_relpath)
 
@@ -106,15 +118,13 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         suffix (str): The suffix to attach to the base ontology file name.
         is_main (bool): Whether this is the main ontology file.
         """
-        release_dir = self._generateReleaseDirPath()
-
         # Parse the base ontology file name.
         ofnparts = os.path.splitext(
             os.path.basename(self.config.getOntologyFilePath())
         )
 
         destpath = os.path.join(
-            release_dir, ofnparts[0] + suffix + ofnparts[1]
+            self.release_dir, ofnparts[0] + suffix + ofnparts[1]
         )
 
         if is_main:
@@ -135,11 +145,9 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
 
     def _generateBuildInfo(self):
         """
-        Generates the paths and IRIs needed to build the release.  Sets three
-        class attributes: release_dir, which the absolute local path of the
-        release directory, and ont_fileinfos and imports_fileinfos, which are
-        lists of FileInfo objects that describe how to build the release
-        components.
+        Generates the paths and IRIs needed to build the release.  Sets two
+        class attributes: ont_fileinfos and imports_fileinfos, which are lists
+        of FileInfo objects that describe how to build the release components.
         """
         # Parse the base ontology file name.
         ofnparts = os.path.splitext(
@@ -231,11 +239,9 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         # ensures that _isBuildRequired() will always be called prior to this
         # method, so generateBuildInfo() will have already been run.
 
-        release_dir = self._generateReleaseDirPath()
-
         # Create the main release directory, if needed.
-        if not(os.path.exists(release_dir)):
-            self._makeReleaseDirs(release_dir)
+        if not(os.path.exists(self.release_dir)):
+            self._makeReleaseDirs(self.release_dir)
 
         # Get the path to the released imports modules directory and create it,
         # if needed.

@@ -27,7 +27,9 @@ import datetime
 
 
 # Define a simple "struct" type for simulating command-line arguments.
-ArgsStruct = namedtuple('ArgsStruct', 'merge_imports, reason, no_def_expand')
+ArgsStruct = namedtuple(
+    'ArgsStruct', 'merge_imports, reason, no_def_expand, release_date'
+)
 
 # Define another simple "struct" type for testing _ArgsType.  Don't use
 # namedtuple here because we want the attributes to be read/write.
@@ -79,15 +81,27 @@ class TestReleaseBuildTarget(unittest.TestCase):
         self.td_path = os.path.abspath('test_data/')
 
         args = ArgsStruct(
-            merge_imports=False, reason=False, no_def_expand=False
+            merge_imports=False, reason=False, no_def_expand=False,
+            release_date=''
         )
         self.rbt = ReleaseBuildTarget(args, self.oc)
 
     def test_generateReleaseDirPath(self):
+        # Check the default, automatically generated date string.
         datestr = datetime.date.today().isoformat()
         release_path = self.td_path + '/releases/' + datestr
+        self.assertEqual(release_path, self.rbt._generateReleaseDirPath(''))
 
-        self.assertEqual(release_path, self.rbt._generateReleaseDirPath())
+        # Check a custom date string.
+        datestr = '2017-01-01'
+        release_path = self.td_path + '/releases/' + datestr
+        self.assertEqual(release_path, self.rbt._generateReleaseDirPath(datestr))
+
+        # Check an invalid date string.
+        with self.assertRaisesRegexp(
+            ValueError, 'The custom release date string, .*, is invalid.'
+        ):
+            self.rbt._generateReleaseDirPath('2017-01-32')
 
     def test_generateImportFileInfo(self):        
         sourcepath = self.td_path + '/imports/import.owl'

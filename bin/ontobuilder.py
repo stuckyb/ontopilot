@@ -53,6 +53,11 @@ argp.add_argument(
     'axioms will be added to a new ontology document.'
 )
 argp.add_argument(
+    '-d', '--release_date', type=str, required=False, default='', help='Sets '
+    'a custom date for a release build.  The date must be in the format '
+    'YYYY-MM-DD.'
+)
+argp.add_argument(
     'task', type=str, nargs='?', default='ontology', help='The build task to '
     'run.  Must be one of {0}.'.format(
         buildtm.getBuildTargetNamesStr('task')
