@@ -58,10 +58,12 @@ TRUE_STRS = ('t', 'true', 'y', 'yes')
 
 # Add top-level classes of contained modules that are used by UI code to the
 # package's top-level scope.
-from tablereader import ColumnNameError
-from importmodulebuilder import ImportModSpecError
-from owlontologybuilder import TermDescriptionError
-from ontoconfig import OntoConfig, ConfigError
-from onto_buildmanager import OntoBuildManager
-from projectcreator import ProjectCreator
+from basic_buildtargets import InitTarget
+from imports_buildtarget import ImportsBuildTarget
+from onto_buildtarget import OntoBuildTarget
+from modified_onto_buildtarget import ModifiedOntoBuildTarget
+from release_buildtarget import ReleaseBuildTarget
+from errorcheck_buildtarget import ErrorCheckBuildTarget
+from update_base_imports_buildtarget import UpdateBaseImportsBuildTarget
+from buildtarget_manager import BuildTargetManager
 

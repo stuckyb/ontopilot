@@ -4,15 +4,12 @@
 import sys
 import logging
 from argparse import ArgumentParser
-from ontobuilder import OntoConfig, ConfigError
-from ontobuilder.basic_buildtargets import InitTarget
-from ontobuilder.imports_buildtarget import ImportsBuildTarget
-from ontobuilder.onto_buildtarget import OntoBuildTarget
-from ontobuilder.modified_onto_buildtarget import ModifiedOntoBuildTarget
-from ontobuilder.release_buildtarget import ReleaseBuildTarget
-from ontobuilder.errorcheck_buildtarget import ErrorCheckBuildTarget
-from ontobuilder.update_base_imports_buildtarget import UpdateBaseImportsBuildTarget
-from ontobuilder.buildtarget_manager import BuildTargetManager
+from ontobuilder import InitTarget, ImportsBuildTarget, OntoBuildTarget
+from ontobuilder import ModifiedOntoBuildTarget, ReleaseBuildTarget
+from ontobuilder import ErrorCheckBuildTarget, UpdateBaseImportsBuildTarget
+from ontobuilder import BuildTargetManager
+
+# Java imports.
 
 
 # Set the format for logging output.
