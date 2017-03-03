@@ -207,7 +207,7 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         # method, so generateBuildInfo() will have already been run.
 
         # Create the main release directory, if needed.
-        if not(os.path.exists(self.release_dir)):
+        if not(os.path.isdir(self.release_dir)):
             self._makeDirs(self.release_dir)
 
         # Get the path to the released imports modules directory and create it,
