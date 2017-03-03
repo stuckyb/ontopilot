@@ -5,7 +5,6 @@ import datetime
 from ontology import Ontology
 from buildtarget import BuildTargetWithConfig
 from modified_onto_buildtarget import ModifiedOntoBuildTarget
-from inferred_axiom_adder import InferredAxiomAdder
 from collections import namedtuple
 
 # Java imports.
@@ -149,11 +148,6 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         class attributes: ont_fileinfos and imports_fileinfos, which are lists
         of FileInfo objects that describe how to build the release components.
         """
-        # Parse the base ontology file name.
-        ofnparts = os.path.splitext(
-            os.path.basename(self.config.getOntologyFilePath())
-        )
-
         # Gather the ontology file information.  Get the compiled main ontology
         # file path from one of the modified ontology dependencies.
         self.ont_fileinfos = []
