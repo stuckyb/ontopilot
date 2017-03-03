@@ -95,14 +95,6 @@ class OntoBuildTarget(BuildTargetWithConfig):
                 )
         self.termsfile_paths = pathslist
 
-        # Verify that the build directory exists.
-        destdir = os.path.dirname(self.getOutputFilePath())
-        if not(os.path.isdir(destdir)):
-            raise RuntimeError(
-                'The destination directory for the ontology does not exist: '
-                '{0}.'.format(destdir)
-            )
-
     def getImportsBuildTarget(self):
         """
         Returns the ImportsBuildTarget instance on which this build target
@@ -178,6 +170,16 @@ class OntoBuildTarget(BuildTargetWithConfig):
 
         self._retrieveAndCheckFilePaths()
 
+        fileoutpath = self.getOutputFilePath()
+
+        # Create the destination directory, if needed.  We only need to check
+        # this for in-source builds, since the BuildDirTarget dependency will
+        # take care of this for out-of-source builds.
+        if self.config.getDoInSourceBuilds():
+            destdir = os.path.dirname(fileoutpath)
+            if not(os.path.isdir(destdir)):
+                self._makeDirs(destdir)
+
         ontbuilder = OWLOntologyBuilder(self.base_ont_path)
         # Add an import declaration for each import module.
         for importIRI in importsIRIs:
@@ -227,8 +229,6 @@ class OntoBuildTarget(BuildTargetWithConfig):
         # Define all deferred axioms from the source entity descriptions.
         print 'Defining all remaining entity axioms...'
         ontbuilder.processDeferredEntityAxioms(self.expanddefs)
-
-        fileoutpath = self.getOutputFilePath()
 
         # Set the ontology IRI.
         ontIRI = self.config.generateDevIRI(fileoutpath)

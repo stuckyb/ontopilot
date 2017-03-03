@@ -79,13 +79,6 @@ class ImportsBuildTarget(BuildTargetWithConfig):
                 'The top-level imports source file could not be found: {0}.'.format(fpath)
             )
         
-        # Check the imports directory if we are doing an in-source build.
-        if self.config.getDoInSourceBuilds():
-            if not(os.path.isdir(self.outputdir)):
-                raise RuntimeError(
-                    'The destination directory does not exist: {0}.'.format(self.outputdir)
-                )
-
     def _readImportsSource(self):
         """
         Reads the top-level imports source file (that is, the file that defines
@@ -189,6 +182,13 @@ class ImportsBuildTarget(BuildTargetWithConfig):
         """
         Runs the imports build process and produces import module OWL files.
         """
+        # Create the destination directory, if needed.  We only need to check
+        # this for in-source builds, since the BuildDirTarget dependency will
+        # take care of this for out-of-source builds.
+        if self.config.getDoInSourceBuilds():
+            if not(os.path.isdir(self.outputdir)):
+                self._makeDirs(self.outputdir)
+
         for row in self.tablerows:
             termsfile_path = row['abs_tfilepath']
 
