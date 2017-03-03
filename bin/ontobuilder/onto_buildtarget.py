@@ -36,7 +36,7 @@ class OntoBuildTarget(BuildTargetWithConfig):
         BuildTargetWithConfig.__init__(self, args, config)
 
         # Determine whether to add IDs to term references in definitions.
-        self.expanddefs = not(args.no_def_expand)
+        self.expanddefs = self.config.getExpandEntityDefs()
 
         # Set the imports modules as a dependency, regardless of whether we're
         # using in-source or out-of-source builds.  Either way, it is probably

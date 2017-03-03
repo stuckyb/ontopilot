@@ -398,6 +398,16 @@ class OntoConfig(RawConfigParser):
 
         return pathstr
 
+    def getExpandEntityDefs(self):
+        """
+        Returns True if ontology entity text definitions should be modified by
+        adding the IDs of term labels referenced in the definitions.  Returns
+        False otherwise.
+        """
+        expand_str = self.getCustom('Build', 'expand_entity_defs', 'True')
+
+        return expand_str.lower() in TRUE_STRS
+
     def getImportsSrcDir(self):
         """
         Returns the path to the directory of the import modules sources.

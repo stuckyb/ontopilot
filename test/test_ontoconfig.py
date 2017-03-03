@@ -389,6 +389,22 @@ class TestOntoConfig(unittest.TestCase):
         self.oc.set('Build', 'builddir', abspath)
         self.assertEqual(abspath, self.oc.getBuildDir())
 
+    def test_getExpandEntityDefs(self):
+        # Check the default value first.
+        self.assertTrue(self.oc.getExpandEntityDefs())
+
+        testvals = [
+            {'exp': False, 'val': 'false'},
+            {'exp': False, 'val': 'FALSE'},
+            {'exp': True, 'val': 'True'},
+            {'exp': True, 'val': 'true'},
+            {'exp': True, 'val': 'yes'}
+        ]
+
+        for testval in testvals:
+            self.oc.set('Build', 'expand_entity_defs', testval['val'])
+            self.assertEqual(testval['exp'], self.oc.getExpandEntityDefs())
+
     def test_getImportsSrcDir(self):
         # Test the default case.
         self.assertEqual(

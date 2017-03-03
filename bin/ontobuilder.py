@@ -38,11 +38,6 @@ argp.add_argument(
     help='The path to a configuration file for the ontology build process.'
 )
 argp.add_argument(
-    '-n', '--no_def_expand', action='store_true', help='If this flag is '
-    'given, no attempt will be made to modify definition strings by adding '
-    'the IDs of term labels referenced in the definitions.'
-)
-argp.add_argument(
     '-m', '--merge_imports', action='store_true', help='If this flag is '
     'given, imported ontologies will be merged with the main ontology into a '
     'new ontology document.'
