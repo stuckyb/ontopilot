@@ -114,10 +114,14 @@ class OntoBuildTarget(BuildTargetWithConfig):
         """
         Returns the path of the compiled ontology file.
         """
+        # Change the file name so that it ends with the suffix '-raw'.
+        pathparts = os.path.splitext(self.config.getOntologyFilePath())
+        rawpath = pathparts[0] + '-raw' + pathparts[1]
+
         if self.config.getDoInSourceBuilds():
-            destpath = self.config.getOntologyFilePath()
+            destpath = rawpath
         else:
-            ontfilename = os.path.basename(self.config.getOntologyFilePath())
+            ontfilename = os.path.basename(rawpath)
             destpath = os.path.join(self.config.getBuildDir(), ontfilename)
 
         return destpath
