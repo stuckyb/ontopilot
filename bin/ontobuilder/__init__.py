@@ -13,8 +13,8 @@
 # Unzip the jar file, then merge everything in the "lib" directory of the jar
 # file into the "javalib" directory of the PPO source tree.  This will get
 # almost everything you need except for a few additional libraries; get these
-# the existing "javalib" directory.  Finally, make sure that the OWL API main
-# jar file is also in the "javalib" folder.
+# from the existing "javalib" directory.  Finally, make sure that the OWL API
+# main jar file is also in the "javalib" folder.
 #
 
 # Python imports.
@@ -23,6 +23,29 @@ import logging
 
 # Java imports.
 from java.lang import System
+
+
+class CustomLogHandler(logging.StreamHandler):
+    """
+    Implements a custom StreamHandler for log messages that uses two different
+    message formats: one for INFO messages, and another for everything else.
+    The difference between the formats is that INFO messages are not prefixed
+    with the log level name since they are intended to be normal UI console
+    output, whereas all other log messages are prefixed with the level name.
+    """
+    def __init__(self):
+        logging.StreamHandler.__init__(self)
+
+        self.info_formatter = logging.Formatter('%(message)s')
+        self.generic_formatter = logging.Formatter(
+            '%(levelname)s: %(message)s'
+        )
+
+    def format(self, record):
+        if record.levelname == 'INFO':
+            return self.info_formatter.format(record)
+        else:
+            return self.generic_formatter.format(record)
 
 
 # Set the default logging level for the SLF4J SimpleLogger to suppress all
@@ -46,11 +69,12 @@ for jlibpath in jlibpaths:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-# Define a custom handler for log messages.
-handler = logging.StreamHandler()
+# Create the custom handler and apply it to the root logger.  If the custom
+# handler is instead attached to the package logger, then logging  messages
+# will be printed twice, once by the custom handler of the package logger and
+# once by the root logger, which is obviously undesirable.
+handler = CustomLogHandler()
 handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(levelname)s: %(message)s')
-handler.setFormatter(formatter)
 logging.getLogger().addHandler(handler)
 
 # Define string constants for recognizing yes/true values in input data.
