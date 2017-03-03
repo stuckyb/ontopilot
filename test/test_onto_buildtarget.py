@@ -93,6 +93,10 @@ class TestOntoBuildTarget(unittest.TestCase):
         exppath = os.path.join(self.td_path, 'ontology/ontname-raw.owl')
         self.assertEqual(exppath, self.obt.getOutputFilePath())
 
+        self.oc.set('Build', 'insource_builds', 'True')
+        exppath = os.path.join(self.td_path, 'ontology/ontname.owl')
+        self.assertEqual(exppath, self.obt.getOutputFilePath(False))
+
         self.oc.set('Build', 'insource_builds', 'False')
         exppath = os.path.join(self.td_path, 'build/ontname-raw.owl')
         self.assertEqual(exppath, self.obt.getOutputFilePath())

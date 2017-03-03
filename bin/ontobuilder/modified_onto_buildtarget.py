@@ -65,7 +65,7 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
         """
         Returns the path of the enhanced ontology file.
         """
-        main_ontpath = self.obt.getOutputFilePath()
+        main_ontpath = self.obt.getOutputFilePath(add_suffix=False)
         destpath = main_ontpath
 
         # If we are merging the imports into the ontology, modify the file name

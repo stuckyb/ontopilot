@@ -110,13 +110,16 @@ class OntoBuildTarget(BuildTargetWithConfig):
         """
         return self.ibt
 
-    def getOutputFilePath(self):
+    def getOutputFilePath(self, add_suffix=True):
         """
         Returns the path of the compiled ontology file.
         """
-        # Change the file name so that it ends with the suffix '-raw'.
-        pathparts = os.path.splitext(self.config.getOntologyFilePath())
-        rawpath = pathparts[0] + '-raw' + pathparts[1]
+        rawpath = self.config.getOntologyFilePath()
+
+        if add_suffix:
+            # Change the file name so that it ends with the suffix '-raw'.
+            pathparts = os.path.splitext(rawpath)
+            rawpath = pathparts[0] + '-raw' + pathparts[1]
 
         if self.config.getDoInSourceBuilds():
             destpath = rawpath
