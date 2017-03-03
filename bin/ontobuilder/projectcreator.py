@@ -36,7 +36,10 @@ class ProjectCreator:
         self.templatedir = os.path.abspath(templatedir)
 
         if not(os.path.isdir(self.targetdir)):
-            raise RuntimeError('The target directory for the new project, "{0}", could not be found.'.format(self.targetdir))
+            raise RuntimeError(
+                'The target directory for the new project, "{0}", could not '
+                'be found.'.format(self.targetdir)
+            )
 
     def _copyAndModify(self, srcpath, destpath, replacements):
         """
@@ -74,19 +77,23 @@ class ProjectCreator:
         Copies the template configuration file and initializes it with the
         ontology file path and IRI.  Returns an initialized OntoConfig object.
         """
-        configpath = os.path.join(self.templatedir, 'ontology.conf')
+        configpath = os.path.join(self.templatedir, 'project.conf')
         ontname = os.path.splitext(os.path.basename(self.ontfilename))[0]
 
         if not(os.path.isfile(configpath)):
             raise RuntimeError(
-                'Could not find the template ontology configuration file: {0}.'.format(configpath)
+                'Could not find the template project configuration file: '
+                '{0}.'.format(configpath)
             )
 
-        outpath = os.path.join(self.targetdir, 'ontology.conf')
+        outpath = os.path.join(self.targetdir, 'project.conf')
 
         if os.path.exists(outpath):
             raise RuntimeError(
-                'A project configuration file already exists in the target directory: {0}.  Please move, delete, or rename the existing configuration file before initializing a new project.'.format(outpath)
+                'A project configuration file already exists in the target '
+                'directory: {0}.  Please move, delete, or rename the existing '
+                'configuration file before initializing a new '
+                'project.'.format(outpath)
             )
 
         rel_ontpath = os.path.join('ontology', self.ontfilename)
