@@ -198,33 +198,6 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
 
         return False
 
-    def _makeReleaseDirs(self, dirpath):
-        """
-        Attempts to create one or more directories in a path string.  If a
-        non-directory file system object with same name already exists, or if
-        directory creation fails for some other reason, an exception will be
-        thrown.
-        """
-        if os.path.exists(dirpath):
-            if not(os.path.isdir(dirpath)):
-                raise RuntimeError(
-                    'A file with the same name as the build folder/directory, '
-                    '"{0}", already exists.  Please delete, move, or rename '
-                    'the conflicting file before '
-                    'continuing.'.format(dirpath)
-                )
-
-        if not(os.path.exists(dirpath)):
-            try:
-                os.makedirs(dirpath)
-            except OSError:
-                raise RuntimeError(
-                    'The release folder/directory, "{0}", could not be '
-                    'created.  Please make sure that you have permission to '
-                    'create new files and directories in the project '
-                    'location.'.format(dirpath)
-                )
-
     def _run(self):
         """
         Runs the build process to produce a new ontology release.
@@ -235,14 +208,14 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
 
         # Create the main release directory, if needed.
         if not(os.path.exists(self.release_dir)):
-            self._makeReleaseDirs(self.release_dir)
+            self._makeDirs(self.release_dir)
 
         # Get the path to the released imports modules directory and create it,
         # if needed.
         if len(self.imports_fileinfos) > 0:
             dirpath = os.path.dirname(self.imports_fileinfos[0].destpath)
             if not(os.path.exists(dirpath)):
-                self._makeReleaseDirs(dirpath)
+                self._makeDirs(dirpath)
 
         # Create the release import module files.
         print 'Creating release import modules...'

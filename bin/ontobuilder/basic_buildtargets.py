@@ -81,19 +81,19 @@ class BuildDirTarget(BuildTargetWithConfig):
         """
         builddir = self.config.getBuildDir()
 
-        if self._isBuildRequired():
-            if os.path.exists(builddir):
-                raise RuntimeError('A file with the same name as the build \
-folder, {0}, already exists.  Use the "builddir" option in the configuration \
-file to specify a different build folder path, or rename the conflicting \
-file.'.format(builddir))
-            else:
-                try:
-                    os.mkdir(builddir)
-                except OSError:
-                    raise RuntimeError('The project build directory, "{0}", \
-could not be created.  Please make sure that you have permission to create \
-new files and directories in the project location.'.format(builddir))
+        bad_dirpath_msg = (
+            'A file with the same name as the build folder, "{0}", already '
+            'exists.  Use the "builddir" option in the configuration file to '
+            'specify a different build folder path, or rename the conflicting '
+            'file.'
+        )
+        bad_dirperms_msg = (
+            'The project build directory, "{0}", could not be created.  '
+            'Please make sure that you have permission to create new files '
+            'and directories in the project location.'
+        )
+
+        self._makeDirs(builddir, bad_dirpath_msg, bad_dirperms_msg)
 
         return {}
 
