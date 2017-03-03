@@ -167,7 +167,7 @@ class OntoBuildTarget(BuildTargetWithConfig):
         Runs the build process and produces a compiled OWL ontology file.
         """
         # Get the imports modules IRIs from the imports build target.
-        importsIRIs = self.ibt.getImportsIRIs()
+        importsIRIs = [info.iristr for info in self.ibt.getImportsInfo()]
 
         self._retrieveAndCheckFilePaths()
 
