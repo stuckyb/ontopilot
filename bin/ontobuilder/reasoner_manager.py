@@ -1,6 +1,6 @@
 
 # Python imports.
-import ontobuilder
+from ontobuilder import logger
 
 # Java imports.
 from org.semanticweb.elk.owlapi import ElkReasonerFactory
@@ -45,10 +45,10 @@ class ReasonerManager:
 
             rfact = None
             if reasoner_name == 'elk':
-                ontobuilder.logger.info('Creating ELK reasoner...')
+                logger.info('Creating ELK reasoner...')
                 rfact = ElkReasonerFactory()
             elif reasoner_name == 'hermit':
-                ontobuilder.logger.info('Creating HermiT reasoner...')
+                logger.info('Creating HermiT reasoner...')
                 rfact = HermiT.ReasonerFactory()
 
             if rfact != None:

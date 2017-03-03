@@ -1,6 +1,7 @@
 
 # Python imports.
 import os
+from ontobuilder import logger
 from ontology import Ontology
 from buildtarget import BuildTargetWithConfig
 from onto_buildtarget import OntoBuildTarget
@@ -126,12 +127,16 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
         if self.mergeimports:
             # Merge the axioms from each imported ontology directly into this
             # ontology (that is, do not use import statements).
-            print 'Merging all imported ontologies into the main ontology...'
+            logger.info(
+                'Merging all imported ontologies into the main ontology...'
+            )
             for importIRI in mainont.getImports():
                 mainont.mergeOntology(importIRI)
 
         if self.prereason:
-            print 'Checking whether the ontology is logically consistent...'
+            logger.info(
+                'Checking whether the ontology is logically consistent...'
+            )
             entcheck_res = mainont.checkEntailmentErrors()
             if not(entcheck_res['is_consistent']):
                 raise RuntimeError(
@@ -144,7 +149,7 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
                     'axioms can be added to the ontology.'
                 )
 
-            print 'Running reasoner and adding inferred axioms...'
+            logger.info('Running reasoner and adding inferred axioms...')
             inf_types = self.config.getInferenceTypeStrs()
             annotate_inferred = self.config.getAnnotateInferred()
             iaa = InferredAxiomAdder(mainont, self.config.getReasonerStr())
@@ -157,6 +162,6 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
         mainont.setOntologyID(ontIRI)
 
         # Write the ontology to the output file.
-        print 'Writing compiled ontology to ' + fileoutpath + '...'
+        logger.info('Writing compiled ontology to ' + fileoutpath + '...')
         mainont.saveOntology(fileoutpath)
 

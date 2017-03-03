@@ -7,6 +7,7 @@
 # Python imports.
 import os
 import glob
+from ontobuilder import logger
 from tablereaderfactory import TableReaderFactory
 from owlontologybuilder import OWLOntologyBuilder, TermDescriptionError
 from ontobuilder import TRUE_STRS
@@ -194,7 +195,7 @@ class OntoBuildTarget(BuildTargetWithConfig):
         # arbitrary order.
         for termsfile in self.termsfile_paths:
             with TableReaderFactory(termsfile) as reader:
-                print 'Parsing ' + termsfile + '...'
+                logger.info('Parsing ' + termsfile + '...')
                 for table in reader:
                     table.setRequiredColumns(REQUIRED_COLS)
                     table.setOptionalColumns(OPTIONAL_COLS)
@@ -227,7 +228,7 @@ class OntoBuildTarget(BuildTargetWithConfig):
                                 )
 
         # Define all deferred axioms from the source entity descriptions.
-        print 'Defining all remaining entity axioms...'
+        logger.info('Defining all remaining entity axioms...')
         ontbuilder.processDeferredEntityAxioms(self.expanddefs)
 
         # Set the ontology IRI.
@@ -235,6 +236,6 @@ class OntoBuildTarget(BuildTargetWithConfig):
         ontbuilder.getOntology().setOntologyID(ontIRI)
 
         # Write the ontology to the output file.
-        print 'Writing compiled ontology to ' + fileoutpath + '...'
+        logger.info('Writing compiled ontology to ' + fileoutpath + '...')
         ontbuilder.getOntology().saveOntology(fileoutpath)
 

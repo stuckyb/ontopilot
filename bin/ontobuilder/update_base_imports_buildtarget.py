@@ -7,6 +7,7 @@
 
 # Python imports.
 import os
+from ontobuilder import logger
 from ontology import Ontology
 from buildtarget import BuildTargetWithConfig
 from imports_buildtarget import ImportsBuildTarget
@@ -123,6 +124,6 @@ class UpdateBaseImportsBuildTarget(BuildTargetWithConfig):
 
         # Write the base ontology to the output file.
         fileoutpath = self.getOutputFilePath()
-        print 'Writing updated base ontology to ' + fileoutpath + '...'
+        logger.info('Writing updated base ontology to ' + fileoutpath + '...')
         baseont.saveOntology(fileoutpath)
 

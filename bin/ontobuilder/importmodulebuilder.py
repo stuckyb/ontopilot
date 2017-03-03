@@ -10,6 +10,7 @@ from urllib2 import HTTPError
 import math
 from progressbar import ProgressBar, Percentage, Bar, ETA
 from rfc3987 import rfc3987
+from ontobuilder import logger
 from tablereaderfactory import TableReaderFactory
 from tablereader import TableRowError
 import ontobuilder
@@ -130,7 +131,7 @@ class ImportModuleBuilder:
                 widgets=[Percentage(), '', Bar(marker='-', left='[', right=']'), ' ' , ETA()],
                 maxval=int(math.ceil(float(filesize) / blocksize))
             )
-            print '\nDownloading ' + self.sourceOntologyIRI
+            logger.info('\nDownloading ' + self.sourceOntologyIRI)
             self.progbar.start()
         else:
             self.progbar.update(blocks_transferred)

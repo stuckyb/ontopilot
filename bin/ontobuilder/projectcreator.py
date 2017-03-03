@@ -6,6 +6,7 @@
 # Python imports.
 import os, shutil
 import re
+from ontobuilder import logger
 from ontoconfig import OntoConfig
 
 # Java imports.
@@ -212,12 +213,12 @@ class ProjectCreator:
         """
         # Copy in the template configuration file, customize the template, and
         # load the configuration settings.
-        print 'Creating custom project configuration file...'
+        logger.info('Creating custom project configuration file...')
         config = self._initConfig()
 
-        print 'Generating project folder structure...'
+        logger.info('Generating project folder structure...')
         self._createProjectDirs(config)
 
-        print 'Creating initial source files...'
+        logger.info('Creating initial source files...')
         self._createSourceFiles(config)
 

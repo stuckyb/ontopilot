@@ -6,6 +6,7 @@
 
 # Python imports.
 import os
+from ontobuilder import logger
 from tablereaderfactory import TableReaderFactory
 from tablereader import TableRowError
 from importmodulebuilder import ImportModuleBuilder
@@ -194,10 +195,15 @@ class ImportsBuildTarget(BuildTargetWithConfig):
 
             if termsfile_path != '':
                 if self.mbuilder.isBuildNeeded(row['IRI'], termsfile_path):
-                    print ('Building the ' + row['name'] + ' (' + row['IRI']
-                        + ') import module.')
+                    logger.info(
+                        'Building the {0} ({1}) import module.'.format(
+                            row['name'], row['IRI']
+                        )
+                    )
                     self.mbuilder.buildModule(row['IRI'], termsfile_path)
                 else:
-                    print ('The ' + row['name'] + ' (' + row['IRI']
-                            + ') import module is already up to date.')
+                    logger.info(
+                        'The {0} ({1}) import module is already up to '
+                        'date.'.format(row['name'], row['IRI'])
+                    )
 

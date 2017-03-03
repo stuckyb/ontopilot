@@ -2,6 +2,7 @@
 # Python imports.
 import os
 import datetime
+from ontobuilder import logger
 from ontology import Ontology
 from buildtarget import BuildTargetWithConfig
 from modified_onto_buildtarget import ModifiedOntoBuildTarget
@@ -218,14 +219,14 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
                 self._makeDirs(dirpath)
 
         # Create the release import module files.
-        print 'Creating release import modules...'
+        logger.info('Creating release import modules...')
         for fileinfo in self.imports_fileinfos:
             ont = Ontology(fileinfo.sourcepath)
             ont.setOntologyID(fileinfo.destIRI, fileinfo.versionIRI)
             ont.saveOntology(fileinfo.destpath)
 
         # Create the release ontology files.
-        print 'Creating release ontology files...'
+        logger.info('Creating release ontology files...')
         for fileinfo in self.ont_fileinfos:
             ont = Ontology(fileinfo.sourcepath)
             ont.setOntologyID(fileinfo.destIRI, fileinfo.versionIRI)

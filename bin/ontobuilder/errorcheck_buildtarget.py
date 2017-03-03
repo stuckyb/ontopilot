@@ -1,5 +1,6 @@
 
 # Python imports.
+from ontobuilder import logger
 from ontology import Ontology
 from buildtarget import BuildTargetWithConfig
 from onto_buildtarget import OntoBuildTarget
@@ -38,11 +39,11 @@ class ErrorCheckBuildTarget(BuildTargetWithConfig):
         """
         mainont = Ontology(self.obt.getOutputFilePath())
 
-        print 'Checking for entailment errors...'
+        logger.info('Checking for entailment errors...')
         entcheck_res = mainont.checkEntailmentErrors()
 
         if not(entcheck_res['is_consistent']):
-            print (
+            logger.info(
                 '\nERROR: The ontology is inconsistent (that is, it has no '
                 'models).  This is often caused by the presence of an '
                 'individual (that is, a class instance) that is explicitly or '
@@ -57,14 +58,14 @@ class ErrorCheckBuildTarget(BuildTargetWithConfig):
                 iri_strs = [ent.getIRI().toString() for ent in class_list]
                 classes_str = '<' + '>\n<'.join(iri_strs) + '>'
 
-                print (
+                logger.info(
                     '\nERROR: The ontology is consistent but incoherent '
                     'because it contains one or more unsatisfiable classes.  '
                     'This usually indicates a modeling error.  The following '
                     'classes are unsatisfiable:\n' + classes_str + '\n'
                 )
             else:
-                print (
+                logger.info(
                     '\nThe ontology is consistent and coherent.  No '
                     'entailment problems were found.\n'
                 )
