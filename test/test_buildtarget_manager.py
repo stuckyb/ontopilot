@@ -106,6 +106,11 @@ class TestBuildTargetManager(unittest.TestCase):
         self.assertEqual(1, len(targets))
         self.assertEqual('target1', targets[0].argvals['task'])
 
+        # Test an empty string.  This should obviously not match any targets.
+        args.task = ''
+        targets = btr._getMatchingTargets(args)
+        self.assertEqual(0, len(targets))
+
         # Test a partial matching request.
         args.task = 'targ'
         targets = btr._getMatchingTargets(args)

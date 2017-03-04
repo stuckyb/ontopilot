@@ -122,7 +122,11 @@ class BuildTargetManager:
 
                 if has_arg:
                     if isinstance(argval, basestring):
-                        if targetmap.argvals[argname].startswith(argval):
+                        argval = argval.strip()
+                        if (
+                            argval != '' and
+                            targetmap.argvals[argname].startswith(argval)
+                        ):
                             matching_argcnt += 1
                     elif targetmap.argvals[argname] == argval:
                         matching_argcnt += 1
