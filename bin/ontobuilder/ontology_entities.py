@@ -18,6 +18,7 @@ CLASS_ENTITY = 0
 DATAPROPERTY_ENTITY = 1
 OBJECTPROPERTY_ENTITY = 2
 ANNOTATIONPROPERTY_ENTITY = 3
+INDIVIDUAL_ENTITY = 4
 
 
 class _OntologyEntity:
@@ -538,4 +539,40 @@ class _OntologyAnnotationProperty(_OntologyEntity):
         # Add the subproperty axiom to the ontology.
         newaxiom = self.df.getOWLSubAnnotationPropertyOfAxiom(self.entityobj, parentprop)
         self.ontology.addTermAxiom(newaxiom)
+
+
+class _OntologyIndividual(_OntologyEntity):
+    """
+    Provides a high-level interface to the OWL API's object system for OWL
+    individuals.  Conceptually, instances of this class represent a single
+    individual in an OWL ontology.  This class should not be instantiated
+    directly; instead, instances should be obtained through Ontology's public
+    interface.
+    """
+    def __init__(self, individualIRI, individual_obj, ontology):
+        """
+        Initializes this _OntologyIndividual.
+
+        individualIRI: The IRI object of the individual.
+        individual_obj: The OWL API class object of the individual.
+        ontology: The ontology to which this individual belongs.  This should
+            be an instance of the local Ontology class (i.e., not an instance
+            of the OWL API ontology object.)
+        """
+        _OntologyEntity.__init__(self, individualIRI, individual_obj, ontology)
+
+    def getTypeConst(self):
+        return INDIVIDUAL_ENTITY
+        
+    def addType(self, manchester_exp):
+        """
+        Adds a class expression as a "subclass of" axiom.  The class expression
+        should be written in Manchester Syntax (MS).
+
+        manchester_exp: A string containing an MS "description" production.
+        """
+        if manchester_exp != '':
+            cexp = self._getClassExpression(manchester_exp)
+            eaxiom = self.df.getOWLClassAssertionAxiom(cexp, self.entityobj)
+            self.ontology.addTermAxiom(eaxiom)
 
