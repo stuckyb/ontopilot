@@ -50,16 +50,16 @@ argp.add_argument(
     'YYYY-MM-DD.'
 )
 argp.add_argument(
-    'task', type=str, nargs='?', default='ontology', help='The build task to '
+    'task', type=str, nargs='?', default='make', help='The build task to '
     'run.  Must be one of {0}.'.format(
         buildtm.getBuildTargetNamesStr('task')
     )
 )
 argp.add_argument(
-    'taskarg', type=str, nargs='?', default='', help='Additional argument for '
-    'the specified build task.  For the build task "make", this should be '
-    'either {0}.  For the build task "initialize", this should be the name of '
-    'an OWL file for a new ontology project.'.format(
+    'taskarg', type=str, nargs='?', default='ontology', help='Additional '
+    'argument for the specified build task.  For the build task "make", this '
+    'should be either {0}.  For the build task "initialize", this should be '
+    'the name of an OWL file for a new ontology project.'.format(
         buildtm.getBuildTargetNamesStr('taskarg', task='make')
     )
 )
