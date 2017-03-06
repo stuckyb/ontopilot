@@ -549,25 +549,25 @@ class _OntologyIndividual(_OntologyEntity):
     directly; instead, instances should be obtained through Ontology's public
     interface.
     """
-    def __init__(self, individualIRI, individual_obj, ontology):
+    def __init__(self, indvIRI, individual_obj, ontology):
         """
         Initializes this _OntologyIndividual.
 
-        individualIRI: The IRI object of the individual.
-        individual_obj: The OWL API class object of the individual.
+        indvIRI: The IRI object of the individual.
+        individual_obj: An OWL API OWLNamedIndividual instance.
         ontology: The ontology to which this individual belongs.  This should
             be an instance of the local Ontology class (i.e., not an instance
             of the OWL API ontology object.)
         """
-        _OntologyEntity.__init__(self, individualIRI, individual_obj, ontology)
+        _OntologyEntity.__init__(self, indvIRI, individual_obj, ontology)
 
     def getTypeConst(self):
         return INDIVIDUAL_ENTITY
         
     def addType(self, manchester_exp):
         """
-        Adds a class expression as a "subclass of" axiom.  The class expression
-        should be written in Manchester Syntax (MS).
+        Adds a class expression as a type for this individual.  The class
+        expression should be written in Manchester Syntax (MS).
 
         manchester_exp: A string containing an MS "description" production.
         """
@@ -575,4 +575,98 @@ class _OntologyIndividual(_OntologyEntity):
             cexp = self._getClassExpression(manchester_exp)
             eaxiom = self.df.getOWLClassAssertionAxiom(cexp, self.entityobj)
             self.ontology.addTermAxiom(eaxiom)
+
+    def addObjectPropertyFact(self, objprop_id, indv_id):
+        """
+        Adds an object property assertion (fact) for this individual.
+
+        objprop_id: The identifier of an object property.  Can be either an OWL
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
+        indv_id: The identifier of the named individual to link to this
+            individual with the provided object property.  Can be either an OWL
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
+        """
+        # Get the object property, making sure that it is actually defined.
+        objprop = self.ontology.getExistingObjectProperty(objprop_id)
+        if objprop == None:
+            raise RuntimeError(
+                'Unable to create a new object property assertion (fact) for '
+                'the individual <{0}>.  The object property "{1}" could not '
+                'be found in the source ontology.'.format(
+                    self.entityIRI, objprop_id
+                )
+            )
+        objprop = objprop.getOWLAPIObj()
+
+        # Get the named individual, making sure that it is actually defined.
+        indv = self.ontology.getExistingIndividual(indv_id)
+        if indv == None:
+            raise RuntimeError(
+                'Unable to create a new object property assertion (fact) for '
+                'the individual <{0}>.  The named individual "{1}" could not '
+                'be found in the source ontology.'.format(
+                    self.entityIRI, indv_id
+                )
+            )
+        indv = indv.getOWLAPIObj()
+
+        # Add the object property assertion axiom to the ontology.
+        newaxiom = self.df.getOWLObjectPropertyAssertionAxiom(
+            objprop, self.entityobj, indv
+        )
+        self.ontology.addTermAxiom(newaxiom)
+
+    def addDataPropertyFact(self, dataprop_id, literal_exp):
+        """
+        Adds a data property assertion (fact) for this individual.
+
+        dataprop_id: The identifier of a data property.  Can be either an OWL
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
+        literal_exp: A string that represents a literal value.  The string
+            should follow the "literal" production of Manchester Syntax.
+        """
+        # Get the data property, making sure that it is actually defined.
+        dataprop = self.ontology.getExistingDataProperty(dataprop_id)
+        if dataprop == None:
+            raise RuntimeError(
+                'Unable to create a new data property assertion (fact) for '
+                'the individual <{0}>.  The data property "{1}" could not be '
+                'found in the source ontology.'.format(
+                    self.entityIRI, dataprop_id
+                )
+            )
+        dataprop = dataprop.getOWLAPIObj()
+
+        # Parse the literal value.
+        try:
+            parser = ManchesterSyntaxParserHelper(self.ontology)
+            litval = parser.parseLiteral(literal_exp);
+        except ParserException as err:
+            raise RuntimeError(
+                'Unable to create a new data property assertion (fact) for '
+                'the individual <{0}>.  Error parsing "{1}" at line {2}, '
+                'column {3} of the literal expression (Manchester Syntax '
+                'expected): {4}.'.format(
+                    self.entityIRI, err.getCurrentToken(), err.getLineNumber(),
+                    err.getColumnNumber(), literal_exp
+                )
+            )
+
+        # Add the data property assertion axiom to the ontology.
+        newaxiom = self.df.getOWLDataPropertyAssertionAxiom(
+            dataprop, self.entityobj, litval
+        )
+        self.ontology.addTermAxiom(newaxiom)
 

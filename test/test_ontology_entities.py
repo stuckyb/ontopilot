@@ -18,7 +18,7 @@
 from ontobuilder.ontology import Ontology
 from ontobuilder.ontology_entities import (
     CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,
-    ANNOTATIONPROPERTY_ENTITY
+    ANNOTATIONPROPERTY_ENTITY, INDIVIDUAL_ENTITY
 )
 import unittest
 #from testfixtures import LogCapture
@@ -447,4 +447,81 @@ class Test_OntologyAnnotationProperty(_TestOntologyEntity, unittest.TestCase):
                 found_prop = True
 
         self.assertTrue(found_prop)
+
+
+class Test_OntologyIndividual(_TestOntologyEntity, unittest.TestCase):
+    """
+    Tests _OntologyIndividual.
+    """
+    def setUp(self):
+        _TestOntologyEntity.setUp(self)
+
+        t_ent = self.test_ont.createNewIndividual(
+                'http://purl.obolibrary.org/obo/OBTO_0042'
+        )
+
+        self._setEntityObject(t_ent)
+
+    def test_getTypeConst(self):
+        self.assertEqual(INDIVIDUAL_ENTITY, self.t_ent.getTypeConst())
+
+    def test_addType(self):
+        classIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
+
+        # Verify that the individual does not yet have any type information.
+        axioms = self.owlont.getClassAssertionAxioms(self.t_owlapiobj)
+        self.assertTrue(axioms.isEmpty())
+
+        # Add a type for the individual, using a simple class expression that
+        # is only a class label.
+        self.t_ent.addType("'test class 1'")
+
+        # Check that the individual has the correct type.
+        axioms = self.owlont.getClassAssertionAxioms(self.t_owlapiobj)
+        self.assertEqual(1, axioms.size())
+        found_typeclass = False
+        for axiom in axioms:
+            classexp = axiom.getClassExpression()
+            if not(classexp.isAnonymous()):
+                if classexp.asOWLClass().getIRI().equals(classIRI):
+                    found_typeclass = True
+
+        self.assertTrue(found_typeclass)
+
+    def test_addObjectPropertyFact(self):
+        objprop = self.test_ont.getExistingObjectProperty('OBTO:0001')
+        indv = self.test_ont.getExistingIndividual('individual_001')
+
+        # Verify that there are not yet any object property facts for this
+        # individual.
+        axioms = self.owlont.getObjectPropertyAssertionAxioms(self.t_owlapiobj)
+        self.assertTrue(axioms.isEmpty())
+
+        self.t_ent.addObjectPropertyFact('OBTO:0001', 'individual_001')
+
+        # Check that the correct object property assertion now exists.
+        axioms = self.owlont.getObjectPropertyAssertionAxioms(self.t_owlapiobj)
+        self.assertEqual(1, axioms.size())
+        axiom = axioms.iterator().next()
+        self.assertTrue(axiom.getProperty().equals(objprop.getOWLAPIObj()))
+        self.assertTrue(axiom.getSubject().equals(self.t_owlapiobj))
+        self.assertTrue(axiom.getObject().equals(indv.getOWLAPIObj()))
+
+    def test_addDataPropertyFact(self):
+        dataprop = self.test_ont.getExistingDataProperty('OBTO:0020')
+
+        # Verify that there are not yet any data property facts for this
+        # individual.
+        axioms = self.owlont.getDataPropertyAssertionAxioms(self.t_owlapiobj)
+        self.assertTrue(axioms.isEmpty())
+
+        self.t_ent.addDataPropertyFact('OBTO:0020', '"literal"^^xsd:string')
+
+        # Check that the correct data property assertion now exists.
+        axioms = self.owlont.getDataPropertyAssertionAxioms(self.t_owlapiobj)
+        self.assertEqual(1, axioms.size())
+        axiom = axioms.iterator().next()
+        self.assertTrue(axiom.getProperty().equals(dataprop.getOWLAPIObj()))
+        self.assertTrue(axiom.getSubject().equals(self.t_owlapiobj))
+        self.assertEqual('literal', axiom.getObject().getLiteral())
 
