@@ -23,7 +23,7 @@ import unittest
 #from testfixtures import LogCapture
 
 # Java imports.
-#from org.semanticweb.owlapi.model import IRI
+from org.semanticweb.owlapi.model import DataRangeType
 
 
 class Test_BasicShortFormProvider(unittest.TestCase):
@@ -74,6 +74,23 @@ class TestManchesterSyntaxParserHelper(unittest.TestCase):
         litval = self.msph.parseLiteral('true')
         self.assertTrue(litval.isBoolean())
         self.assertTrue(litval.parseBoolean())
+
+    def test_parseDataRange(self):
+        drange = self.msph.parseDataRange('xsd:integer')
+        self.assertTrue(drange.isDatatype())
+        self.assertTrue(drange.asOWLDatatype().isInteger())
+
+        drange = self.msph.parseDataRange('xsd:integer[>0]')
+        self.assertFalse(drange.isDatatype())
+        self.assertEqual(
+            DataRangeType.DATATYPE_RESTRICTION, drange.getDataRangeType()
+        )
+
+        drange = self.msph.parseDataRange('{1,2,3}')
+        self.assertFalse(drange.isDatatype())
+        self.assertEqual(
+            DataRangeType.DATA_ONE_OF, drange.getDataRangeType()
+        )
 
     def test_parseClassExpressions(self):
         """
