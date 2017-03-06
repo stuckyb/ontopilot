@@ -50,6 +50,31 @@ class TestManchesterSyntaxParserHelper(unittest.TestCase):
 
         self.msph = ManchesterSyntaxParserHelper(self.test_ont)
 
+    def test_parseLiteral(self):
+        litval = self.msph.parseLiteral('"test"')
+        self.assertTrue(litval.isRDFPlainLiteral())
+        self.assertEqual('test', litval.getLiteral())
+
+        litval = self.msph.parseLiteral('"test"^^xsd:string')
+        self.assertTrue(litval.getDatatype().isString())
+        self.assertEqual('test', litval.getLiteral())
+
+        litval = self.msph.parseLiteral('1')
+        self.assertTrue(litval.isInteger())
+        self.assertEqual(1, litval.parseInteger())
+
+        litval = self.msph.parseLiteral('"1"^^xsd:float')
+        self.assertTrue(litval.isFloat())
+        self.assertEqual(1.0, litval.parseFloat())
+ 
+        litval = self.msph.parseLiteral('1.0f')
+        self.assertTrue(litval.getDatatype().isFloat())
+        self.assertEqual(1.0, litval.parseFloat())
+
+        litval = self.msph.parseLiteral('true')
+        self.assertTrue(litval.isBoolean())
+        self.assertTrue(litval.parseBoolean())
+
     def test_parseClassExpressions(self):
         """
         Tests parsing strings that contain MS class expressions.

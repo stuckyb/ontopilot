@@ -170,6 +170,14 @@ class ManchesterSyntaxParserHelper:
         )
         self.parser.setOWLEntityChecker(_MoreAdvancedEntityChecker(self.ontology))
 
+    def parseLiteral(self, literal_ms_exp):
+        """
+        Parses the "literal" production of Manchester Syntax.
+        """
+        self.parser.setStringToParse(literal_ms_exp);
+
+        return self.parser.parseLiteral(None)
+
     def parseDataRange(self, datarange_ms_exp):
         """
         Parses the "dataRange" production of Manchester Syntax.
