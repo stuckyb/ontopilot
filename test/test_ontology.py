@@ -144,6 +144,9 @@ class Test_Ontology(unittest.TestCase):
         self.assertIsNotNone(
             self.ont.getExistingEntity(CLASS_IRI)
         )
+        self.assertIsNotNone(
+            self.ont.getExistingEntity(INDIVIDUAL_IRI)
+        )
 
         # Verify that a non-existent entity is not found.
         self.assertIsNone(
@@ -166,7 +169,9 @@ class Test_Ontology(unittest.TestCase):
         )
 
     def test_createNewClass(self):
-        entIRI = 'http://purl.obolibrary.org/obo/OBTO_0011'
+        entIRI = NULL_IRI
+
+        self.assertIsNone(self.ont.getExistingEntity(entIRI))
 
         self.ont.createNewClass(entIRI)
 
@@ -175,7 +180,9 @@ class Test_Ontology(unittest.TestCase):
         )
 
     def test_createNewDataProperty(self):
-        entIRI = 'http://purl.obolibrary.org/obo/OBTO_0011'
+        entIRI = NULL_IRI
+
+        self.assertIsNone(self.ont.getExistingEntity(entIRI))
 
         self.ont.createNewDataProperty(entIRI)
 
@@ -184,7 +191,9 @@ class Test_Ontology(unittest.TestCase):
         )
 
     def test_createNewObjectProperty(self):
-        entIRI = 'http://purl.obolibrary.org/obo/OBTO_0011'
+        entIRI = NULL_IRI
+
+        self.assertIsNone(self.ont.getExistingEntity(entIRI))
 
         self.ont.createNewObjectProperty(entIRI)
 
@@ -193,12 +202,25 @@ class Test_Ontology(unittest.TestCase):
         )
 
     def test_createNewAnnotationProperty(self):
-        entIRI = 'http://purl.obolibrary.org/obo/OBTO_0011'
+        entIRI = NULL_IRI
+
+        self.assertIsNone(self.ont.getExistingEntity(entIRI))
 
         self.ont.createNewAnnotationProperty(entIRI)
 
         self.assertIsNotNone(
             self.ont.getExistingAnnotationProperty(entIRI)
+        )
+
+    def test_createNewIndividual(self):
+        entIRI = NULL_IRI
+
+        self.assertIsNone(self.ont.getExistingEntity(entIRI))
+
+        self.ont.createNewIndividual(entIRI)
+
+        self.assertIsNotNone(
+            self.ont.getExistingIndividual(entIRI)
         )
 
     def test_removeEntity(self):
@@ -219,7 +241,9 @@ class Test_Ontology(unittest.TestCase):
         self.assertEqual(1, annot_ax_set.size())
 
         # Run the deletion command again, this time deleting annotations.
-        self.ont.removeEntity(classobj.getOWLAPIObj(), True)
+        # Also, this time, use the _OntologyEntity object directly instead of
+        # the OWL API object to make sure entity deletion works either way.
+        self.ont.removeEntity(classobj, True)
 
         # Make sure annotations for the target entity have been deleted.
         IRIobj = IRI.create(CLASS_IRI)

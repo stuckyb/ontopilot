@@ -7,6 +7,7 @@
 from idresolver import IDResolver
 from ontology_entities import _OntologyClass, _OntologyDataProperty
 from ontology_entities import _OntologyObjectProperty, _OntologyAnnotationProperty
+from ontology_entities import _OntologyIndividual, _OntologyEntity
 from reasoner_manager import ReasonerManager
 from observable import Observable
 
@@ -249,36 +250,11 @@ class Ontology(Observable):
         # If no matching data property was found, prop == None.
         return prop
 
-    def getExistingEntity(self, ent_id):
-        """
-        Searches for an entity in the ontology using an identifier.  The entity
-        is assumed to be either a class, object property, data property, or
-        annotation property.  Both the main ontology and its imports closure
-        are searched for the target entity.  If the entity is found, an
-        _OntologyEntity object representing the entity is returned.  Otherwise,
-        None is returned.
-        
-        ent_id: The identifier of the entity.  Can be either an OWL API IRI
-            object or a string containing: a label (with or without a prefix),
-            a prefix IRI (i.e., a curie, such as "owl:Thing"), a relative IRI,
-            a full IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
-            Labels should be enclosed in single quotes (e.g., 'label text' or
-            prefix:'label txt').
-        """
-        eIRI = self.resolveIdentifier(ent_id)
-
-        entity = self.getExistingClass(eIRI)
-        if entity == None:
-            entity = self.getExistingProperty(eIRI)
-
-        # If no matching data property was found, entity == None.
-        return entity
-
     def getExistingIndividual(self, indv_id):
         """
-        Searches for an existing individual in the ontology.  If the individual
-        is declared either directly in the ontology or is declared in its
-        transitive imports closure, an OWL API object representing the
+        Searches for an existing named individual in the ontology.  If the
+        individual is declared either directly in the ontology or is declared
+        in its transitive imports closure, an OWL API object representing the
         individual is returned.  Otherwise, None is returned.
 
         indv_id: The identifier of the individual to search for.  Can be either
@@ -295,9 +271,36 @@ class Ontology(Observable):
         ontset = self.ontology.getImportsClosure()
         for ont in ontset:
             if ont.getDeclarationAxioms(indvobj).size() > 0:
-                return indvobj
+                return _OntologyIndividual(indvIRI, indvobj, self)
 
         return None
+
+    def getExistingEntity(self, ent_id):
+        """
+        Searches for an entity in the ontology using an identifier.  The entity
+        is assumed to be either a class, object property, data property,
+        annotation property, or named individual.  Both the main ontology and
+        its imports closure are searched for the target entity.  If the entity
+        is found, an _OntologyEntity object representing the entity is
+        returned.  Otherwise, None is returned.
+        
+        ent_id: The identifier of the entity.  Can be either an OWL API IRI
+            object or a string containing: a label (with or without a prefix),
+            a prefix IRI (i.e., a curie, such as "owl:Thing"), a relative IRI,
+            a full IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label text' or
+            prefix:'label txt').
+        """
+        eIRI = self.resolveIdentifier(ent_id)
+
+        entity = self.getExistingClass(eIRI)
+        if entity == None:
+            entity = self.getExistingProperty(eIRI)
+        if entity == None:
+            entity = self.getExistingIndividual(eIRI)
+
+        # If no matching individual was found, entity == None.
+        return entity
 
     def createNewClass(self, class_id):
         """
@@ -376,6 +379,26 @@ class Ontology(Observable):
 
         return _OntologyAnnotationProperty(propIRI, owloprop, self)
 
+    def createNewIndividual(self, individual_id):
+        """
+        Creates a new OWL named individual, adds it to the ontology, and
+        returns an associated _OntologyIndividual object.
+
+        individual_id: The identifier for the new individual.  Can be either an
+            OWL API IRI object or a string containing: a prefix IRI (i.e., a
+            curie, such as "owl:Thing"), a full IRI, a relative IRI, or an OBO
+            ID (e.g., a string of the form "PO:0000003").
+        """
+        individualIRI = self.idr.resolveNonlabelIdentifier(individual_id)
+
+        # Get the individual object.
+        owlobj = self.df.getOWLNamedIndividual(individualIRI)
+
+        declaxiom = self.df.getOWLDeclarationAxiom(owlobj)
+        self.ontman.applyChange(AddAxiom(self.ontology, declaxiom))
+
+        return _OntologyIndividual(individualIRI, owlobj, self)
+    
     def addTermAxiom(self, owl_axiom):
         """
         Adds a new term axiom to this ontology.  In this context, "term axiom"
@@ -403,10 +426,15 @@ class Ontology(Observable):
         Optionally, any annotations referencing the deleted entity can also be
         removed (this is the default behavior).
 
-        entity: An OWL API entity object.
+        entity: An _OntologyEntity object or an OWL API entity object.
         remove_annotations: If True, annotations referencing the entity will
             also be removed.
         """
+        if isinstance(entity, _OntologyEntity):
+            owlent = entity.getOWLAPIObj()
+        else:
+            owlent = entity
+
         ontset = self.ontology.getImportsClosure()
         for ont in ontset:
             # A set for gathering axioms to remove so that axioms can be
@@ -422,11 +450,11 @@ class Ontology(Observable):
                         # entity.
                         asubject = axiom.getSubject()
                         if isinstance(asubject, IRI):
-                            if asubject.equals(entity.getIRI()):
+                            if asubject.equals(owlent.getIRI()):
                                 del_axioms.add(axiom)
                 # See if this axiom includes the target entity (e.g., a
                 # declaration axiom for the target entity).
-                elif axiom.getSignature().contains(entity):
+                elif axiom.getSignature().contains(owlent):
                     del_axioms.add(axiom)
 
             self.ontman.removeAxioms(ont, del_axioms)

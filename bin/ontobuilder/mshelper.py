@@ -152,7 +152,10 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
             indvIRI = self._resolveName(name)
             indvobj = self.ontology.getExistingIndividual(indvIRI)
 
-        return indvobj
+        if indvobj != None:
+            return indvobj.getOWLAPIObj()
+        else:
+            return None
 
 
 class ManchesterSyntaxParserHelper:
