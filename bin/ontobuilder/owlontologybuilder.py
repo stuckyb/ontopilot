@@ -10,7 +10,7 @@ from obohelper import termIRIToOboID, OBOIdentiferError
 from ontology import Ontology
 from ontology_entities import (
     CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,
-    ANNOTATIONPROPERTY_ENTITY
+    ANNOTATIONPROPERTY_ENTITY, INDIVIDUAL_ENTITY
 )
 from delimstr_parser import DelimStrParser
 from tablereader import TableRowError
@@ -63,7 +63,13 @@ class OWLOntologyBuilder:
         # stored as a tuple, (ontology entity instance, _TableRow instance).
         self.entity_trows = []
 
-        self.dsparser = DelimStrParser(';')
+        # Create a delimited string parser for parsing multiple values out of
+        # input fields.
+        self.dsparser = DelimStrParser(delimchars=';', quotechars='"\'')
+
+        # Create a delimited string parser for parsing the components of
+        # individual property assertions (facts).
+        self.factparser = DelimStrParser(delimchars=' \t', quotechars='"\'')
 
     def getOntology(self):
         """
@@ -143,9 +149,7 @@ class OWLOntologyBuilder:
         """
         Adds a new data property to the ontology, based on a property
         description provided as the table row propdesc (i.e., the single
-        explicit argument).  If expanddef is True, then term labels in the text
-        definition for the new property will be expanded to include the terms'
-        OBO IDs.
+        explicit argument).
         """
         try:
             # Create the new data property.
@@ -212,9 +216,7 @@ class OWLOntologyBuilder:
         """
         Adds a new object property to the ontology, based on a property
         description provided as the table row propdesc (i.e., the single
-        explicit argument).  If expanddef is True, then term labels in the text
-        definition for the new property will be expanded to include the terms'
-        OBO IDs.
+        explicit argument).
         """
         try:
             # Create the new object property.
@@ -309,9 +311,7 @@ class OWLOntologyBuilder:
         """
         Adds a new annotation property to the ontology, based on a property
         description provided as the table row propdesc (i.e., the single
-        explicit argument).  If expanddef is True, then term labels in the text
-        definition for the new property will be expanded to include the terms'
-        OBO IDs.
+        explicit argument).
         """
         try:
             # Create the new annotation property.
@@ -342,6 +342,49 @@ class OWLOntologyBuilder:
             if parentIRI != None:
                 propobj.addSuperproperty(parentIRI)
 
+    def addIndividual(self, indvdesc):
+        """
+        Adds a new named individual to the ontology, based on a description
+        provided as the table row indvdesc (i.e., the single explicit
+        argument).
+        """
+        try:
+            # Create the new named individual
+            newindv = self.ontology.createNewIndividual(indvdesc['ID'])
+            
+            # If we have a label, add it to the individual.
+            labeltext = indvdesc['Label']
+            if labeltext != '':
+                newindv.addLabel(labeltext)
+        except RuntimeError as err:
+            raise TermDescriptionError(str(err), indvdesc)
+        
+        # Cache the remainder of the individual description.
+        self.entity_trows.append((newindv, indvdesc))
+
+    def _addIndividualAxioms(self, indvobj, indvdesc, expanddef=True):
+        """
+        Adds axioms from a _TableRow object property description to an existing
+        named individual object.  If expanddef is True, then term labels in the
+        text definition for the individual will be expanded to include the
+        terms' OBO IDs.
+        """
+        self._addGenericAxioms(indvobj, indvdesc, expanddef)
+
+        # Add all types for the individual.
+        for classexp in self.dsparser.parseString(indvdesc['Instance of']):
+            indvobj.addType(classexp)
+
+        # Add all object property assertions (object property facts).
+        for opfact in self.dsparser.parseString(indvdesc['Relations']):
+            fact_parts = self.factparser.parseString(opfact)
+            indvobj.addObjectPropertyFact(fact_parts[0], fact_parts[1])
+
+        # Add all data property assertions (data property facts).
+        for dpfact in self.dsparser.parseString(indvdesc['Data facts']):
+            fact_parts = self.factparser.parseString(dpfact)
+            indvobj.addDataPropertyFact(fact_parts[0], fact_parts[1])
+
     def processDeferredEntityAxioms(self, expanddefs=True):
         """
         Processes all cached _TableRow entity descriptions and entity objects
@@ -363,6 +406,8 @@ class OWLOntologyBuilder:
                     self._addObjectPropertyAxioms(entity, desc, expanddefs)
                 elif typeconst == ANNOTATIONPROPERTY_ENTITY:
                     self._addAnnotationPropertyAxioms(entity, desc, expanddefs)
+                elif typeconst == INDIVIDUAL_ENTITY:
+                    self._addIndividualAxioms(entity, desc, expanddefs)
                 else:
                     raise RuntimeError('Unsupported ontology entity type: '
                             + str(typeconst) + '.')
@@ -390,12 +435,13 @@ class OWLOntologyBuilder:
         deftext (str): The text definition to process.
         """
         # Define a regular expression for recognizing labels in curly braces
-        # for the purpose parsing them out of a larger containing string.  Note
-        # that this regular expression cannot include label component subgroups
-        # in parentheses; if it did, they would be included in the elements of
-        # the split string list.  Note that in this regular expression, the '?'
-        # after the '+' qualifier specifies a non-greedy match; this is
-        # required for definitions that contain multiple label elements.
+        # for the purpose of parsing them out of a larger containing string.
+        # Note that this regular expression cannot include label component
+        # subgroups in parentheses; if it did, they would be included in the
+        # elements of the split string list.  Note also that in this regular
+        # expression, the '?' after the '+' qualifier specifies a non-greedy
+        # match; this is required for definitions that contain multiple label
+        # elements.
         label_split_re = re.compile(r'(\{.+?\})')
 
         # Define a regular expression for parsing labels with or without a

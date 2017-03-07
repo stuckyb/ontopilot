@@ -27,6 +27,10 @@ from org.semanticweb.owlapi.model import IRI
 LABEL_IRI = IRI.create('http://www.w3.org/2000/01/rdf-schema#label')
 COMMENT_IRI = IRI.create('http://www.w3.org/2000/01/rdf-schema#comment')
 
+# An IRI that is not used in the test ontology.
+NEW_IRI = 'http://purl.obolibrary.org/obo/OBTO_9999'
+
+
 class Test_OWLOntologyBuilder(unittest.TestCase):
     """
     Tests OWLOntologyBuilder.
@@ -40,10 +44,14 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         # among all entities.  Remaining entity-specific values should be
         # defined in the entity-specific test methods.
         self.tr = TableRow(1, None)
-        self.tr['ID'] = 'http://purl.obolibrary.org/obo/OBTO_2000'
+        self.tr['ID'] = NEW_IRI
         self.tr['Label'] = 'new test entity'
         self.tr['Text definition'] = 'The definition!'
-        self.tr['Comments'] = 'The first comment.;"The second; comment."'
+        self.tr['Comments'] = 'The first comment.; The second\; comment.'
+
+        # If we define custom failure messages, append them to the end of the
+        # default failure message.
+        self.longMessage = True
 
     def _checkGenericAxioms(self, entity):
         """
@@ -68,13 +76,13 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
     def test_addClass(self):
         # Define additional row values.
-        self.tr['Parent'] = 'obo:OBTO_2000'
+        self.tr['Parent'] = NEW_IRI
         self.tr['Subclass of'] = "'test class 1'; OBITO:0001"
         self.tr['Equivalent to'] = 'OBTO:1001; obo:OBTO_1002'
         self.tr['Disjoint with'] = 'OBTO:1000'
 
         # Create some additional classes for use in axioms.
-        self.test_ont.createNewClass('obo:OBTO_2000')
+        self.test_ont.createNewClass(NEW_IRI)
         self.test_ont.createNewClass('obo:OBTO_1000')
         self.test_ont.createNewClass('obo:OBTO_1001')
         self.test_ont.createNewClass('obo:OBTO_1002')
@@ -95,7 +103,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         # "parent" field.
         expIRIs = {
             'http://purl.obolibrary.org/obo/OBTO_0010',
-            'http://purl.obolibrary.org/obo/OBTO_2000',
+            NEW_IRI,
             'http://purl.obolibrary.org/obo/OBITO_0001'
             }
         actualIRIs = set()
@@ -106,7 +114,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the equivalency axioms.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_2000',
+            NEW_IRI,
             'http://purl.obolibrary.org/obo/OBTO_1001',
             'http://purl.obolibrary.org/obo/OBTO_1002'
             }
@@ -119,7 +127,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the disjointness axiom.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_2000',
+            NEW_IRI,
             'http://purl.obolibrary.org/obo/OBTO_1000'
         }
         actualIRIs = set()
@@ -188,7 +196,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the disjointness axiom.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_2000',
+            NEW_IRI,
             'http://purl.obolibrary.org/obo/OBTO_1000',
             'http://purl.obolibrary.org/obo/OBTO_1001'
         }
@@ -265,7 +273,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the "inverse of" axioms.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_2000',
+            NEW_IRI,
             'http://purl.obolibrary.org/obo/OBTO_1000'
         }
         actualIRIs = set()
@@ -277,7 +285,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the disjointness axiom.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_2000',
+            NEW_IRI,
             'http://purl.obolibrary.org/obo/OBTO_1001'
         }
         actualIRIs = set()
@@ -323,6 +331,96 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
             actualIRIs.add(axiom.getSuperProperty().getIRI().toString())
 
         self.assertEqual(expIRIs, actualIRIs)
+
+    def test_addIndividual(self):
+        # Define additional row values.
+        self.tr['Instance of'] = 'obo:OBTO_0010; OBTO:0012'
+        self.tr['Relations'] = """
+            'test object property 1' 'test individual 1';
+            'test object property 1' 'test individual 2'
+        """
+        self.tr['Data facts'] = """
+            'test data property 1' "litval"^^xsd:string;
+            'test data property 1' "litval2"^^xsd:string
+        """
+
+        self.oob.addIndividual(self.tr)
+
+        # Process all deferred named individual axioms.
+        self.oob.processDeferredEntityAxioms()
+
+        # Check that the new individual exists.
+        newindv = self.test_ont.getExistingIndividual(self.tr['ID'])
+        self.assertIsNotNone(newindv)
+        new_oaent = newindv.getOWLAPIObj()
+
+        self._checkGenericAxioms(newindv)
+
+        # Check the types of the individual.
+        expIRIs = {
+            'http://purl.obolibrary.org/obo/OBTO_0010',
+            'http://purl.obolibrary.org/obo/OBTO_0012'
+        }
+        actualIRIs = set()
+        for axiom in self.owlont.getClassAssertionAxioms(new_oaent):
+            classexp = axiom.getClassExpression()
+            actualIRIs.add(classexp.asOWLClass().getIRI().toString())
+
+        self.assertEqual(expIRIs, actualIRIs)
+
+        # Check the object property assertions.
+        # Create a set with the expected subject, property, object IRI tuples.
+        expected = {
+            (
+                str(new_oaent.getIRI()),
+                'http://purl.obolibrary.org/obo/OBTO_0001',
+                'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#individual_001'
+            ),
+            (
+                str(new_oaent.getIRI()),
+                'http://purl.obolibrary.org/obo/OBTO_0001',
+                'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#individual_002'
+            )
+        }
+
+        axioms = self.owlont.getObjectPropertyAssertionAxioms(new_oaent)
+        results = set()
+        for axiom in axioms:
+            factparts = (
+                str(axiom.getSubject().getIRI()),
+                str(axiom.getProperty().getIRI()),
+                str(axiom.getObject().getIRI())
+            )
+            results.add(factparts)
+
+        self.assertEqual(expected, results)
+
+        # Check the data property assertions.
+        # Create a set with the expected subject, property, literal tuples.
+        expected = {
+            (
+                str(new_oaent.getIRI()),
+                'http://purl.obolibrary.org/obo/OBTO_0020',
+                'litval'
+            ),
+            (
+                str(new_oaent.getIRI()),
+                'http://purl.obolibrary.org/obo/OBTO_0020',
+                'litval2'
+            )
+        }
+
+        axioms = self.owlont.getDataPropertyAssertionAxioms(new_oaent)
+        results = set()
+        for axiom in axioms:
+            factparts = (
+                str(axiom.getSubject().getIRI()),
+                str(axiom.getProperty().getIRI()),
+                str(axiom.getObject().getLiteral())
+            )
+            results.add(factparts)
+
+        self.assertEqual(expected, results)
 
     def test_expandDefinition(self):
         # Test an expansion that includes the label text.  Express the label in

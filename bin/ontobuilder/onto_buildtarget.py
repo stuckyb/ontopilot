@@ -23,7 +23,7 @@ REQUIRED_COLS = ('Type', 'ID')
 # Optional columns in terms files.
 OPTIONAL_COLS = (
     'Comments', 'Parent', 'Subclass of', 'Equivalent to', 'Disjoint with',
-    'Inverse', 'Characteristics', 'Ignore'
+    'Inverse', 'Characteristics', 'Relations', 'Data facts', 'Ignore'
 )
         
 class OntoBuildTarget(BuildTargetWithConfig):
