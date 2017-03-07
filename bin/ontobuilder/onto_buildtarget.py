@@ -215,6 +215,8 @@ class OntoBuildTarget(BuildTargetWithConfig):
                                 ontbuilder.addObjectProperty(t_row)
                             elif typestr == 'annotationproperty':
                                 ontbuilder.addAnnotationProperty(t_row)
+                            elif typestr == 'individual':
+                                ontbuilder.addIndividual(t_row)
                             elif typestr == '':
                                 raise TermDescriptionError(
                                     'The entity type (e.g., "class", "data '
