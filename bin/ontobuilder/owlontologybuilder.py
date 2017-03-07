@@ -378,12 +378,50 @@ class OWLOntologyBuilder:
         # Add all object property assertions (object property facts).
         for opfact in self.dsparser.parseString(indvdesc['Relations']):
             fact_parts = self.factparser.parseString(opfact)
-            indvobj.addObjectPropertyFact(fact_parts[0], fact_parts[1])
+            self._checkFactSyntax(fact_parts, opfact, indvdesc)
+            if fact_parts[0].lower() == 'not':
+                indvobj.addObjectPropertyFact(
+                    fact_parts[1], fact_parts[2], is_negative=True
+                )
+            else:
+                indvobj.addObjectPropertyFact(
+                    fact_parts[0], fact_parts[1], is_negative=False
+                )
 
         # Add all data property assertions (data property facts).
         for dpfact in self.dsparser.parseString(indvdesc['Data facts']):
             fact_parts = self.factparser.parseString(dpfact)
-            indvobj.addDataPropertyFact(fact_parts[0], fact_parts[1])
+            self._checkFactSyntax(fact_parts, dpfact, indvdesc)
+            if fact_parts[0].lower() == 'not':
+                indvobj.addDataPropertyFact(
+                    fact_parts[1], fact_parts[2], is_negative=True
+                )
+            else:
+                indvobj.addDataPropertyFact(
+                    fact_parts[0], fact_parts[1], is_negative=False
+                )
+
+    def _checkFactSyntax(self, fact_parts, factstr, desc):
+        """
+        Performs some simple syntax checking of a parsed individual fact
+        statement.  Does not attempt to validate any identifiers in the
+        statement.
+        """
+        if len(fact_parts) not in (2, 3):
+            raise TermDescriptionError(
+                'The individual object/data property assertion (fact) is '
+                'invalid: {0}'.format(factstr),
+                desc
+            )
+
+        if len(fact_parts) == 3:
+            if fact_parts[0].lower() != 'not':
+                raise TermDescriptionError(
+                    'The individual object/data property assertion (fact) is '
+                    'invalid: "not" was expected, but "{0}" was '
+                    'encountered.'.format(fact_parts[0]),
+                    desc
+                )
 
     def processDeferredEntityAxioms(self, expanddefs=True):
         """

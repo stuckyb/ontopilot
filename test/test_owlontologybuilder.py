@@ -18,6 +18,7 @@
 from ontobuilder.tablereader import TableRow
 from ontobuilder.owlontologybuilder import OWLOntologyBuilder
 import unittest
+from test_tablereader import TableStub
 #from testfixtures import LogCapture
 
 # Java imports.
@@ -43,7 +44,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         # Define a test row.  In setUp(), we define row values that are shared
         # among all entities.  Remaining entity-specific values should be
         # defined in the entity-specific test methods.
-        self.tr = TableRow(1, None)
+        self.tr = TableRow(1, TableStub())
         self.tr['ID'] = NEW_IRI
         self.tr['Label'] = 'new test entity'
         self.tr['Text definition'] = 'The definition!'
@@ -337,10 +338,11 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         self.tr['Instance of'] = 'obo:OBTO_0010; OBTO:0012'
         self.tr['Relations'] = """
             'test object property 1' 'test individual 1';
-            'test object property 1' 'test individual 2'
+            not 'test object property 1' 'test individual 2'
         """
         self.tr['Data facts'] = """
             'test data property 1' "litval"^^xsd:string;
+            not 'test data property 1' "litval3"^^xsd:string;
             'test data property 1' "litval2"^^xsd:string
         """
 
@@ -375,7 +377,24 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
                 str(new_oaent.getIRI()),
                 'http://purl.obolibrary.org/obo/OBTO_0001',
                 'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#individual_001'
-            ),
+            )
+        }
+
+        axioms = self.owlont.getObjectPropertyAssertionAxioms(new_oaent)
+        results = set()
+        for axiom in axioms:
+            factparts = (
+                str(axiom.getSubject().getIRI()),
+                str(axiom.getProperty().getIRI()),
+                str(axiom.getObject().getIRI())
+            )
+            results.add(factparts)
+
+        self.assertEqual(expected, results)
+
+        # Check the negative object property assertions.
+        # Create a set with the expected subject, property, object IRI tuples.
+        expected = {
             (
                 str(new_oaent.getIRI()),
                 'http://purl.obolibrary.org/obo/OBTO_0001',
@@ -383,7 +402,9 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
             )
         }
 
-        axioms = self.owlont.getObjectPropertyAssertionAxioms(new_oaent)
+        axioms = self.owlont.getNegativeObjectPropertyAssertionAxioms(
+            new_oaent
+        )
         results = set()
         for axiom in axioms:
             factparts = (
@@ -411,6 +432,28 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         }
 
         axioms = self.owlont.getDataPropertyAssertionAxioms(new_oaent)
+        results = set()
+        for axiom in axioms:
+            factparts = (
+                str(axiom.getSubject().getIRI()),
+                str(axiom.getProperty().getIRI()),
+                str(axiom.getObject().getLiteral())
+            )
+            results.add(factparts)
+
+        self.assertEqual(expected, results)
+
+        # Check the negative data property assertions.
+        # Create a set with the expected subject, property, literal tuples.
+        expected = {
+            (
+                str(new_oaent.getIRI()),
+                'http://purl.obolibrary.org/obo/OBTO_0020',
+                'litval3'
+            )
+        }
+
+        axioms = self.owlont.getNegativeDataPropertyAssertionAxioms(new_oaent)
         results = set()
         for axiom in axioms:
             factparts = (
