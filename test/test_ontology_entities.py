@@ -497,10 +497,34 @@ class Test_OntologyIndividual(_TestOntologyEntity, unittest.TestCase):
         axioms = self.owlont.getObjectPropertyAssertionAxioms(self.t_owlapiobj)
         self.assertTrue(axioms.isEmpty())
 
-        self.t_ent.addObjectPropertyFact('OBTO:0001', 'individual_001')
+        self.t_ent.addObjectPropertyFact(
+            'OBTO:0001', 'individual_001', is_negative=False
+        )
 
         # Check that the correct object property assertion now exists.
         axioms = self.owlont.getObjectPropertyAssertionAxioms(self.t_owlapiobj)
+        self.assertEqual(1, axioms.size())
+        axiom = axioms.iterator().next()
+        self.assertTrue(axiom.getProperty().equals(objprop.getOWLAPIObj()))
+        self.assertTrue(axiom.getSubject().equals(self.t_owlapiobj))
+        self.assertTrue(axiom.getObject().equals(indv.getOWLAPIObj()))
+
+        # Verify that there are not yet any negative object property facts for
+        # this individual.
+        axioms = self.owlont.getNegativeObjectPropertyAssertionAxioms(
+            self.t_owlapiobj
+        )
+        self.assertTrue(axioms.isEmpty())
+
+        self.t_ent.addObjectPropertyFact(
+            'OBTO:0001', 'individual_002', is_negative=True
+        )
+
+        # Check that the correct negative object property assertion now exists.
+        indv = self.test_ont.getExistingIndividual('individual_002')
+        axioms = self.owlont.getNegativeObjectPropertyAssertionAxioms(
+            self.t_owlapiobj
+        )
         self.assertEqual(1, axioms.size())
         axiom = axioms.iterator().next()
         self.assertTrue(axiom.getProperty().equals(objprop.getOWLAPIObj()))
@@ -515,7 +539,9 @@ class Test_OntologyIndividual(_TestOntologyEntity, unittest.TestCase):
         axioms = self.owlont.getDataPropertyAssertionAxioms(self.t_owlapiobj)
         self.assertTrue(axioms.isEmpty())
 
-        self.t_ent.addDataPropertyFact('OBTO:0020', '"literal"^^xsd:string')
+        self.t_ent.addDataPropertyFact(
+            'OBTO:0020', '"literal"^^xsd:string', is_negative=False
+        )
 
         # Check that the correct data property assertion now exists.
         axioms = self.owlont.getDataPropertyAssertionAxioms(self.t_owlapiobj)
@@ -524,4 +550,25 @@ class Test_OntologyIndividual(_TestOntologyEntity, unittest.TestCase):
         self.assertTrue(axiom.getProperty().equals(dataprop.getOWLAPIObj()))
         self.assertTrue(axiom.getSubject().equals(self.t_owlapiobj))
         self.assertEqual('literal', axiom.getObject().getLiteral())
+
+        # Verify that there are not yet any negative data property facts for
+        # this individual.
+        axioms = self.owlont.getNegativeDataPropertyAssertionAxioms(
+            self.t_owlapiobj
+        )
+        self.assertTrue(axioms.isEmpty())
+
+        self.t_ent.addDataPropertyFact(
+            'OBTO:0020', '"literal2"^^xsd:string', is_negative=True
+        )
+
+        # Check that the correct data property assertion now exists.
+        axioms = self.owlont.getNegativeDataPropertyAssertionAxioms(
+            self.t_owlapiobj
+        )
+        self.assertEqual(1, axioms.size())
+        axiom = axioms.iterator().next()
+        self.assertTrue(axiom.getProperty().equals(dataprop.getOWLAPIObj()))
+        self.assertTrue(axiom.getSubject().equals(self.t_owlapiobj))
+        self.assertEqual('literal2', axiom.getObject().getLiteral())
 

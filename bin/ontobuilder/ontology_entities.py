@@ -576,7 +576,7 @@ class _OntologyIndividual(_OntologyEntity):
             eaxiom = self.df.getOWLClassAssertionAxiom(cexp, self.entityobj)
             self.ontology.addTermAxiom(eaxiom)
 
-    def addObjectPropertyFact(self, objprop_id, indv_id):
+    def addObjectPropertyFact(self, objprop_id, indv_id, is_negative=False):
         """
         Adds an object property assertion (fact) for this individual.
 
@@ -593,6 +593,7 @@ class _OntologyIndividual(_OntologyEntity):
             IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
             Labels should be enclosed in single quotes (e.g., 'label txt' or
             prefix:'label txt').
+        is_negative: Whether to create a negative object property assertion.
         """
         # Get the object property, making sure that it is actually defined.
         objprop = self.ontology.getExistingObjectProperty(objprop_id)
@@ -619,12 +620,18 @@ class _OntologyIndividual(_OntologyEntity):
         indv = indv.getOWLAPIObj()
 
         # Add the object property assertion axiom to the ontology.
-        newaxiom = self.df.getOWLObjectPropertyAssertionAxiom(
-            objprop, self.entityobj, indv
-        )
+        if is_negative:
+            newaxiom = self.df.getOWLNegativeObjectPropertyAssertionAxiom(
+                objprop, self.entityobj, indv
+            )
+        else:
+            newaxiom = self.df.getOWLObjectPropertyAssertionAxiom(
+                objprop, self.entityobj, indv
+            )
+
         self.ontology.addTermAxiom(newaxiom)
 
-    def addDataPropertyFact(self, dataprop_id, literal_exp):
+    def addDataPropertyFact(self, dataprop_id, literal_exp, is_negative=False):
         """
         Adds a data property assertion (fact) for this individual.
 
@@ -636,6 +643,7 @@ class _OntologyIndividual(_OntologyEntity):
             prefix:'label txt').
         literal_exp: A string that represents a literal value.  The string
             should follow the "literal" production of Manchester Syntax.
+        is_negative: Whether to create a negative data property assertion.
         """
         # Get the data property, making sure that it is actually defined.
         dataprop = self.ontology.getExistingDataProperty(dataprop_id)
@@ -665,8 +673,13 @@ class _OntologyIndividual(_OntologyEntity):
             )
 
         # Add the data property assertion axiom to the ontology.
-        newaxiom = self.df.getOWLDataPropertyAssertionAxiom(
-            dataprop, self.entityobj, litval
-        )
+        if is_negative:
+            newaxiom = self.df.getOWLNegativeDataPropertyAssertionAxiom(
+                dataprop, self.entityobj, litval
+            )
+        else:
+            newaxiom = self.df.getOWLDataPropertyAssertionAxiom(
+                dataprop, self.entityobj, litval
+            )
         self.ontology.addTermAxiom(newaxiom)
 
