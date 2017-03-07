@@ -26,40 +26,35 @@ class Test_DelimtrParser(unittest.TestCase):
     Tests the delimiter-separated string parser.
     """
     def setUp(self):
-        self.parser = DelimStrParser(';')
+        # If we define custom failure messages, append them to the end of the
+        # default failure message.
+        self.longMessage = True
 
     def test_parseString(self):
         """
         Tests a bunch of strings to verify that different edge cases and
         character combinations all parse correctly.
         """
+        parser = DelimStrParser(delimchars=';', quotechars='"')
+
         testvals = (
             ('', []),
             (' ', []),
             ('   \t   ', []),
-            ( """   \t  
-\t
-   \t """, []),
+            ('   \t  \n\t\n   \t ', []),
             (';', []),
-            (""";
-  \t  \t
-;
-  ;
-\t  
-;
-   \t""", []),
-            (r'\"', ['"']),
+            ('\;', [';']),
+            (';\n  \t  \t\n;\n  ;\n\t  \n;\n   \t', []),
+            (r'\"', [r'\"']),
             ('test string!!', ['test string!!']),
-            (r'test \string\"!!', [r'test \string"!!']),
+            (r'test \string\"!!', [r'test \string\"!!']),
             (';;multiple string;; ; values;', ['multiple string', 'values']),
-            ('""', []),
-            ('"test string!!"', ['test string!!']),
-            (r'"test \string\"!!"', [r'test \string"!!']),
-            ('te"st" "string!!"', ['test string!!']),
-            ('a "string; with" delimiters', ['a string; with delimiters']),
-            ('a "string; with" ; delimiters', ['a string; with', 'delimiters']),
-            (r'"with;;delimiters\"";\""and \" escapes"', ['with;;delimiters"', '"and " escapes']),
-            ('"includes\ncarriage";\n;\nret-\nurns', ['includes\ncarriage', 'ret-\nurns']),
+            ('"test string!!"', ['"test string!!"']),
+            (r'"test \string\"!!"', [r'"test \string\"!!"']),
+            ('a "string; with" delimiters', ['a "string; with" delimiters']),
+            ('a "string; with" ; delimiters', ['a "string; with"', 'delimiters']),
+            (r'"with; delimiters"; and \; escapes', ['"with; delimiters"', 'and ; escapes']),
+            ('"includes;\ncarriage";\n;\nret-\nurns', ['"includes;\ncarriage"', 'ret-\nurns']),
 
             # Also include a variety of test cases for parsing Manchester
             # Syntax class expressions.
@@ -95,14 +90,75 @@ class Test_DelimtrParser(unittest.TestCase):
 
         for testval in testvals:
             self.assertEqual(
-                testval[1], self.parser.parseString(testval[0])
+                testval[1], parser.parseString(testval[0]),
+                msg='Input string: "{0}"'.format(testval[0])
+            )
+
+        # Test multiple delimiter characters and multiple quote characters.
+        parser = DelimStrParser(delimchars=',;', quotechars='\'"')
+
+        new_testvals = (
+            # Test values for mixed delimiters.
+            (',;', []),
+            (', ;; ,; ,,', []),
+            ('different; delimiter, chars', ['different', 'delimiter', 'chars']),
+            ('different\;\, delimiter\, chars', ['different;, delimiter, chars']),
+            ('"different;, delimiter,"; chars', ['"different;, delimiter,"', 'chars']),
+
+            # Test values for mixed quote characters.
+            ('";", \',\'', ['";"', "','"]),
+            ('"quotes \';inside\'"', ['"quotes \';inside\'"']),
+            ("'quotes \";inside'", ["'quotes \";inside'"]),
+            ('"in,; quote", \'in;quote, 2\'', ['"in,; quote"', "'in;quote, 2'"]),
+            ('"\\""; \'\\\'\'', ['"\\""', "'\\\''"])
+        )
+
+        testvals = testvals + new_testvals
+        for testval in testvals:
+            self.assertEqual(
+                testval[1], parser.parseString(testval[0]),
+                msg='Input string: "{0}"'.format(testval[0])
+            )
+
+        # Test that the parser works as expected if we use whitespace
+        # characters as the delimiters.
+        parser = DelimStrParser(delimchars=' \t', quotechars='\'"')
+
+        testvals = (
+            ('', []),
+            ('  \t', []),
+            ('two strings', ['two', 'strings']),
+            ('two  \tstrings', ['two', 'strings']),
+            ('"one  \tstring"', ['"one  \tstring"'])
+        )
+
+        for testval in testvals:
+            self.assertEqual(
+                testval[1], parser.parseString(testval[0]),
+                msg='Input string: "{0}"'.format(testval[0])
             )
 
     def test_parseError(self):
         """
         Tests that parse errors are detected and reported.
         """
-        # Verify that unbalanced quotes are correctly detected.
-        with self.assertRaisesRegexp(RuntimeError, 'Closing quote missing in input string'):
-            self.parser.parseString('"unbalanced"; "quotes')
+        parser = DelimStrParser(delimchars=';', quotechars='\'"')
+
+        # Define a set of test values that all contain unbalanced quotes.
+        testvals = [
+            '"',
+            "'",
+            '"unbalanced',
+            "unbalanced'",
+            '"\'',
+            "'\"",
+            '"unbalanced\'',
+            "'unbalanced\""
+        ]
+
+        for testval in testvals:
+            with self.assertRaisesRegexp(
+                RuntimeError, 'Closing quote missing in input string'
+            ):
+                parser.parseString(testval)
 

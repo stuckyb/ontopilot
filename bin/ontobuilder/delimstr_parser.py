@@ -1,36 +1,38 @@
 
-#
-# Provides a simple parser for strings that contain delimiter-separated string
-# values.  Supports quoted strings, escaped quote characters, and line returns
-# inside component strings.
-#
-
 
 class DelimStrParser:
     r"""
     Parses strings that optionally contain delimiter-separated string values.
-    The strings are parsed according to the simple grammar below.
+    The strings are parsed according to the simple grammar below.  Two rules
+    not captured by the grammar are: 1) Quoted components must begin and end
+    with the same quote character; and 2) Inside a quoted components,
+    alternative quote characters can be used unescaped.
 
     str_list => [string {delimchar string}]
     string => strpart {strpart}
-    strpart => (nonreserved | '\"') {nonreserved | '\"'}
-               | '"' {nonquote | '\"'} '"'
+    strpart => unquoted_str | quoted_str
+    unquoted_str => {nonreserved | escaped_quote | escaped_delim}+
+    quoted_str => quotechar {nonquote | escaped_quote}+ quotechar
+    escaped_quote = '\' quotechar
+    escaped_delim = '\' delimchar
     char = all characters
-    delimchar = delimiter character
-    nonquote = char - '"'
+    delimchar = delimiter characters
+    quotechar = quote characters
+    nonquote = char - quotechar
     nonreserved = nonquote - delimchar
 
     In words, input strings are expected to contain 0 or more characters, with
-    some delimiter (commas by default) separating different string values
-    within the input string.  Component strings can be quoted with double
-    quotes if they contain delimiter characters, and literal double quote
-    characters are escaped with a backslash.
+    some delimiter or delimiters (comma by default) separating different string
+    values within the input string.  Delimiters inside quotes are ignored.
+    Escaped delimiters will be replaced only if they are not inside of quotes.
 
     In addition, leading and trailing whitespace is removed from all strings,
-    and empty strings are never returned.
+    and empty strings are never returned.  This means that, effectively, runs
+    of delimiter characters are merged into a single delimiter.
     """
-    def __init__(self, delimchar=','):
-        self.delimchar = delimchar
+    def __init__(self, delimchars=',', quotechars='"'):
+        self.delimchars = delimchars
+        self.quotechars = quotechars
 
     def parseString(self, strval):
         """
@@ -42,19 +44,26 @@ class DelimStrParser:
         currstrval = ''
         prevchar = ''
         inquotes = False
+        open_quotechar = ''
         for char in strval:
-            if char == '"':
-                if prevchar == '\\':
-                    # We have an escaped quote, so remove the escape character
-                    # from the output string and replace it with the quote.
-                    currstrval = currstrval[:len(currstrval) - 1] + '"'
-                elif inquotes:
+            if (char in self.quotechars) and (prevchar != '\\'):
+                if inquotes and (char == open_quotechar):
+                    # This quote character is not escaped, so it closes the
+                    # quoted portion.
                     inquotes = False
-                else:
+                elif not(inquotes):
                     inquotes = True
-            elif char == self.delimchar:
+                    open_quotechar = char
+
+                currstrval += char
+            elif char in self.delimchars:
                 if inquotes:
                     currstrval += char
+                elif prevchar == '\\':
+                    # We have an escaped delimiter, so remove the escape
+                    # character from the output string and replace it with the
+                    # delimiter.
+                    currstrval = currstrval[:len(currstrval) - 1] + char
                 else:
                     if currstrval.strip() != '':
                         strlist.append(currstrval.strip())
