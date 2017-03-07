@@ -108,7 +108,10 @@ class ProjectCreator:
             ),
             (
                 re.compile('^termsfiles =\s*$'),
-                'termsfiles = {0}_classes.csv, {0}_properties.csv\n'.format(ontname)
+                (
+                    'termsfiles = {0}_classes.csv, {0}_properties.csv, '
+                    '{0}_individuals.csv\n'.format(ontname)
+                )
             )
         ]
 
@@ -193,7 +196,8 @@ class ProjectCreator:
         # Create a list of terms source file / destination pairs.
         copypairs = [
             ('sample_classes.csv', '{0}_classes.csv'.format(projname)),
-            ('sample_properties.csv', '{0}_properties.csv'.format(projname))
+            ('sample_properties.csv', '{0}_properties.csv'.format(projname)),
+            ('sample_individuals.csv', '{0}_individuals.csv'.format(projname))
         ]
 
         # Copy and rename the sample ontology terms files.
