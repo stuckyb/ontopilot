@@ -89,6 +89,14 @@ class _TestOntologyEntity:
         # Test that the comment annotation exists and has the correct value.
         self._checkAnnotation(self.COMMENT_IRI, commentstr)
 
+    def test_addAnnotation(self):
+        annotprop_iri = IRI.create('http://purl.obolibrary.org/obo/OBTO_0030')
+        annot_txt = 'Test annotation text.'
+
+        self.t_ent.addAnnotation(annotprop_iri, annot_txt)
+
+        self._checkAnnotation(annotprop_iri, annot_txt)
+
     def test_getAnnotationValues(self):
         # Test the case of no annotations.
         self.assertEqual(

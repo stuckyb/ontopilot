@@ -93,10 +93,40 @@ class _OntologyEntity:
 
         self.ontology.addTermAxiom(annotaxiom)
 
+    def addAnnotation(self, annotprop_id, annottxt):
+        """
+        Adds an arbitrary annotation for this entity.
+
+        annotprop_id: The identifier of an annotation property.  Can be either
+            an OWL API IRI object or a string containing: a label (with or
+            without a prefix), a prefix IRI (i.e., a curie, such as
+            "owl:Thing"), a full IRI, or an OBO ID (e.g., a string of the form
+            "PO:0000003").  Labels should be enclosed in single quotes (e.g.,
+            'label txt' or prefix:'label txt').
+        annottxt: The annotation text.
+        """
+        annotprop = self.ontology.getExistingAnnotationProperty(annotprop_id)
+        if annotprop == None:
+            raise RuntimeError(
+                'The specified annotation property, {0}, could not be found '
+                'in the source ontology.'.format(annotprop_id)
+            )
+
+        annot = self.df.getOWLAnnotation(
+            annotprop.getOWLAPIObj(), self.df.getOWLLiteral(annottxt, 'en')
+        )
+        annotaxiom = self.df.getOWLAnnotationAssertionAxiom(
+            self.entityIRI, annot
+        )
+
+        self.ontology.addTermAxiom(annotaxiom)
+
     def getAnnotationValues(self, annotpropIRI):
         """
         Returns a list containing the string values of all annotation axioms
         for this entity of the specified annotation type.
+
+        annotpropIRI: An OWL API IRI object.
         """
         annotvals = []
 
