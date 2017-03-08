@@ -34,7 +34,7 @@ class TestOntoBuildTarget(unittest.TestCase):
     """
     def setUp(self):
         self.oc = OntoConfig('test_data/project.conf')
-        self.oc.set('Ontology', 'termsdir', '.')
+        self.oc.set('Ontology', 'entity_sourcedir', '.')
 
         # We need to set the imports source location so that the
         # ImportsBuildTarget dependency will initialize without error.
@@ -45,11 +45,11 @@ class TestOntoBuildTarget(unittest.TestCase):
 
         self.td_path = os.path.abspath('test_data/')
 
-    def test_getExpandedTermsFilesList(self):
+    def test_getExpandedSourceFilesList(self):
         # Test a set of terms file paths that includes wildcards and duplicate
         # file paths (including duplicates caused by expansion).
         termsfilesstr = 'test_table-valid.csv, test_table*.ods, test_table-valid.csv, test_table-valid.*'
-        self.oc.set('Ontology', 'termsfiles', termsfilesstr)
+        self.oc.set('Ontology', 'entity_sourcefiles', termsfilesstr)
 
         exp_fnames = [
             'test_table-valid.csv', 'test_table-valid.ods',
@@ -61,7 +61,7 @@ class TestOntoBuildTarget(unittest.TestCase):
         ]
 
         self.assertEqual(
-            sorted(exp_fnames), sorted(self.obt._getExpandedTermsFilesList())
+            sorted(exp_fnames), sorted(self.obt._getExpandedSourceFilesList())
         )
 
     def test_retrieveAndCheckFilePaths(self):
@@ -74,17 +74,9 @@ class TestOntoBuildTarget(unittest.TestCase):
         self.oc.set('Ontology', 'base_ontology_file', './ontology.owl')
 
         # Test a terms file that is a valid path but not an actual file.
-        self.oc.set('Ontology', 'termsfiles', 'test_table-valid.csv, .')
+        self.oc.set('Ontology', 'entity_sourcefiles', 'test_table-valid.csv, .')
         with self.assertRaisesRegexp(
             RuntimeError, 'exists, but is not a valid file'
-        ):
-            self.obt._retrieveAndCheckFilePaths()
-
-        self.oc.set('Ontology', 'termsfiles', 'test_table-valid.csv')
-
-        # Test an invalid build directory.
-        with self.assertRaisesRegexp(
-            RuntimeError, 'directory for the ontology does not exist'
         ):
             self.obt._retrieveAndCheckFilePaths()
 

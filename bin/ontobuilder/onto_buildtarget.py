@@ -9,7 +9,7 @@ import os
 import glob
 from ontobuilder import logger
 from tablereaderfactory import TableReaderFactory
-from owlontologybuilder import OWLOntologyBuilder, TermDescriptionError
+from owlontologybuilder import OWLOntologyBuilder, EntityDescriptionError
 from ontobuilder import TRUE_STRS
 from buildtarget import BuildTargetWithConfig
 from imports_buildtarget import ImportsBuildTarget
@@ -48,7 +48,7 @@ class OntoBuildTarget(BuildTargetWithConfig):
         self.ibt = ImportsBuildTarget(args, self.config)
         self.addDependency(self.ibt)
 
-    def _getExpandedTermsFilesList(self):
+    def _getExpandedSourceFilesList(self):
         """
         Prepares the list of terms files by expanding any paths with
         shell-style wildcards.  Verifies that each path string resolves to one
@@ -58,7 +58,7 @@ class OntoBuildTarget(BuildTargetWithConfig):
 
         # Attempt to expand each terms path string and eliminate any duplicate
         # paths by building a set of path strings.
-        for fpath in self.config.getTermsFilePaths():
+        for fpath in self.config.getEntitySourceFilePaths():
             flist = glob.glob(fpath)
             if len(flist) == 0:
                 raise RuntimeError(
@@ -86,9 +86,9 @@ class OntoBuildTarget(BuildTargetWithConfig):
         self.base_ont_path = fpath
 
         # Verify that the terms files exist and are of correct type.  The
-        # method _expandTermsFilesList() ensures that all paths are valid in
-        # the list it returns.
-        pathslist = self._getExpandedTermsFilesList()
+        # method _getExpandedSourceFilesList() ensures that all paths are valid
+        # in the list it returns.
+        pathslist = self._getExpandedSourceFilesList()
         for fpath in pathslist:
             if not(os.path.isfile(fpath)):
                 raise RuntimeError(
@@ -148,8 +148,8 @@ class OntoBuildTarget(BuildTargetWithConfig):
                 return True
 
             # Check the modification time of each terms file.
-            for termsfile in self.config.getTermsFilePaths():
-                if mtime < os.path.getmtime(termsfile):
+            for sourcefile in self.config.getEntitySourceFilePaths():
+                if mtime < os.path.getmtime(sourcefile):
                     return True
 
             # Check the modification time of the top-level imports file.  If
@@ -219,13 +219,13 @@ class OntoBuildTarget(BuildTargetWithConfig):
                             elif typestr == 'individual':
                                 ontbuilder.addIndividual(t_row)
                             elif typestr == '':
-                                raise TermDescriptionError(
+                                raise EntityDescriptionError(
                                     'The entity type (e.g., "class", "data '
                                     'property") was not specified.',
                                     t_row
                                 )
                             else:
-                                raise TermDescriptionError(
+                                raise EntityDescriptionError(
                                     'The entity type "' + t_row['Type']
                                     + '" is not supported.', t_row
                                 )

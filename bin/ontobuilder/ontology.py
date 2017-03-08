@@ -399,13 +399,13 @@ class Ontology(Observable):
 
         return _OntologyIndividual(individualIRI, owlobj, self)
     
-    def addTermAxiom(self, owl_axiom):
+    def addEntityAxiom(self, owl_axiom):
         """
-        Adds a new term axiom to this ontology.  In this context, "term axiom"
-        means an axiom with an OWL class or property as its subject.  The
-        argument "owl_axiom" should be an instance of an OWL API axiom object.
+        Adds a new entity axiom to this ontology.  In this context, "entity
+        axiom" means an axiom with an OWL class, property, or individual as its
+        subject.  The argument "owl_axiom" should be an instance of an OWL API
+        axiom object.
         """
-        # If this is a label annotation, notify observers about the new label.
         if owl_axiom.isOfType(AxiomType.ANNOTATION_ASSERTION):
             if owl_axiom.getProperty().isLabel():
                 labeltxt = owl_axiom.getValue().getLiteral()
@@ -416,6 +416,8 @@ class Ontology(Observable):
                 if not(isinstance(subjIRI, IRI)):
                     raise RuntimeError('Attempted to add the label "'
                         + labeltxt + '" as an annotation of an anonymous class.')
+
+                # Notify observers about the new label.
                 self.notifyObservers('label_added', (labeltxt, subjIRI))
 
         self.ontman.applyChange(AddAxiom(self.ontology, owl_axiom))

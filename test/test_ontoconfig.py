@@ -308,51 +308,53 @@ class TestOntoConfig(unittest.TestCase):
         self.oc.set('Ontology', 'base_ontology_file', abspath)
         self.assertEqual(abspath, self.oc.getBaseOntologyPath())
 
-    def test_getTermsDir(self):
+    def test_getEntitySourceDir(self):
         # Test the default case.
         self.assertEqual(
-            self.td_path + '/src/terms',
-            self.oc.getTermsDir()
+            self.td_path + '/src/entities',
+            self.oc.getEntitySourceDir()
         )
 
         # Test a custom relative file path.
         relpath = 'rel/terms'
-        self.oc.set('Ontology', 'termsdir', relpath)
+        self.oc.set('Ontology', 'entity_sourcedir', relpath)
         self.assertEqual(
             self.td_path + '/' + relpath,
-            self.oc.getTermsDir()
+            self.oc.getEntitySourceDir()
         )
 
         # Test a custom absolute file path.
         abspath = '/an/absolute/path/terms'
-        self.oc.set('Ontology', 'termsdir', abspath)
-        self.assertEqual(abspath, self.oc.getTermsDir())
+        self.oc.set('Ontology', 'entity_sourcedir', abspath)
+        self.assertEqual(abspath, self.oc.getEntitySourceDir())
 
-    def test_getTermsFilePaths(self):
+    def test_getEntitySourceFilePaths(self):
         # Check the default terms file location.
-        exp = [self.td_path + '/src/terms/' + fname for fname in self.termsfiles]
-        self.assertEqual(exp, self.oc.getTermsFilePaths())
+        exp = [
+            self.td_path + '/src/entities/' + fname for fname in self.termsfiles
+        ]
+        self.assertEqual(exp, self.oc.getEntitySourceFilePaths())
 
         # Check a custom relative path terms file location.
         relpath = 'a/rel/path'
-        self.oc.set('Ontology', 'termsdir', relpath)
+        self.oc.set('Ontology', 'entity_sourcedir', relpath)
         abspath = self.td_path + '/' + relpath
         exp = [abspath + '/' + fname for fname in self.termsfiles]
-        self.assertEqual(exp, self.oc.getTermsFilePaths())
+        self.assertEqual(exp, self.oc.getEntitySourceFilePaths())
 
         # Check a custom absolute path terms file location.
         abspath = '/an/absolute/path'
-        self.oc.set('Ontology', 'termsdir', abspath)
+        self.oc.set('Ontology', 'entity_sourcedir', abspath)
         exp = [abspath + '/' + fname for fname in self.termsfiles]
-        self.assertEqual(exp, self.oc.getTermsFilePaths())
+        self.assertEqual(exp, self.oc.getEntitySourceFilePaths())
 
         # Verify that a missing termsfiles setting returns an empty list.
-        self.oc.remove_option('Ontology', 'termsfiles')
-        self.assertEqual([], self.oc.getTermsFilePaths())
+        self.oc.remove_option('Ontology', 'entity_sourcefiles')
+        self.assertEqual([], self.oc.getEntitySourceFilePaths())
 
         # Verify that a blank termsfiles returns an empty list.
         self.oc.set('Ontology', 'termsfiles', '   \t  ')
-        self.assertEqual([], self.oc.getTermsFilePaths())
+        self.assertEqual([], self.oc.getEntitySourceFilePaths())
 
     def test_getDoInSourceBuilds(self):
         self.assertFalse(self.oc.getDoInSourceBuilds())

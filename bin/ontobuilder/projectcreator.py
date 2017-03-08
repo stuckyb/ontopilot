@@ -57,7 +57,9 @@ class ProjectCreator:
         """
         if not(os.path.isfile(srcpath)):
             raise RuntimeError(
-                'The ontology project template file, "{0}", could not be found.  Please check that the software was installed correctly.'.format(srcpath)
+                'The ontology project template file, "{0}", could not be '
+                'found.  Please check that the software was installed '
+                'correctly.'.format(srcpath)
             )
 
         try:
@@ -70,7 +72,10 @@ class ProjectCreator:
                     fileout.write(line)
         except IOError:
             raise RuntimeError(
-                'The ontology project file, "{0}", could not be created.  Please make sure that you have permission to create new files and directories in the new project location.'.format(destpath)
+                'The ontology project file, "{0}", could not be created.  '
+                'Please make sure that you have permission to create new '
+                'files and directories in the new project '
+                'location.'.format(destpath)
             )
 
     def _initConfig(self):
@@ -107,10 +112,10 @@ class ProjectCreator:
                 'ontology_file = {0}\n'.format(rel_ontpath)
             ),
             (
-                re.compile('^termsfiles =\s*$'),
+                re.compile('^entity_sourcefiles =\s*$'),
                 (
-                    'termsfiles = {0}_classes.csv, {0}_properties.csv, '
-                    '{0}_individuals.csv\n'.format(ontname)
+                    'entity_sourcefiles = {0}_classes.csv, {0}_properties.csv,'
+                    ' {0}_individuals.csv\n'.format(ontname)
                 )
             )
         ]
@@ -130,7 +135,7 @@ class ProjectCreator:
         # Get all project directory paths from the new project's configuration
         # file.
         dirnames = [
-            config.getTermsDir(), config.getImportsSrcDir(),
+            config.getEntitySourceDir(), config.getImportsSrcDir(),
             os.path.dirname(config.getOntologyFilePath()),
             config.getImportsDir()
         ]
@@ -143,9 +148,19 @@ class ProjectCreator:
                     try:
                         os.makedirs(dirpath)
                     except OSError:
-                        raise RuntimeError('The new project directory, "{0}", could not be created.  Please make sure that you have permission to create new files and directories in the new project location.'.format(dirpath))
+                        raise RuntimeError(
+                            'The new project directory, "{0}", could not be '
+                            'created.  Please make sure that you have '
+                            'permission to create new files and directories '
+                            'in the new project location.'.format(dirpath)
+                        )
                 else:
-                    raise RuntimeError('The path "{0}" already exists, but is not a directory.  This file must be moved, renamed, or deleted before the new project can be created.'.format(dirpath))
+                    raise RuntimeError(
+                        'The path "{0}" already exists, but is not a '
+                        'directory.  This file must be moved, renamed, or '
+                        'deleted before the new project can be '
+                        'created.'.format(dirpath)
+                    )
 
     def _robustCopy(self, sourcepath, destpath):
         """
@@ -203,7 +218,7 @@ class ProjectCreator:
         # Copy and rename the sample ontology terms files.
         for copypair in copypairs:
             srcpath = os.path.join(self.templatedir, copypair[0])
-            destpath = os.path.join(config.getTermsDir(), copypair[1])
+            destpath = os.path.join(config.getEntitySourceDir(), copypair[1])
             self._robustCopy(srcpath, destpath)
 
         # Copy and rename the base ontology file.

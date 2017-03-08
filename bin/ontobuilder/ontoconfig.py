@@ -353,29 +353,29 @@ class OntoConfig(RawConfigParser):
 
         return baseontpath
 
-    def getTermsDir(self):
+    def getEntitySourceDir(self):
         """
         Returns the absolute path to the directory of the terms/entities source
         files.
         """
-        pathstr = self.getCustom('Ontology', 'termsdir', 'src/terms')
+        pathstr = self.getCustom('Ontology', 'entity_sourcedir', 'src/entities')
         
         return self._getAbsPath(pathstr)
 
-    def getTermsFilePaths(self):
+    def getEntitySourceFilePaths(self):
         """
         Returns a list of full paths to all input terms/entities files.
         """
-        tfilesraw = self.getCustom('Ontology', 'termsfiles', '').split(',')
+        tfilesraw = self.getCustom('Ontology', 'entity_sourcefiles', '')
 
         # Remove any empty terms file names.
         tfileslist = []
-        for tfnameraw in tfilesraw:
+        for tfnameraw in tfilesraw.split(','):
             if tfnameraw.strip() != '':
                 tfileslist.append(tfnameraw.strip())
 
         # Generate the locations of all terms files.
-        termsfolder = self.getTermsDir()
+        termsfolder = self.getEntitySourceDir()
         pathslist = [os.path.join(termsfolder, fname) for fname in tfileslist]
 
         return pathslist

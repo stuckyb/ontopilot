@@ -18,7 +18,7 @@ from tablereader import TableRowError
 # Java imports.
 
 
-class TermDescriptionError(TableRowError):
+class EntityDescriptionError(TableRowError):
     """
     An exception class for errors encountered in term descriptions in rows from
     input files.
@@ -92,7 +92,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newclass.addLabel(labeltext)
         except RuntimeError as err:
-            raise TermDescriptionError(str(err), classdesc)
+            raise EntityDescriptionError(str(err), classdesc)
 
         # Cache the remainder of the class description.
         self.entity_trows.append((newclass, classdesc))
@@ -121,7 +121,7 @@ class OWLOntologyBuilder:
         for annottext in annottexts:
             annotparts = self.ws_dsparser.parseString(annottext)
             if len(annotparts) != 2:
-                raise TermDescriptionError(
+                raise EntityDescriptionError(
                     'The annotation specification is invalid: {0}.  It must '
                     'be of the form annotation_property_ID "Annotation '
                     'text."'.format(annottext),
@@ -185,7 +185,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newprop.addLabel(labeltext)
         except RuntimeError as err:
-            raise TermDescriptionError(str(err), propdesc)
+            raise EntityDescriptionError(str(err), propdesc)
         
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
@@ -252,7 +252,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newprop.addLabel(labeltext)
         except RuntimeError as err:
-            raise TermDescriptionError(str(err), propdesc)
+            raise EntityDescriptionError(str(err), propdesc)
         
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
@@ -347,7 +347,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newprop.addLabel(labeltext)
         except RuntimeError as err:
-            raise TermDescriptionError(str(err), propdesc)
+            raise EntityDescriptionError(str(err), propdesc)
         
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
@@ -382,7 +382,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newindv.addLabel(labeltext)
         except RuntimeError as err:
-            raise TermDescriptionError(str(err), indvdesc)
+            raise EntityDescriptionError(str(err), indvdesc)
         
         # Cache the remainder of the individual description.
         self.entity_trows.append((newindv, indvdesc))
@@ -433,7 +433,7 @@ class OWLOntologyBuilder:
         statement.
         """
         if len(fact_parts) not in (2, 3):
-            raise TermDescriptionError(
+            raise EntityDescriptionError(
                 'The individual object/data property assertion (fact) is '
                 'invalid: {0}'.format(factstr),
                 desc
@@ -441,7 +441,7 @@ class OWLOntologyBuilder:
 
         if len(fact_parts) == 3:
             if fact_parts[0].lower() != 'not':
-                raise TermDescriptionError(
+                raise EntityDescriptionError(
                     'The individual object/data property assertion (fact) is '
                     'invalid: "not" was expected, but "{0}" was '
                     'encountered.'.format(fact_parts[0]),
@@ -475,7 +475,7 @@ class OWLOntologyBuilder:
                     raise RuntimeError('Unsupported ontology entity type: '
                             + str(typeconst) + '.')
             except RuntimeError as err:
-                raise TermDescriptionError(str(err), desc)
+                raise EntityDescriptionError(str(err), desc)
 
             # Putting the pop() operation at the end of the loop ensures that a
             # description is only removed from the list/stack if it was
