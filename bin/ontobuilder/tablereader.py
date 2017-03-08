@@ -115,6 +115,13 @@ class TableRow:
 
         return metadata + str(self.data)
 
+    def __iter__(self):
+        """
+        Returns an iterator for the column names (i.e., keys) in the table row.
+        """
+        # Return an iterator for the keys in the underlying dictionary.
+        return iter(self.data)
+
     def getTable(self):
         """
         Returns the BaseTable subclass instance from which this TableRow

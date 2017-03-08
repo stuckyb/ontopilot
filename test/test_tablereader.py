@@ -39,7 +39,10 @@ class TestTableReaderFactory(unittest.TestCase):
         with TableReaderFactory('test_data/test_table-valid.ods') as t_reader:
             self.assertEqual(t_reader.getNumTables(), 2)
 
-        with self.assertRaisesRegexp(RuntimeError, 'The type of the input file .* could not be determined'):
+        with self.assertRaisesRegexp(
+            RuntimeError,
+            'The type of the input file .* could not be determined'
+        ):
             TableReaderFactory('unknown_type.blah').__enter__()
 
 
@@ -135,6 +138,21 @@ class TestTableRow(unittest.TestCase):
             'ontobuilder', 'WARNING',
             'The column "col6" was missing in the table row.'
         ))
+
+    def test_iteration(self):
+        """
+        Tests that iteration through the column names (keys) works properly.
+        """
+        self.tr['col1'] = 'val1'
+        self.tr['col2'] = 'val2'
+        self.tr['col3'] = 'val3'
+
+        exp_keys = ['col1', 'col2', 'col3']
+        result = []
+        for key in self.tr:
+            result.append(key)
+
+        self.assertEqual(exp_keys, sorted(result))
 
 
 class _TestTableReader:
