@@ -88,7 +88,7 @@ class OWLOntologyBuilder:
             newclass = self.ontology.createNewClass(classdesc['ID'])
             
             # Make sure we have a label and add it to the new class.
-            labeltext = classdesc['Label']
+            labeltext = self.dsparser.unquoteStr(classdesc['Label'])
             if labeltext != '':
                 newclass.addLabel(labeltext)
         except RuntimeError as err:
@@ -109,12 +109,12 @@ class OWLOntologyBuilder:
         for textdef in textdefs:
             if expanddef:
                 textdef = self._expandDefinition(textdef)
-            entobj.addDefinition(textdef)
+            entobj.addDefinition(self.dsparser.unquoteStr(textdef))
 
         # Add any comments for the entity.
         commenttexts = self.dsparser.parseString(entdesc['Comments'])
         for commenttext in commenttexts:
-            entobj.addComment(commenttext)
+            entobj.addComment(self.dsparser.unquoteStr(commenttext))
 
         # Add any additional annotations.
         annottexts = self.dsparser.parseString(entdesc['Annotations'])
@@ -173,7 +173,7 @@ class OWLOntologyBuilder:
             newprop = self.ontology.createNewDataProperty(propdesc['ID'])
             
             # Make sure we have a label and add it to the new class.
-            labeltext = propdesc['Label']
+            labeltext = self.dsparser.unquoteStr(propdesc['Label'])
             if labeltext != '':
                 newprop.addLabel(labeltext)
         except RuntimeError as err:
@@ -240,7 +240,7 @@ class OWLOntologyBuilder:
             newprop = self.ontology.createNewObjectProperty(propdesc['ID'])
             
             # Make sure we have a label and add it to the new class.
-            labeltext = propdesc['Label']
+            labeltext = self.dsparser.unquoteStr(propdesc['Label'])
             if labeltext != '':
                 newprop.addLabel(labeltext)
         except RuntimeError as err:
@@ -335,7 +335,7 @@ class OWLOntologyBuilder:
             newprop = self.ontology.createNewAnnotationProperty(propdesc['ID'])
             
             # Make sure we have a label and add it to the new class.
-            labeltext = propdesc['Label']
+            labeltext = self.dsparser.unquoteStr(propdesc['Label'])
             if labeltext != '':
                 newprop.addLabel(labeltext)
         except RuntimeError as err:
@@ -370,7 +370,7 @@ class OWLOntologyBuilder:
             newindv = self.ontology.createNewIndividual(indvdesc['ID'])
             
             # If we have a label, add it to the individual.
-            labeltext = indvdesc['Label']
+            labeltext = self.dsparser.unquoteStr(indvdesc['Label'])
             if labeltext != '':
                 newindv.addLabel(labeltext)
         except RuntimeError as err:

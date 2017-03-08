@@ -48,7 +48,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         self.tr['ID'] = NEW_IRI
         self.tr['Label'] = 'new test entity'
         self.tr['Text definition'] = 'The definition!'
-        self.tr['Comments'] = 'The first comment.; The second\; comment.'
+        self.tr['Comments'] = '"The first comment."; The second\; comment.'
         self.tr['Annotations'] = """
             'annotation property 1' 'Annotation text 1.';
             'annotation property 1' "Annotation text 2."
@@ -70,7 +70,8 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the definition.
         self.assertEqual(
-            [self.tr['Text definition']], entity.getAnnotationValues(entity.DEFINITION_IRI)
+            [self.tr['Text definition']],
+            entity.getAnnotationValues(entity.DEFINITION_IRI)
         )
 
         # Check the comments.
