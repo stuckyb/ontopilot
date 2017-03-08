@@ -53,6 +53,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
             'annotation property 1' 'Annotation text 1.';
             'annotation property 1' "Annotation text 2."
         """
+        self.tr["@'annotation property 1'"] = 'Annotation text 3.'
 
         # If we define custom failure messages, append them to the end of the
         # default failure message.
@@ -83,7 +84,10 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         # Check the annotations.
         annotpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0030')
         self.assertEqual(
-            sorted(['Annotation text 1.', 'Annotation text 2.']),
+            sorted([
+                'Annotation text 1.', 'Annotation text 2.',
+                'Annotation text 3.'
+            ]),
             sorted(entity.getAnnotationValues(annotpropIRI))
         )
 

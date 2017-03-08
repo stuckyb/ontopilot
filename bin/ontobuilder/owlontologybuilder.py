@@ -132,6 +132,14 @@ class OWLOntologyBuilder:
                 annotparts[0], self.dsparser.unquoteStr(annotparts[1])
             )
 
+        # Look for custom annotation columns, and add any such annotations.
+        for colname in entdesc:
+            if colname[0] == '@':
+                annotprop_id = colname[1:]
+                entobj.addAnnotation(
+                    annotprop_id, self.dsparser.unquoteStr(entdesc[colname])
+                )
+
     def _addClassAxioms(self, classobj, classdesc, expanddef=True):
         """
         Adds axioms from a _TableRow class description to an existing class
