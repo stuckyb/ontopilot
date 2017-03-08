@@ -68,8 +68,9 @@ class OWLOntologyBuilder:
         self.dsparser = DelimStrParser(delimchars=';', quotechars='"\'')
 
         # Create a delimited string parser for parsing the components of
-        # individual property assertions (facts).
-        self.factparser = DelimStrParser(delimchars=' \t', quotechars='"\'')
+        # strings with whitespace-separated components, such as individual
+        # property assertions (facts).
+        self.ws_dsparser = DelimStrParser(delimchars=' \t', quotechars='"\'')
 
     def getOntology(self):
         """
@@ -114,6 +115,22 @@ class OWLOntologyBuilder:
         commenttexts = self.dsparser.parseString(entdesc['Comments'])
         for commenttext in commenttexts:
             entobj.addComment(commenttext)
+
+        # Add any additional annotations.
+        annottexts = self.dsparser.parseString(entdesc['Annotations'])
+        for annottext in annottexts:
+            annotparts = self.ws_dsparser.parseString(annottext)
+            if len(annotparts) != 2:
+                raise TermDescriptionError(
+                    'The annotation specification is invalid: {0}.  It must '
+                    'be of the form annotation_property_ID "Annotation '
+                    'text."'.format(annottext),
+                    entdesc
+                )
+
+            entobj.addAnnotation(
+                annotparts[0], self.dsparser.unquoteStr(annotparts[1])
+            )
 
     def _addClassAxioms(self, classobj, classdesc, expanddef=True):
         """
@@ -377,7 +394,7 @@ class OWLOntologyBuilder:
 
         # Add all object property assertions (object property facts).
         for opfact in self.dsparser.parseString(indvdesc['Relations']):
-            fact_parts = self.factparser.parseString(opfact)
+            fact_parts = self.ws_dsparser.parseString(opfact)
             self._checkFactSyntax(fact_parts, opfact, indvdesc)
             if fact_parts[0].lower() == 'not':
                 indvobj.addObjectPropertyFact(
@@ -390,7 +407,7 @@ class OWLOntologyBuilder:
 
         # Add all data property assertions (data property facts).
         for dpfact in self.dsparser.parseString(indvdesc['Data facts']):
-            fact_parts = self.factparser.parseString(dpfact)
+            fact_parts = self.ws_dsparser.parseString(dpfact)
             self._checkFactSyntax(fact_parts, dpfact, indvdesc)
             if fact_parts[0].lower() == 'not':
                 indvobj.addDataPropertyFact(

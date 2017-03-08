@@ -49,6 +49,10 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         self.tr['Label'] = 'new test entity'
         self.tr['Text definition'] = 'The definition!'
         self.tr['Comments'] = 'The first comment.; The second\; comment.'
+        self.tr['Annotations'] = """
+            'annotation property 1' 'Annotation text 1.';
+            'annotation property 1' "Annotation text 2."
+        """
 
         # If we define custom failure messages, append them to the end of the
         # default failure message.
@@ -73,6 +77,13 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         self.assertEqual(
             sorted(['The first comment.', 'The second; comment.']),
             sorted(entity.getAnnotationValues(COMMENT_IRI))
+        )
+
+        # Check the annotations.
+        annotpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0030')
+        self.assertEqual(
+            sorted(['Annotation text 1.', 'Annotation text 2.']),
+            sorted(entity.getAnnotationValues(annotpropIRI))
         )
 
     def test_addClass(self):
