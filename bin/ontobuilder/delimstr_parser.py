@@ -5,8 +5,8 @@ class DelimStrParser:
     Parses strings that optionally contain delimiter-separated string values.
     The strings are parsed according to the simple grammar below.  Two rules
     not captured by the grammar are: 1) Quoted components must begin and end
-    with the same quote character; and 2) Inside a quoted components,
-    alternative quote characters can be used unescaped.
+    with the same quote character; and 2) Inside quoted components, alternative
+    quote characters can be used unescaped.
 
     str_list => [string {delimchar string}]
     string => strpart {strpart}
@@ -83,4 +83,28 @@ class DelimStrParser:
             strlist.append(currstrval.strip())
 
         return strlist
+
+    def unquoteStr(self, strval):
+        """
+        Removes enclosing quotes from a string.  Any escaped quote characters
+        inside the string will be replaced with their non-escaped equivalent.
+        If the *entire* string is not enclosed in quotes, the string is
+        returned unaltered.  That is, a string is only considered to be quoted
+        if the first and last character are a matching quote character.
+        """
+        if len(strval) < 2:
+            return strval
+
+        if (strval[0] != strval[-1]) or (strval[0] not in self.quotechars):
+            return strval
+
+        # If the end quote is an escaped quote character, then the string is
+        # not actually quoted.
+        if strval[-2] == '\\':
+            return strval
+
+        # Replace escaped quote characters.
+        newstrval = strval.replace('\\' + strval[0], strval[0])
+
+        return newstrval[1:-1]
 

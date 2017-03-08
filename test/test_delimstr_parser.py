@@ -162,3 +162,26 @@ class Test_DelimtrParser(unittest.TestCase):
             ):
                 parser.parseString(testval)
 
+    def test_unquoteStr(self):
+        parser = DelimStrParser(delimchars=';', quotechars='\'"')
+
+        # Define a set of test values as tuples of (inputstr, resultstr).
+        testvals = [
+            ('', ''),
+            ('"', '"'),
+            ('""', ''),
+            (r'\"', r'\"'),
+            (r'"\"', r'"\"'),
+            (r'"\""', '"'),
+            ('"\'"', "'"),
+            ("'\"'", '"'),
+            (r'"\"test\" val"', '"test" val'),
+            ('"test" val', '"test" val')
+        ]
+
+        for inputstr, resultstr in testvals:
+            self.assertEqual(
+                resultstr, parser.unquoteStr(inputstr),
+                msg='Input string: "{0}"'.format(inputstr)
+            )
+
