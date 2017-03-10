@@ -65,7 +65,7 @@ class OWLOntologyBuilder:
 
         # Create a delimited string parser for parsing multiple values out of
         # input fields.
-        self.dsparser = DelimStrParser(delimchars=';', quotechars='"\'')
+        self.dsparser = DelimStrParser(delimchars=';', quotechars='"')
 
         # Create a delimited string parser for parsing the components of
         # strings with whitespace-separated components, such as individual
