@@ -640,7 +640,7 @@ class Ontology(Observable):
             # about the merged ontology.
             self.notifyObservers('ontology_added', (importont,))
 
-    def checkEntailmentErrors(self):
+    def checkEntailmentErrors(self, reasoner='HermiT'):
         """
         Checks for and reports two common entailment errors: inconsistency and
         incoherence.  Returns a report object that is a dictionary with two
@@ -653,7 +653,7 @@ class Ontology(Observable):
         report = {
             'unsatisfiable_classes': []
         }
-        reasoner = self.getReasonerManager().getReasoner('hermit')
+        reasoner = self.getReasonerManager().getReasoner(reasoner)
 
         report['is_consistent'] = reasoner.isConsistent()
 
