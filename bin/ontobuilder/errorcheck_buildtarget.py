@@ -40,7 +40,9 @@ class ErrorCheckBuildTarget(BuildTargetWithConfig):
         mainont = Ontology(self.obt.getOutputFilePath())
 
         logger.info('Checking for entailment errors...')
-        entcheck_res = mainont.checkEntailmentErrors()
+        entcheck_res = mainont.checkEntailmentErrors(
+            self.config.getReasonerStr()
+        )
 
         if not(entcheck_res['is_consistent']):
             logger.info(
