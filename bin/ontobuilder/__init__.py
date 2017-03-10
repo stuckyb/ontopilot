@@ -82,6 +82,7 @@ TRUE_STRS = ('t', 'true', 'y', 'yes')
 
 # Add top-level classes of contained modules that are used by UI code to the
 # package's top-level scope.
+from ontoconfig import ConfigError
 from basic_buildtargets import InitTarget
 from imports_buildtarget import ImportsBuildTarget
 from onto_buildtarget import OntoBuildTarget

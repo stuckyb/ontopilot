@@ -4,6 +4,7 @@
 import sys
 import logging
 from argparse import ArgumentParser
+from ontobuilder import ConfigError
 from ontobuilder import InitTarget, ImportsBuildTarget, OntoBuildTarget
 from ontobuilder import ModifiedOntoBuildTarget, ReleaseBuildTarget
 from ontobuilder import ErrorCheckBuildTarget, UpdateBaseImportsBuildTarget
@@ -74,7 +75,7 @@ try:
     else:
         print '\n', target.getBuildNotRequiredMsg(), '\n'
         sys.exit(1)
-except RuntimeError as err:
+except (ConfigError, RuntimeError) as err:
     print '\n', err, '\n'
     sys.exit(1)
 
