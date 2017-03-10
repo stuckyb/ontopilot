@@ -134,21 +134,6 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
                 mainont.mergeOntology(importIRI)
 
         if self.prereason:
-            logger.info(
-                'Checking whether the ontology is logically consistent...'
-            )
-            entcheck_res = mainont.checkEntailmentErrors()
-            if not(entcheck_res['is_consistent']):
-                raise RuntimeError(
-                    'The ontology is inconsistent (that is, it has no '
-                    'models).  This is often caused by the presence of an '
-                    'individual (that is, a class instance) that is '
-                    'explicitly or implicitly a member of two disjoint '
-                    'classes.  It might also indicate an underlying modeling '
-                    'error.  You must correct this problem before inferred '
-                    'axioms can be added to the ontology.'
-                )
-
             logger.info('Running reasoner and adding inferred axioms...')
             inf_types = self.config.getInferenceTypeStrs()
             annotate_inferred = self.config.getAnnotateInferred()

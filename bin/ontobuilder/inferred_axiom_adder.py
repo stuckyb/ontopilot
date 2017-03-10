@@ -4,6 +4,7 @@
 
 # Python imports.
 import ontobuilder
+from ontobuilder import logger
 
 # Java imports.
 from java.util import HashSet
@@ -60,6 +61,7 @@ class InferredAxiomAdder:
 
         reasoner_str: A string indicating the type of reasoner to use.
         """
+        self.reasoner_str = reasoner_str
         self.reasoner = self.ont.getReasonerManager().getReasoner(reasoner_str)
 
     def _getGeneratorsList(self, inference_types):
@@ -236,11 +238,18 @@ class InferredAxiomAdder:
         """
         # First, make sure that the ontology is consistent; otherwise, all
         # inference attempts will fail.
-        report = self.ont.checkEntailmentErrors()
-        if not(report['is_consistent']):
+        logger.info(
+            'Checking whether the ontology is logically consistent...'
+        )
+        entcheck_res = self.ont.checkEntailmentErrors(self.reasoner_str)
+        if not(entcheck_res['is_consistent']):
             raise RuntimeError(
-                'The ontology is inconsistent.  Inferred axioms cannot be '
-                + 'generated for inconsistent ontologies.'
+                'The ontology is inconsistent (that is, it has no models).  '
+                'This is often caused by the presence of an individual (that '
+                'is, a class instance) that is explicitly or implicitly a '
+                'member of two disjoint classes.  It might also indicate an '
+                'underlying modeling error.  You must correct this problem '
+                'before inferred axioms can be added to the ontology.'
             )
 
         # The general approach is to first get the set of all axioms in the
