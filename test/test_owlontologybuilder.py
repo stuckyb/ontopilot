@@ -50,10 +50,10 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         self.tr['Text definition'] = 'The definition!'
         self.tr['Comments'] = '"The first comment."; The second\; comment.'
         self.tr['Annotations'] = """
-            'annotation property 1' 'Annotation text 1.';
+            'annotation property 1' "Annotation text 1.";
             'annotation property 1' "Annotation text 2."
         """
-        self.tr["@'annotation property 1'"] = 'Annotation text 3.'
+        self.tr["@'annotation property 1'"] = "Annotation text 3."
 
         # If we define custom failure messages, append them to the end of the
         # default failure message.
