@@ -1,15 +1,30 @@
-"""
-Provides a single class, LabelMap, that implements methods for mapping term
-labels to term IRIs in a given ontology.  A major challenge with using labels
-to identify terms is deciding how to deal with label collisions, which are
-nearly inevitable given a large enough imports closure.  LableMap takes the
-approach of issuing non-fatal warnings when collisions are encountered while
-building the label lookup table.  However, LabelMap keeps track of all known
-ambiguous labels, and if client code attempts to look up the IRI for an
-ambiguous label, an exception is thrown.  To further avoid ambiguous label
-references, cliet code can optionally supply a root IRI string that will be
-used to attempt to disambiguate label collisions.
-"""
+# Copyright (C) 2017 Brian J. Stucky
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#
+# Provides a single class, LabelMap, that implements methods for mapping term
+# labels to term IRIs in a given ontology.  A major challenge with using labels
+# to identify terms is deciding how to deal with label collisions, which are
+# nearly inevitable given a large enough imports closure.  LableMap takes the
+# approach of issuing non-fatal warnings when collisions are encountered while
+# building the label lookup table.  However, LabelMap keeps track of all known
+# ambiguous labels, and if client code attempts to look up the IRI for an
+# ambiguous label, an exception is thrown.  To further avoid ambiguous label
+# references, client code can optionally supply a root IRI string that will be
+# used to attempt to disambiguate label collisions.
+#
 
 # Python imports.
 import logging
