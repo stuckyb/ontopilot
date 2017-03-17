@@ -7,10 +7,10 @@
 # Python imports.
 import os
 import glob
-from ontobuilder import logger
+from ontopilot import logger
 from tablereaderfactory import TableReaderFactory
 from owlontologybuilder import OWLOntologyBuilder, EntityDescriptionError
-from ontobuilder import TRUE_STRS
+from ontopilot import TRUE_STRS
 from buildtarget import BuildTargetWithConfig
 from imports_buildtarget import ImportsBuildTarget
 

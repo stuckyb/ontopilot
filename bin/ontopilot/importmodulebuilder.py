@@ -10,11 +10,11 @@ from urllib2 import HTTPError
 import math
 from progressbar import ProgressBar, Percentage, Bar, ETA
 from rfc3987 import rfc3987
-from ontobuilder import logger
+from ontopilot import logger
 from tablereaderfactory import TableReaderFactory
 from tablereader import TableRowError
-import ontobuilder
-from ontobuilder import TRUE_STRS
+import ontopilot
+from ontopilot import TRUE_STRS
 from ontology import Ontology
 
 # Java imports.
@@ -250,7 +250,7 @@ class ImportModuleBuilder:
                 raise RuntimeError('Unable to download the external ontology at "'
                         + ontologyIRI + '": ' + str(err))
 
-        ontobuilder.logger.info('Loading source ontology from file ' + ontfile + '.')
+        ontopilot.logger.info('Loading source ontology from file ' + ontfile + '.')
         sourceont = Ontology(ontfile)
 
         signature = HashSet()
@@ -267,7 +267,7 @@ class ImportModuleBuilder:
                 for row in table:
                     if not(row['Ignore'].lower() in TRUE_STRS):
                         idstr = row['ID']
-                        ontobuilder.logger.info('Processing entity "' + idstr + '".')
+                        ontopilot.logger.info('Processing entity "' + idstr + '".')
                         owlent = sourceont.getExistingEntity(idstr)
                         if owlent == None:
                             raise ImportModSpecError(
@@ -316,7 +316,7 @@ class ImportModuleBuilder:
             reasoner = reasonerman.getReasoner(trow['Reasoner'])
         
             # Get the entity's subclasses or subproperties.
-            ontobuilder.logger.info('Adding descendant entities of ' + str(owlent) + '.')
+            ontopilot.logger.info('Adding descendant entities of ' + str(owlent) + '.')
             if isinstance(owlent, OWLClassExpression):
                 subclasses = reasoner.getSubClasses(owlent, False).getFlattened()
                 # Reasoners can return owl:Nothing as a descendant class, so

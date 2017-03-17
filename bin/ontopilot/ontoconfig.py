@@ -5,7 +5,7 @@ import os.path
 import glob
 import urllib, urlparse
 from rfc3987 import rfc3987
-from ontobuilder import logger, TRUE_STRS
+from ontopilot import logger, TRUE_STRS
 from inferred_axiom_adder import INFERENCE_TYPES
 
 # Java imports.

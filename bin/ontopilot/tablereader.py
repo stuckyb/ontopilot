@@ -1,7 +1,7 @@
 
 # Python imports.
 import abc
-from ontobuilder import logger
+from ontopilot import logger
 
 # Java imports.
 

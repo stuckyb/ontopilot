@@ -1,6 +1,6 @@
 
 # Python imports.
-from ontobuilder import logger
+from ontopilot import logger
 
 # Java imports.
 from org.semanticweb.elk.owlapi import ElkReasonerFactory

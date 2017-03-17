@@ -6,11 +6,11 @@
 
 # Python imports.
 import os
-from ontobuilder import logger
+from ontopilot import logger
 from tablereaderfactory import TableReaderFactory
 from tablereader import TableRowError
 from importmodulebuilder import ImportModuleBuilder
-from ontobuilder import TRUE_STRS
+from ontopilot import TRUE_STRS
 from rfc3987 import rfc3987
 from buildtarget import BuildTargetWithConfig
 from basic_buildtargets import BuildDirTarget

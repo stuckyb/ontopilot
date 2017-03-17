@@ -1,6 +1,6 @@
 
 # Python imports.
-from ontobuilder import logger
+from ontopilot import logger
 from ontology import Ontology
 from buildtarget import BuildTargetWithConfig
 from onto_buildtarget import OntoBuildTarget

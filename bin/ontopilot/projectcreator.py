@@ -6,7 +6,7 @@
 # Python imports.
 import os, shutil
 import re
-from ontobuilder import logger
+from ontopilot import logger
 from ontoconfig import OntoConfig
 
 # Java imports.

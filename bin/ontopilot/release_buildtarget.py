@@ -2,7 +2,7 @@
 # Python imports.
 import os
 import datetime
-from ontobuilder import logger
+from ontopilot import logger
 from ontology import Ontology
 from buildtarget import BuildTargetWithConfig
 from modified_onto_buildtarget import ModifiedOntoBuildTarget

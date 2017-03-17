@@ -3,8 +3,8 @@
 #
 
 # Python imports.
-import ontobuilder
-from ontobuilder import logger
+import ontopilot
+from ontopilot import logger
 
 # Java imports.
 from java.util import HashSet
@@ -91,7 +91,7 @@ class InferredAxiomAdder:
                     self.reasoner.getSuperClasses(testent, True)
                     generators.append(InferredSubClassAxiomGenerator())
                 except UnsupportedOperationException as err:
-                    ontobuilder.logging.warning(
+                    ontopilot.logging.warning(
                         'The reasoner "{0}" does not support subclass inferences.'.format(
                             reasoner_name
                         )
@@ -104,7 +104,7 @@ class InferredAxiomAdder:
                     self.reasoner.getEquivalentClasses(testent)
                     generators.append(InferredEquivalentClassAxiomGenerator())
                 except UnsupportedOperationException as err:
-                    ontobuilder.logging.warning(
+                    ontopilot.logging.warning(
                         'The reasoner "{0}" does not support class equivalency inferences.'.format(
                             reasoner_name
                         )
@@ -117,7 +117,7 @@ class InferredAxiomAdder:
                     self.reasoner.getDisjointClasses(testent)
                     generators.append(InferredDisjointClassesAxiomGenerator())
                 except UnsupportedOperationException as err:
-                    ontobuilder.logging.warning(
+                    ontopilot.logging.warning(
                         'The reasoner "{0}" does not support class disjointness inferences.'.format(
                             reasoner_name
                         )
@@ -130,7 +130,7 @@ class InferredAxiomAdder:
                     self.reasoner.getSuperDataProperties(testent, True)
                     generators.append(InferredSubDataPropertyAxiomGenerator())
                 except UnsupportedOperationException as err:
-                    ontobuilder.logging.warning(
+                    ontopilot.logging.warning(
                         'The reasoner "{0}" does not support data property hierarchy inferences.'.format(
                             reasoner_name
                         )
@@ -143,7 +143,7 @@ class InferredAxiomAdder:
                     self.reasoner.getSuperObjectProperties(testent, True)
                     generators.append(InferredSubObjectPropertyAxiomGenerator())
                 except UnsupportedOperationException as err:
-                    ontobuilder.logging.warning(
+                    ontopilot.logging.warning(
                         'The reasoner "{0}" does not support object property hierarchy inferences.'.format(
                             reasoner_name
                         )
@@ -156,7 +156,7 @@ class InferredAxiomAdder:
                     self.reasoner.getInverseObjectProperties(testent)
                     generators.append(InferredInverseObjectPropertiesAxiomGenerator())
                 except UnsupportedOperationException as err:
-                    ontobuilder.logging.warning(
+                    ontopilot.logging.warning(
                         'The reasoner "{0}" does not support inverse object property inferences.'.format(
                             reasoner_name
                         )
@@ -169,7 +169,7 @@ class InferredAxiomAdder:
                     self.reasoner.getTypes(testent, True)
                     generators.append(InferredClassAssertionAxiomGenerator())
                 except UnsupportedOperationException as err:
-                    ontobuilder.logging.warning(
+                    ontopilot.logging.warning(
                         'The reasoner "{0}" does not support class assertion inferences.'.format(
                             reasoner_name
                         )
@@ -185,7 +185,7 @@ class InferredAxiomAdder:
                     self.reasoner.getObjectPropertyValues(testent, oprop)
                     generators.append(InferredPropertyAssertionGenerator())
                 except UnsupportedOperationException as err:
-                    ontobuilder.logging.warning(
+                    ontopilot.logging.warning(
                         'The reasoner "{0}" does not support property assertion inferences.'.format(
                             reasoner_name
                         )

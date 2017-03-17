@@ -7,7 +7,7 @@
 
 # Python imports.
 import os
-from ontobuilder import logger
+from ontopilot import logger
 from ontology import Ontology
 from buildtarget import BuildTargetWithConfig
 from imports_buildtarget import ImportsBuildTarget

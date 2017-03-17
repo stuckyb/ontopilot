@@ -4,11 +4,11 @@
 import sys
 import logging
 from argparse import ArgumentParser
-from ontobuilder import ConfigError
-from ontobuilder import InitTarget, ImportsBuildTarget, OntoBuildTarget
-from ontobuilder import ModifiedOntoBuildTarget, ReleaseBuildTarget
-from ontobuilder import ErrorCheckBuildTarget, UpdateBaseImportsBuildTarget
-from ontobuilder import BuildTargetManager
+from ontopilot import ConfigError
+from ontopilot import InitTarget, ImportsBuildTarget, OntoBuildTarget
+from ontopilot import ModifiedOntoBuildTarget, ReleaseBuildTarget
+from ontopilot import ErrorCheckBuildTarget, UpdateBaseImportsBuildTarget
+from ontopilot import BuildTargetManager
 
 # Java imports.
 
