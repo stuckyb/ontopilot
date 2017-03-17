@@ -15,7 +15,7 @@
 
 
 # Python imports.
-from ontobuilder.buildtarget import BuildTarget
+from ontopilot.buildtarget import BuildTarget
 import unittest
 
 # Java imports.

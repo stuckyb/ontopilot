@@ -15,7 +15,7 @@
 
 
 # Python imports.
-from ontobuilder.ontology import Ontology
+from ontopilot.ontology import Ontology
 import unittest
 #from testfixtures import LogCapture
 
@@ -29,7 +29,7 @@ OBJPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0001'
 DATAPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0020'
 ANNOTPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0030'
 CLASS_IRI = 'http://purl.obolibrary.org/obo/OBTO_0010'
-INDIVIDUAL_IRI = 'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#individual_002'
+INDIVIDUAL_IRI = 'https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology.owl#individual_002'
 
 # IRI that is not used in the test ontology.
 NULL_IRI = 'http://purl.obolibrary.org/obo/OBTO_9999'
@@ -251,14 +251,14 @@ class Test_Ontology(unittest.TestCase):
         self.assertTrue(annot_ax_set.isEmpty())
 
     def test_hasImport(self):
-        import_iri = 'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl'
+        import_iri = 'https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology-import.owl'
 
         self.assertFalse(self.ont.hasImport('http://not.an.import/iri'))
         self.assertTrue(self.ont.hasImport(import_iri))
 
     def test_getImports(self):
         expected = [
-            'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl'
+            'https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology-import.owl'
         ]
         imports_IRI_strs = [iri.toString() for iri in self.ont.getImports()]
         self.assertEqual(expected, imports_IRI_strs)
@@ -279,7 +279,7 @@ class Test_Ontology(unittest.TestCase):
         )
 
     def test_updateImportIRI(self):
-        old_iri = 'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl'
+        old_iri = 'https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology-import.owl'
         new_iri = 'http://a.new.iri/replacement'
 
         self.assertTrue(self.ont.hasImport(old_iri))
@@ -298,7 +298,7 @@ class Test_Ontology(unittest.TestCase):
             self.ont.updateImportIRI('http://iri.with.no/import', old_iri)
 
     def test_mergeOntology(self):
-        mergeiri_str = 'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl'
+        mergeiri_str = 'https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology-import.owl'
         mergeIRI = IRI.create(mergeiri_str)
 
         mergeclassiri_str = 'http://purl.obolibrary.org/obo/OBITO_0001'

@@ -15,8 +15,8 @@
 
 
 # Python imports.
-from ontobuilder.tablereader import TableRow
-from ontobuilder.owlontologybuilder import OWLOntologyBuilder
+from ontopilot.tablereader import TableRow
+from ontopilot.owlontologybuilder import OWLOntologyBuilder
 import unittest
 from test_tablereader import TableStub
 #from testfixtures import LogCapture
@@ -392,7 +392,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
             (
                 str(new_oaent.getIRI()),
                 'http://purl.obolibrary.org/obo/OBTO_0001',
-                'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#individual_001'
+                'https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology.owl#individual_001'
             )
         }
 
@@ -414,7 +414,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
             (
                 str(new_oaent.getIRI()),
                 'http://purl.obolibrary.org/obo/OBTO_0001',
-                'https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#individual_002'
+                'https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology.owl#individual_002'
             )
         }
 

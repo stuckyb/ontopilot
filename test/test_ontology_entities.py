@@ -15,8 +15,8 @@
 
 
 # Python imports.
-from ontobuilder.ontology import Ontology
-from ontobuilder.ontology_entities import (
+from ontopilot.ontology import Ontology
+from ontopilot.ontology_entities import (
     CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,
     ANNOTATIONPROPERTY_ENTITY, INDIVIDUAL_ENTITY
 )

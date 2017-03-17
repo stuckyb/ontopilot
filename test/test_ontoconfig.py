@@ -15,7 +15,7 @@
 
 
 # Python imports.
-from ontobuilder.ontoconfig import ConfigError, OntoConfig
+from ontopilot.ontoconfig import ConfigError, OntoConfig
 import unittest
 from testfixtures import LogCapture
 import os.path

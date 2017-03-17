@@ -16,7 +16,7 @@
 
 
 # Python imports.
-from ontobuilder.observable import Observable
+from ontopilot.observable import Observable
 import unittest
 
 # Java imports.

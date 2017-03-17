@@ -15,8 +15,8 @@
 
 
 # Python imports.
-from ontobuilder.ontology import Ontology
-from ontobuilder.mshelper import (
+from ontopilot.ontology import Ontology
+from ontopilot.mshelper import (
     ManchesterSyntaxParserHelper, _BasicShortFormProvider
 )
 import unittest

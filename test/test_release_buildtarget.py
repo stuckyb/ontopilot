@@ -15,9 +15,9 @@
 
 
 # Python imports.
-from ontobuilder.ontoconfig import OntoConfig
-from ontobuilder.release_buildtarget import ReleaseBuildTarget
-from ontobuilder.release_buildtarget import _ArgsType, FileInfo
+from ontopilot.ontoconfig import OntoConfig
+from ontopilot.release_buildtarget import ReleaseBuildTarget
+from ontopilot.release_buildtarget import _ArgsType, FileInfo
 import unittest
 import os.path
 from collections import namedtuple

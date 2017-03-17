@@ -21,14 +21,14 @@ import os.path
 import unittest
 
 
-# Make sure we can find the ontobuilder modules.
-ontobuilder_dir = os.path.normpath(
+# Make sure we can find the ontopilot modules.
+ontopilot_dir = os.path.normpath(
     os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
         '../bin'
     )
 )
-sys.path.append(ontobuilder_dir)
+sys.path.append(ontopilot_dir)
 
 # Implements a very simple test runner for all test modules.  This could
 # probably be done even more easily using a package such as nose, but the

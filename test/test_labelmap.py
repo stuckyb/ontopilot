@@ -15,9 +15,9 @@
 
 
 # Python imports.
-from ontobuilder.ontology import Ontology
-from ontobuilder.labelmap import LabelMap
-from ontobuilder.labelmap import InvalidLabelError, AmbiguousLabelError
+from ontopilot.ontology import Ontology
+from ontopilot.labelmap import LabelMap
+from ontopilot.labelmap import InvalidLabelError, AmbiguousLabelError
 import unittest
 from testfixtures import LogCapture
 
@@ -65,12 +65,12 @@ class TestLabelMap(unittest.TestCase):
                 'label': 'test class 3'
             },
             {
-                'iri': 'https://github.com/stuckyb/ontobuilder/raw/master/'
+                'iri': 'https://github.com/stuckyb/ontopilot/raw/master/'
                     'test/test_data/ontology.owl#individual_001',
                 'label': 'test individual 1'
             },
             {
-                'iri': 'https://github.com/stuckyb/ontobuilder/raw/master/'
+                'iri': 'https://github.com/stuckyb/ontopilot/raw/master/'
                     'test/test_data/ontology.owl#individual_002',
                 'label': 'test individual 2'
             }

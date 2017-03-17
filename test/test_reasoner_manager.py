@@ -15,8 +15,8 @@
 
 
 # Python imports.
-from ontobuilder.ontology import Ontology
-from ontobuilder.reasoner_manager import ReasonerManager
+from ontopilot.ontology import Ontology
+from ontopilot.reasoner_manager import ReasonerManager
 import unittest
 #from testfixtures import LogCapture
 

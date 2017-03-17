@@ -15,7 +15,7 @@
 
 
 # Python imports.
-from ontobuilder.delimstr_parser import DelimStrParser
+from ontopilot.delimstr_parser import DelimStrParser
 import unittest
 
 # Java imports.

@@ -19,11 +19,11 @@
 # tables, including concrete implementations of BaseTable and BaseTableReader.
 #
 
-from ontobuilder.tablereader import TableRow, TableRowError, ColumnNameError
-from ontobuilder.tablereaderfactory import TableReaderFactory
-from ontobuilder.tablereader_csv import CSVTableReader
-from ontobuilder.tablereader_odf import ODFTableReader
-from ontobuilder.tablereader_excel import ExcelTableReader
+from ontopilot.tablereader import TableRow, TableRowError, ColumnNameError
+from ontopilot.tablereaderfactory import TableReaderFactory
+from ontopilot.tablereader_csv import CSVTableReader
+from ontopilot.tablereader_odf import ODFTableReader
+from ontopilot.tablereader_excel import ExcelTableReader
 import unittest
 from testfixtures import LogCapture
 
@@ -135,7 +135,7 @@ class TestTableRow(unittest.TestCase):
         with LogCapture() as lc:
             self.tr['col6']
         lc.check((
-            'ontobuilder', 'WARNING',
+            'ontopilot', 'WARNING',
             'The column "col6" was missing in the table row.'
         ))
 
@@ -253,7 +253,7 @@ class _TestTableReader:
         with LogCapture() as lc:
             row['column 7']
         lc.check((
-            'ontobuilder', 'WARNING',
+            'ontopilot', 'WARNING',
             'The column "column 7" was missing in the table row.'
         ))
 

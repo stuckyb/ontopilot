@@ -15,8 +15,8 @@
 
 
 # Python imports.
-from ontobuilder.ontoconfig import OntoConfig
-from ontobuilder.update_base_imports_buildtarget import UpdateBaseImportsBuildTarget
+from ontopilot.ontoconfig import OntoConfig
+from ontopilot.update_base_imports_buildtarget import UpdateBaseImportsBuildTarget
 import unittest
 import os.path
 

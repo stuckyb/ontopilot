@@ -15,10 +15,10 @@
 
 
 # Python imports.
-from ontobuilder.ontoconfig import OntoConfig
-from ontobuilder.imports_buildtarget import ImportsBuildTarget, ModuleInfo
+from ontopilot.ontoconfig import OntoConfig
+from ontopilot.imports_buildtarget import ImportsBuildTarget, ModuleInfo
 from test_tablereader import TableStub
-from ontobuilder.tablereader import TableRow, TableRowError
+from ontopilot.tablereader import TableRow, TableRowError
 import unittest
 import os.path
 

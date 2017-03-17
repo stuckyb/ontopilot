@@ -15,8 +15,8 @@
 
 
 # Python imports.
-from ontobuilder.ontoconfig import OntoConfig
-from ontobuilder.modified_onto_buildtarget import ModifiedOntoBuildTarget
+from ontopilot.ontoconfig import OntoConfig
+from ontopilot.modified_onto_buildtarget import ModifiedOntoBuildTarget
 import unittest
 import os.path
 from collections import namedtuple

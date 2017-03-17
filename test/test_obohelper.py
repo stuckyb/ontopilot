@@ -15,9 +15,9 @@
 
 
 # Python imports.
-from ontobuilder.obohelper import isOboID, termIRIToOboID, oboIDToIRI
-from ontobuilder.obohelper import getIRIForOboPrefix, OBO_BASE_IRI
-from ontobuilder.obohelper import OBOIdentiferError
+from ontopilot.obohelper import isOboID, termIRIToOboID, oboIDToIRI
+from ontopilot.obohelper import getIRIForOboPrefix, OBO_BASE_IRI
+from ontopilot.obohelper import OBOIdentiferError
 import unittest
 
 # Java imports.

@@ -15,7 +15,7 @@
 
 
 # Python imports.
-from ontobuilder.buildtarget_manager import BuildTargetManager, TargetMap
+from ontopilot.buildtarget_manager import BuildTargetManager, TargetMap
 from test_buildtarget import Target1, Target2
 import unittest
 

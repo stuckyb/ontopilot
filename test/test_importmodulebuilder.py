@@ -15,9 +15,9 @@
 
 
 # Python imports.
-from ontobuilder.importmodulebuilder import ImportModuleBuilder
-from ontobuilder.ontology import Ontology
-from ontobuilder.tablereader import TableRow
+from ontopilot.importmodulebuilder import ImportModuleBuilder
+from ontopilot.ontology import Ontology
+from ontopilot.tablereader import TableRow
 from test_tablereader import TableStub
 import unittest
 import os.path

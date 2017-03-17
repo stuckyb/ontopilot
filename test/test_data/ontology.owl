@@ -8,8 +8,8 @@
 # inference.
 #
 -->
-<rdf:RDF xmlns="https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#"
-     xml:base="https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl"
+<rdf:RDF xmlns="https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology.owl#"
+     xml:base="https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology.owl"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:oboInOwl="http://www.geneontology.org/formats/oboInOwl#"
@@ -17,8 +17,8 @@
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:obo="http://purl.obolibrary.org/obo/">
-    <owl:Ontology rdf:about="https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl">
-        <owl:imports rdf:resource="https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology-import.owl"/>
+    <owl:Ontology rdf:about="https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology.owl">
+        <owl:imports rdf:resource="https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology-import.owl"/>
         <rdfs:label xml:lang="en">Simple Test Ontology</rdfs:label>
     </owl:Ontology>
 
@@ -127,7 +127,7 @@
 
     <owl:NamedIndividual rdf:ID="individual_002">
         <rdf:type rdf:resource="http://purl.obolibrary.org/obo/OBTO_0010"/>
-        <obo:OBTO_0001 rdf:resource="https://github.com/stuckyb/ontobuilder/raw/master/test/test_data/ontology.owl#individual_001"/>
+        <obo:OBTO_0001 rdf:resource="https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology.owl#individual_001"/>
         <rdfs:label xml:lang="en">test individual 2</rdfs:label>
     </owl:NamedIndividual>
 

@@ -15,9 +15,9 @@
 
 
 # Python imports.
-from ontobuilder.ontology import Ontology
-from ontobuilder.inferred_axiom_adder import InferredAxiomAdder
-from ontobuilder.inferred_axiom_adder import INFERENCE_TYPES
+from ontopilot.ontology import Ontology
+from ontopilot.inferred_axiom_adder import InferredAxiomAdder
+from ontopilot.inferred_axiom_adder import INFERENCE_TYPES
 from test_ontology import INDIVIDUAL_IRI
 import unittest
 #from testfixtures import LogCapture
