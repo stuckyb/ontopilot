@@ -51,6 +51,11 @@ argp.add_argument(
     help='The path to a configuration file for the ontology build process.'
 )
 argp.add_argument(
+    '-f', '--force', action='store_true', required=False, help='If this flag '
+    'is given, the build task will be run even if the build products appear '
+    'to be up to date.'
+)
+argp.add_argument(
     '-m', '--merge_imports', action='store_true', help='If this flag is '
     'given, imported ontologies will be merged with the main ontology into a '
     'new ontology document.'
@@ -85,8 +90,8 @@ args = argp.parse_args()
 # Get and run the appropriate build target.
 try:
     target = buildtm.getBuildTarget(args, targetname_arg='task')
-    if target.isBuildRequired():
-        target.run()
+    if target.isBuildRequired() or args.force:
+        target.run(args.force)
     else:
         print '\n', target.getBuildNotRequiredMsg(), '\n'
         sys.exit(1)

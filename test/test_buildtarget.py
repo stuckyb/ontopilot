@@ -34,14 +34,15 @@ COMBINED_PRODUCTS =  {
 # of these, Target1, allows manipulating the value of _isBuildRequired().
 class Target1(BuildTarget):
     run_cnt = 0
+    build_products = TARGET1_PRODUCTS
     def __init__(self, args=None):
         BuildTarget.__init__(self)
         self.build_required = True
     def _isBuildRequired(self):
         return self.build_required
     def _run(self):
-        Target1.run_cnt += 1
-        return TARGET1_PRODUCTS
+        self.run_cnt += 1
+        return self.build_products
 
 class Target2(BuildTarget):
     run_cnt = 0
@@ -50,7 +51,7 @@ class Target2(BuildTarget):
     def _isBuildRequired(self):
         return True
     def _run(self):
-        Target2.run_cnt += 1
+        self.run_cnt += 1
         return {'product 2': 'something else'}
 
 
@@ -119,4 +120,21 @@ class TestBuildTarget(unittest.TestCase):
             "key that duplicates one of its dependency's product name keys"
         ):
             target1.run()
+
+        # Test that forcing a build works as expected.
+        target1 = Target1()
+        target1.build_required = False
+        target1.build_products = {}
+        target2 = Target1()
+        target2.build_required = False
+        target2.build_products = {}
+        target1.addDependency(target2)
+
+        target1.run()
+        self.assertEqual(0, target1.run_cnt)
+        self.assertEqual(0, target2.run_cnt)
+
+        target1.run(force_build=True)
+        self.assertEqual(1, target1.run_cnt)
+        self.assertEqual(1, target2.run_cnt)
 

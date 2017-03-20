@@ -106,12 +106,15 @@ class BuildTarget:
 
         return self._isBuildRequired()
 
-    def run(self):
+    def run(self, force_build=False):
         """
         Runs this build task.  All dependencies are processed first.  If the
         build task fails, an appropriate exception should be thrown, and
         exceptions should be allowed to "bubble up" through the dependency
         chain so they can be properly handled by external client code.
+
+        force_build: If True, the build task (including all dependencies) will
+            be run, even if all build products appear to be up to date.
         """
         # Invalidate any previous build products.
         self.products.clear()
@@ -119,9 +122,9 @@ class BuildTarget:
         dependencies_run = False
         for dependency in self.dependencies:
             results = {}
-            if dependency.isBuildRequired():
+            if dependency.isBuildRequired() or force_build:
                 dependencies_run = True
-                results = dependency.run()
+                results = dependency.run(force_build)
 
             # Merge the results with the products dictionary, making sure we
             # don't have any duplicate keys.
@@ -140,7 +143,7 @@ product name key: "{2}".'.format(
         # Run the build task for this target.  If we ran any dependencies, we
         # should always run this build task even if the local
         # _isBuildRequired() returns False.
-        if self._isBuildRequired() or dependencies_run:
+        if self._isBuildRequired() or dependencies_run or force_build:
             results = self._run()
             if results == None:
                 results = {}
