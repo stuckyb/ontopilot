@@ -27,7 +27,7 @@ from inferred_axiom_adder import INFERENCE_TYPES
 
 
 # Strings for identifying supported OWL reasoners.
-REASONER_STRS = ('HermiT', 'ELK')
+REASONER_STRS = ('HermiT', 'ELK', 'Pellet')
 
 # The inference types to use by default.
 DEFAULT_INFERENCE_TYPES = (
@@ -486,7 +486,7 @@ class OntoConfig(RawConfigParser):
     def getReasonerStr(self):
         """
         Returns the string identifying the reasoner to use.  If this option is
-        not configured, use "HermiT" as the default.
+        not configured, use "ELK" as the default.
         """
         reasoner = self.getCustom('Reasoning', 'reasoner', 'HermiT')
 

@@ -62,7 +62,7 @@ argp.add_argument(
 )
 argp.add_argument(
     '-r', '--reason', action='store_true', help='If this flag is given, a '
-    'reasoner will be run on the ontology (ELK by default), and inferred '
+    'reasoner will be run on the ontology (HermiT by default), and inferred '
     'axioms will be added to a new ontology document.'
 )
 argp.add_argument(
