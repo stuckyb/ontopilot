@@ -27,7 +27,7 @@ from inferred_axiom_adder import INFERENCE_TYPES
 
 
 # Strings for identifying supported OWL reasoners.
-REASONER_STRS = ('HermiT', 'ELK', 'Pellet')
+REASONER_STRS = ('HermiT', 'ELK', 'Pellet', 'JFact')
 
 # The inference types to use by default.
 DEFAULT_INFERENCE_TYPES = (
