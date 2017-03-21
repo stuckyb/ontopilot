@@ -486,7 +486,7 @@ class OntoConfig(RawConfigParser):
     def getReasonerStr(self):
         """
         Returns the string identifying the reasoner to use.  If this option is
-        not configured, use "ELK" as the default.
+        not configured, use "HermiT" as the default.
         """
         reasoner = self.getCustom('Reasoning', 'reasoner', 'HermiT')
 
