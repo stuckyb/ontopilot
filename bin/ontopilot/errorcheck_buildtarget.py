@@ -19,6 +19,7 @@ from ontopilot import logger
 from ontology import Ontology
 from buildtarget import BuildTargetWithConfig
 from onto_buildtarget import OntoBuildTarget
+from basictimer import BasicTimer
 
 # Java imports.
 
@@ -53,10 +54,15 @@ class ErrorCheckBuildTarget(BuildTargetWithConfig):
         Checks for entailment errors in the main ontology.
         """
         mainont = Ontology(self.obt.getOutputFilePath())
+        timer = BasicTimer()
 
         logger.info('Checking for entailment errors...')
+        timer.start()
         entcheck_res = mainont.checkEntailmentErrors(
             self.config.getReasonerStr()
+        )
+        logger.info(
+            'Logical error check completed in {0} s'.format(timer.stop())
         )
 
         if not(entcheck_res['is_consistent']):
