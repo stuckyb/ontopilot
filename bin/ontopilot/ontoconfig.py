@@ -212,7 +212,7 @@ class OntoConfig(RawConfigParser):
             # the local file system.
             iristr = urlparse.urljoin(
                 'file://localhost', urllib.pathname2url(self.confdir)
-        )
+            )
 
         return iristr
 
