@@ -116,6 +116,28 @@ class _TestOntologyEntity:
         annotvals = self.t_ent.getAnnotationValues(self.COMMENT_IRI)
         self.assertEqual(sorted(commentvals), sorted(annotvals))
 
+    def test_hash(self):
+        """
+        Tests that entities will behave as expected when they are hashed.  Two
+        entity instances that point to the same ontology entity should produce
+        equal hashes.
+        """
+        # Get another instance of the same entity.
+        entcpy = self.test_ont.getExistingEntity(self.t_entIRI)
+
+        # Verify that the instances are not the same.
+        self.assertFalse(self.t_entIRI is entcpy)
+
+        # Check the hash values.
+        self.assertEqual(hash(self.t_ent), hash(entcpy))
+        self.assertEqual(hash(self.t_owlapiobj), hash(entcpy.getOWLAPIObj()))
+
+        # Check the equality operator.
+        self.assertTrue(self.t_ent == entcpy)
+
+        # Check the inequality operator.
+        self.assertFalse(self.t_ent != entcpy)
+
 
 class Test_OntologyClass(_TestOntologyEntity, unittest.TestCase):
     """

@@ -58,6 +58,22 @@ class _OntologyEntity:
         self.entityIRI = entityIRI
         self.entityobj = entityobj
 
+    def __hash__(self):
+        """
+        The hash value for an ontology entity should be derived from its
+        underlying OWL API entity object.
+        """
+        return hash(self.entityobj)
+
+    def __eq__(self, other):
+        if isinstance(other, _OntologyEntity):
+            return self.entityobj.equals(other.getOWLAPIObj())
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not(self == other)
+
     def getIRI(self):
         return self.entityIRI
     
