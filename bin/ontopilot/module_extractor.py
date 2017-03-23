@@ -44,10 +44,10 @@ from org.semanticweb.owlapi.model.parameters import Imports as ImportsEnum
 class _ExtractMethodsStruct:
     # The STAR syntactic locality extraction method.
     LOCALITY = 0
-    # Extract single terms without any other axioms (except annotations).
+    # Extract single entities without any other axioms (except annotations).
     SINGLE = 1
-    # Extract terms and their superclass/superproperty hierarchies without any
-    # other axioms (except annotations).
+    # Extract entities and their superclass/superproperty hierarchies without
+    # any other axioms (except annotations).
     HIERARCHY = 2
 
     # Combine all supported methods in a single tuple.
@@ -66,14 +66,6 @@ class ModuleExtractor:
     """
     Extracts import "modules" from existing OWL ontologies.
     """
-    # The IRI for the "dc:source" annotation property.
-    SOURCE_PROP_IRI = IRI.create('http://purl.org/dc/elements/1.1/source')
-
-    # The IRI for inferred axiom annotation.
-    INFERRED_ANNOT_IRI = IRI.create(
-        'http://www.geneontology.org/formats/oboInOwl#is_inferred'
-    )
-
     def __init__(self, ontology_source):
         """
         Initialize this ModuleExtractor instance.  The argument
@@ -85,7 +77,7 @@ class ModuleExtractor:
         # Initialize data structures for holding the extraction signatures.
         self.signatures = {}
         for method in methods.all_methods:
-            self.signatures[method] = []
+            self.signatures[method] = set()
 
     def addEntity(self, entity_id, method):
         """
@@ -106,7 +98,7 @@ class ModuleExtractor:
                 'ontology.'.format(entity_id)
             )
 
-        self.signatures[method].append(entity)
+        self.signatures[method].add(entity)
 
     def extractModule(self, mod_iri):
         """
@@ -117,21 +109,33 @@ class ModuleExtractor:
             IRI object or a string containing a relative IRI, prefix IRI, or
             full IRI.
         """
-        target = Ontology(self.ontology.ontman.createOntology())
+        modont = Ontology(self.ontology.ontman.createOntology())
+        modont.setOntologyID(mod_iri)
 
-        self._extractSingleTerms(self.signatures[methods.SINGLE], target)
+        self._extractSingleEntities(self.signatures[methods.SINGLE], modont)
 
-        return target
+        # Add an annotation for the source of the module.
+        sourceIRI = None
+        ontid = self.owlont.getOntologyID()
+        if ontid.getVersionIRI().isPresent():
+            sourceIRI = ontid.getVersionIRI().get()
+        elif ontid.getOntologyIRI().isPresent():
+            sourceIRI = ontid.getOntologyIRI().get()
 
-    def _extractSingleTerms(self, signature, target):
+        if sourceIRI != None:
+            modont.setOntologySource(sourceIRI)
+
+        return modont
+
+    def _extractSingleEntities(self, signature, target):
         """
-        Extracts terms from the source ontology using the "single term"
-        extraction method, which means pulling individual terms without any
+        Extracts entities from the source ontology using the single-entity
+        extraction method, which pulls individual entities without any
         associated axioms (except for annotations).  Annotation properties that
         are used to annotate entities in the signature will also be extracted
         from the source ontology.
 
-        signature: A list of OntologyEntity objects.
+        signature: A set of OntologyEntity objects.
         target: The target module ontopilot.Ontology object.
         """
         owltarget = target.getOWLOntology()
@@ -154,13 +158,15 @@ class ModuleExtractor:
             # target ontology.
             for ont in ontset:
                 annot_axioms = ont.getAnnotationAssertionAxioms(owlent.getIRI())
-                self.ontology.ontman.addAxioms(owltarget, annot_axioms)
 
-                # Check if the relevant annotation properties are already
-                # included in the target ontology.  If not, add them to the set
-                # of terms to extract.
                 for annot_axiom in annot_axioms:
-                    # Ignore rdfs:label.
+                    target.addEntityAxiom(annot_axiom)
+
+                    # Check if the relevant annotation property is already
+                    # included in the target ontology.  If not, add it to the
+                    # set of terms to extract.
+
+                    # Ignore rdfs:label since it is always included.
                     if annot_axiom.getProperty().equals(rdfslabel):
                         continue
 
@@ -172,7 +178,7 @@ class ModuleExtractor:
                         # will not "exist" because they have no declaration
                         # axioms, so we need to check for this.
                         if annot_ent != None:
-                            signature.append(annot_ent)
+                            signature.add(annot_ent)
 
     def _extractModule(self, signature, mod_iri):
         """
@@ -191,16 +197,6 @@ class ModuleExtractor:
         )
         modont = Ontology(slme.extractAsOntology(signature, modIRI))
 
-        # Add an annotation for the source of the module.
-        sourceIRI = None
-        ontid = self.getOWLOntology().getOntologyID()
-        if ontid.getVersionIRI().isPresent():
-            sourceIRI = ontid.getVersionIRI().get()
-        elif ontid.getOntologyIRI().isPresent():
-            sourceIRI = ontid.getOntologyIRI().get()
-
-        if sourceIRI != None:
-            modont.setOntologySource(sourceIRI)
 
         return modont
 
