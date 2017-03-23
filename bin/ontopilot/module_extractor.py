@@ -17,6 +17,10 @@
 # Python imports.
 from idresolver import IDResolver
 from ontology import Ontology
+from ontology_entities import (
+    CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,
+    ANNOTATIONPROPERTY_ENTITY, INDIVIDUAL_ENTITY
+)
 from ontology_entities import _OntologyClass, _OntologyDataProperty
 from ontology_entities import _OntologyObjectProperty, _OntologyAnnotationProperty
 from ontology_entities import _OntologyIndividual, _OntologyEntity
@@ -76,6 +80,12 @@ class ModuleExtractor:
 
         # Initialize data structures for holding the extraction signatures.
         self.signatures = {}
+        self.clearSignatures()
+
+    def clearSignatures(self):
+        """
+        Resets all signature sets to empty.
+        """
         for method in methods.all_methods:
             self.signatures[method] = set()
 
@@ -112,7 +122,16 @@ class ModuleExtractor:
         modont = Ontology(self.ontology.ontman.createOntology())
         modont.setOntologyID(mod_iri)
 
+        hierset, axiomset = self._getEntitiesInHierarchies(
+            self.signatures[methods.HIERARCHY]
+        )
+        self.signatures[methods.SINGLE].update(hierset)
+
         self._extractSingleEntities(self.signatures[methods.SINGLE], modont)
+
+        # Add any subclass/subproperty axioms.
+        for axiom in axiomset:
+            modont.addEntityAxiom(axiom)
 
         # Add an annotation for the source of the module.
         sourceIRI = None
@@ -126,6 +145,100 @@ class ModuleExtractor:
             modont.setOntologySource(sourceIRI)
 
         return modont
+
+    def _getEntitiesInHierarchies(self, signature):
+        """
+        Returns two sets: 1) a set of OntologyEntity objects that includes the
+        entities in the signature set and all entities in the ancestor
+        hierarchies of the entities in the signature set; and 2) a set of all
+        subclass/subproperty axioms needed to create the desired entity
+        hierarchies.
+
+        signature: A set of OntologyEntity objects.
+        """
+        hierset = set()
+        axiomset = set()
+
+        while len(signature) > 0:
+            entity = signature.pop()
+
+            hierset.add(entity)
+
+            if entity.getTypeConst() == CLASS_ENTITY:
+                axioms = self.owlont.getSubClassAxiomsForSubClass(
+                    entity.getOWLAPIObj()
+                )
+                for axiom in axioms:
+                    super_ce = axiom.getSuperClass()
+                    if not(super_ce.isAnonymous()):
+                        superclass = self.ontology.getExistingClass(
+                            super_ce.asOWLClass().getIRI()
+                        )
+                        if (superclass != None):
+                            axiomset.add(axiom)
+
+                            # Check whether the parent property has already
+                            # been processed so we don't get stuck in cyclic
+                            # relationship graphs.
+                            if not(superclass in hierset):
+                                signature.add(superclass)
+
+            elif entity.getTypeConst() == OBJECTPROPERTY_ENTITY:
+                axioms = self.owlont.getObjectSubPropertyAxiomsForSubProperty(
+                    entity.getOWLAPIObj()
+                )
+                for axiom in axioms:
+                    super_pe = axiom.getSuperProperty()
+                    if not(super_pe.isAnonymous()):
+                        superprop = self.ontology.getExistingObjectProperty(
+                            super_pe.asOWLObjectProperty().getIRI()
+                        )
+                        if (superprop != None):
+                            axiomset.add(axiom)
+
+                            # Check whether the parent property has already
+                            # been processed so we don't get stuck in cyclic
+                            # relationship graphs.
+                            if not(superprop in hierset):
+                                signature.add(superprop)
+
+            elif entity.getTypeConst() == DATAPROPERTY_ENTITY:
+                axioms = self.owlont.getDataSubPropertyAxiomsForSubProperty(
+                    entity.getOWLAPIObj()
+                )
+                for axiom in axioms:
+                    super_pe = axiom.getSuperProperty()
+                    if not(super_pe.isAnonymous()):
+                        superprop = self.ontology.getExistingDataProperty(
+                            super_pe.asOWLDataProperty().getIRI()
+                        )
+                        if (superprop != None):
+                            axiomset.add(axiom)
+
+                            # Check whether the parent property has already
+                            # been processed so we don't get stuck in cyclic
+                            # relationship graphs.
+                            if not(superprop in hierset):
+                                signature.add(superprop)
+
+            elif entity.getTypeConst() == ANNOTATIONPROPERTY_ENTITY:
+                axioms = self.owlont.getSubAnnotationPropertyOfAxioms(
+                    entity.getOWLAPIObj()
+                )
+                for axiom in axioms:
+                    superprop = self.ontology.getExistingAnnotationProperty(
+                        axiom.getSuperProperty().getIRI()
+                    )
+                    if (superprop != None):
+                        axiomset.add(axiom)
+
+                        # Check whether the parent property has already been
+                        # processed so we don't get stuck in cyclic
+                        # relationship graphs.
+                        if not(superprop in hierset):
+                            signature.add(superprop)
+
+        return (hierset, axiomset)
 
     def _extractSingleEntities(self, signature, target):
         """
