@@ -526,9 +526,9 @@ class Ontology(Observable):
         """
         Adds an OWL import statement to this ontology.
 
-        source_iri: The IRI of the source ontology.  Can be either an IRI
-            object or a string containing a relative IRI, prefix IRI, or full
-            IRI.
+        source_iri: The document IRI of the source ontology.  Can be either an
+            IRI object or a string containing a relative IRI, prefix IRI, or
+            full IRI.
         load_import: If True, the new import will be automatically loaded and
             its terms labels will be added to the internal LabelMap.
         """
@@ -548,7 +548,20 @@ class Ontology(Observable):
         if load_import:
             # Manually load the newly added import.
             try:
-                importont = self.ontman.loadOntology(sourceIRI)
+                # The call to makeLoadImportRequest() might seem redundant, and
+                # in general, it is redundant if the new import's document IRI
+                # is the same as its ontology IRI.  However, if those IRIs
+                # differ, then without explicitly calling
+                # makeLoadImportRequest(), the new import will not show up in
+                # the main ontology's imports closure (true as of version 4.2.4
+                # of the OWL API).  I examined the OWL API source code and
+                # confirmed that if the ontology has already been loaded when
+                # makeLoadImportRequest() is called, the already-loaded version
+                # of the ontology is used (that is, it is not parsed again), so
+                # these method calls should not hurt performance.
+                importont = self.ontman.loadOntologyFromOntologyDocument(sourceIRI)
+                self.ontman.makeLoadImportRequest(importdec)
+
             except (
                 OWLOntologyFactoryNotFoundException,
                 OWLOntologyCreationIOException
