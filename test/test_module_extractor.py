@@ -215,5 +215,87 @@ class Test_ModuleExtractor(unittest.TestCase):
         axioms = owlont.getSubClassAxiomsForSubClass(ent.getOWLAPIObj())
         self.assertTrue(1, axioms.size())
 
+    def test_extractLocality(self):
+        """
+        Tests building an import module using only the syntactic locality
+        extraction method.
+        """
+        # Add 'test class 1'.
+        #self.me.addEntity('OBTO:0010', me_methods.LOCALITY)
+        # Add 'test object property 1'.
+        #self.me.addEntity('OBTO:0001', me_methods.LOCALITY)
+
+        module = self.me.extractModule('http://test.mod/id')
+
         module.saveOntology('blah.owl')
+
+    def _compareEntitySets(self, ent_list, result):
+        """
+        Compares a list of expected entities to a result set of OWLEntity
+        instances.  The list should contain entity ID strings.
+        """
+        expset = set()
+        for ent_id in ent_list:
+            ent = self.ont.getExistingEntity(ent_id)
+            if ent != None:
+                expset.add(ent.getOWLAPIObj())
+
+        self.assertEqual(expset, result)
+
+    def test_getBranch(self):
+        # Create a subclass for 'test class 2'.  This results in an explicit
+        # class hierarchy that is 3 levels deep and includes a node with
+        # multiple child classes, all of which should provide a good test case
+        # for the traversal algorithm.
+        newent = self.ont.createNewClass('OBTO:9999')
+        newent.addSubclassOf('OBTO:0011')
+
+        # Create a subproperty for 'test object property 1'.
+        newent = self.ont.createNewObjectProperty('OBTO:0002')
+        newent.addSuperproperty('OBTO:0001')
+
+        # Create a subproperty for 'test data property 1'.
+        newent = self.ont.createNewDataProperty('OBTO:0021')
+        newent.addSuperproperty('OBTO:0020')
+
+        # Create a subproperty for 'annotation property 1'.
+        newent = self.ont.createNewAnnotationProperty('OBTO:0031')
+        newent.addSuperproperty('OBTO:0030')
+
+        # Test class branch retrieval.
+        ent = self.ont.getExistingClass('OBITO:0001').getOWLAPIObj()
+        entset, axset = self.me._getBranch(ent)
+        self._compareEntitySets(
+            ['OBITO:0001', 'OBTO:0010', 'OBTO:0011', 'OBTO:0012', 'OBTO:9999'],
+            entset
+        )
+        self.assertEqual(4, len(axset))
+
+        # Test object property branch retrieval.
+        ent = self.ont.getExistingObjectProperty('OBTO:0001').getOWLAPIObj()
+        entset, axset = self.me._getBranch(ent)
+        self._compareEntitySets(['OBTO:0001', 'OBTO:0002'], entset)
+        self.assertEqual(1, len(axset))
+
+        # Test data property branch retrieval.
+        ent = self.ont.getExistingDataProperty('OBTO:0020').getOWLAPIObj()
+        entset, axset = self.me._getBranch(ent)
+        self._compareEntitySets(['OBTO:0020', 'OBTO:0021'], entset)
+        self.assertEqual(1, len(axset))
+
+        # Test annotation property branch retrieval.
+        ent = self.ont.getExistingAnnotationProperty('OBTO:0030').getOWLAPIObj()
+        entset, axset = self.me._getBranch(ent)
+        self._compareEntitySets(['OBTO:0030', 'OBTO:0031'], entset)
+        self.assertEqual(1, len(axset))
+
+        # Make a cyclic parent/child relationship for 'test class 2'.
+        ent = self.ont.getExistingClass('OBTO:0011')
+        ent.addSubclassOf('OBTO:9999')
+
+        # Verify that the cycle is correctly handled.
+        ent = self.ont.getExistingClass('OBTO:0011').getOWLAPIObj()
+        entset, axset = self.me._getBranch(ent)
+        self._compareEntitySets(['OBTO:0011', 'OBTO:9999'], entset)
+        self.assertEqual(2, len(axset))
 

@@ -174,7 +174,7 @@ class ModuleExtractor:
         Returns two sets: 1) a set of all entities in the branch; and 2) a set
         of all subclass/subproperty axioms relating the entities in the branch.
 
-        root_entity: An ontopilot.OntologyEntity object.
+        root_entity: An OWL API OWLEntity object.
         """
         # Initialize the results sets.
         br_entset = set()
@@ -182,32 +182,79 @@ class ModuleExtractor:
 
         # Initialize a list to serve as a stack for tracking the "recursion"
         # through the branch.
-        stack = [root_entity]
+        entstack = [root_entity]
 
-        while len(traverse) > 0:
-            entity = stack.pop()
+        while len(entstack) > 0:
+            entity = entstack.pop()
 
             br_entset.add(entity)
 
-            if entity.getTypeConst() == CLASS_ENTITY:
-                axioms = self.owlont.getSubClassAxiomsForSuperClass(
-                    entity.getOWLAPIObj()
-                )
+            if entity.getEntityType() == EntityType.CLASS:
+                axioms = self.owlont.getSubClassAxiomsForSuperClass(entity)
                 for axiom in axioms:
                     sub_ce = axiom.getSubClass()
                     if not(sub_ce.isAnonymous()):
-                        subclass = self.ontology.getExistingClass(
-                            sub_ce.asOWLClass().getIRI()
-                        )
-                        if (subclass != None):
-                            axiomset.add(axiom)
+                        subclass = sub_ce.asOWLClass()
+                        br_axiomset.add(axiom)
 
-                            # Check whether the child class has already been
-                            # processed so we don't get stuck in cyclic
-                            # relationship graphs.
-                            if not(superclass in hierset):
-                                signature.add(superclass)
+                        # Check whether the child class has already been
+                        # processed so we don't get stuck in cyclic
+                        # relationship graphs.
+                        if not(subclass in br_entset):
+                            entstack.append(subclass)
 
+            elif entity.getEntityType() == EntityType.OBJECT_PROPERTY:
+                axioms = self.owlont.getObjectSubPropertyAxiomsForSuperProperty(
+                    entity
+                )
+                for axiom in axioms:
+                    sub_pe = axiom.getSubProperty()
+                    if not(sub_pe.isAnonymous()):
+                        subprop = sub_pe.asOWLObjectProperty()
+                        br_axiomset.add(axiom)
+
+                        # Check whether the child property has already been
+                        # processed so we don't get stuck in cyclic
+                        # relationship graphs.
+                        if not(subprop in br_entset):
+                            entstack.append(subprop)
+
+            elif entity.getEntityType() == EntityType.DATA_PROPERTY:
+                axioms = self.owlont.getDataSubPropertyAxiomsForSuperProperty(
+                    entity
+                )
+                for axiom in axioms:
+                    sub_pe = axiom.getSubProperty()
+                    if not(sub_pe.isAnonymous()):
+                        subprop = sub_pe.asOWLDataProperty()
+                        br_axiomset.add(axiom)
+
+                        # Check whether the child property has already been
+                        # processed so we don't get stuck in cyclic
+                        # relationship graphs.
+                        if not(subprop in br_entset):
+                            entstack.append(subprop)
+
+            elif entity.getEntityType() == EntityType.ANNOTATION_PROPERTY:
+                # The OWL API does not include a method to retrieve annotation
+                # subproperty axioms by the parent property, so we instead
+                # examine all annotation subproperty axioms to see which ones
+                # have the current entity as a superproperty.
+                axioms = self.owlont.getAxioms(
+                    AxiomType.SUB_ANNOTATION_PROPERTY_OF, True
+                )
+                for axiom in axioms:
+                    if axiom.getSuperProperty().equals(entity):
+                        br_axiomset.add(axiom)
+
+                        # Check whether the child property has already been
+                        # processed so we don't get stuck in cyclic
+                        # relationship graphs.
+                        subprop = axiom.getSubProperty()
+                        if not(subprop in br_entset):
+                            entstack.append(subprop)
+
+        return (br_entset, br_axiomset)
 
     def _getEntitiesInHierarchies(self, signature):
         """
