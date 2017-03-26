@@ -238,7 +238,7 @@ class Test_Ontology(unittest.TestCase):
         # Make sure annotations for the target entity have not been deleted.
         IRIobj = IRI.create(CLASS_IRI)
         annot_ax_set = self.owlont.getAnnotationAssertionAxioms(IRIobj)
-        self.assertEqual(1, annot_ax_set.size())
+        self.assertEqual(2, annot_ax_set.size())
 
         # Run the deletion command again, this time deleting annotations.
         # Also, this time, use the _OntologyEntity object directly instead of
