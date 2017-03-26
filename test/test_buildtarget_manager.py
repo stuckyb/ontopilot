@@ -237,25 +237,22 @@ class TestBuildTargetManager(unittest.TestCase):
         btr.addBuildTarget(Target1, task='target1')
         btr.addBuildTarget(Target2, task='target1', arg1=1, arg2=2)
 
-        # Verify that the correct target is run for both target mappings.
+        # Verify that the correct target is returned for both target mappings.
         args.task='target1'
-        btr.getBuildTarget(args).run()
-        self.assertEqual(1, Target1.run_cnt)
-        self.assertEqual(0, Target2.run_cnt)
+        btarget = btr.getBuildTarget(args)
+        self.assertTrue(isinstance(btarget, Target1))
         args.arg1 = 1
         args.arg2 = 2
-        btr.getBuildTarget(args).run()
-        self.assertEqual(1, Target1.run_cnt)
-        self.assertEqual(1, Target2.run_cnt)
+        btarget = btr.getBuildTarget(args)
+        self.assertTrue(isinstance(btarget, Target2))
 
         # Define an additional target mapping.
         btr.addBuildTarget(Target1, task='target2')
 
         # Test an unambiguous partial target name.
         args.task = 'targ'
-        btr.getBuildTarget(args).run()
-        self.assertEqual(1, Target1.run_cnt)
-        self.assertEqual(2, Target2.run_cnt)
+        btarget = btr.getBuildTarget(args)
+        self.assertTrue(isinstance(btarget, Target2))
 
         # Test an ambiguous match.
         args = ArgVals(task='target')
