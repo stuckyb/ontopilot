@@ -51,18 +51,14 @@ class _ExtractMethodsStruct:
     LOCALITY = 0
     # Extract single entities without any other axioms (except annotations).
     SINGLE = 1
-    # Extract entities and their superclass/superproperty hierarchies without
-    # any other axioms (except annotations).
-    HIERARCHY = 2
 
     # Combine all supported methods in a single tuple.
-    all_methods = (LOCALITY, SINGLE, HIERARCHY)
+    all_methods = (LOCALITY, SINGLE)
 
     # Define string values that map to the extraction methods.
     strings = {
         'locality': LOCALITY,
-        'single': SINGLE,
-        'hierarchy': HIERARCHY
+        'single': SINGLE
     }
 methods = _ExtractMethodsStruct()
 
@@ -79,18 +75,22 @@ class ModuleExtractor:
         self.ontology = ontology_source
         self.owlont = self.ontology.getOWLOntology()
 
-        # Initialize data structures for holding the extraction signatures.
+        # Initialize data structures for holding the extraction signatures and
+        # axioms that need to be retained.
         self.signatures = {}
+        self.saved_axioms = set()
         self.clearSignatures()
 
     def clearSignatures(self):
         """
-        Resets all signature sets to empty.
+        Resets all signature sets and the saved axoim set to empty.
         """
+        self.saved_axioms.clear()
+
         for method in methods.all_methods:
             self.signatures[method] = set()
 
-    def addEntity(self, entity_id, method, include_branch=False):
+    def addEntity(self, entity_id, method, include_branch=False, include_ancestors=False):
         """
         Adds an entity to the module signature.  If include_branch is True, all
         descendants of the entity will be retrieved and added to the signature.
@@ -106,6 +106,8 @@ class ModuleExtractor:
         method: The extraction method to use for this entity.
         include_branch: If True, all descendants of the entity will also be
             added to the signature.
+        include_ancestors: If True, all ancestors of the entity will also be
+            added to the signature.
         """
         entity = self.ontology.getExistingEntity(entity_id)
         if entity == None:
@@ -114,7 +116,20 @@ class ModuleExtractor:
                 'ontology.'.format(entity_id)
             )
 
-        self.signatures[method].add(entity.getOWLAPIObj())
+        owlent = entity.getOWLAPIObj()
+
+        entset = {owlent}
+        if include_branch:
+            br_ents, br_axioms = self._getBranch(owlent)
+            entset.update(br_ents)
+            self.saved_axioms.update(br_axioms)
+
+        if include_ancestors:
+            an_ents, an_axioms = self._getAncestors(owlent)
+            entset.update(an_ents)
+            self.saved_axioms.update(an_axioms)
+
+        self.signatures[method].update(entset)
 
     def extractModule(self, mod_iri):
         """
@@ -139,20 +154,11 @@ class ModuleExtractor:
             for axiom in mod_axioms:
                 modont.addEntityAxiom(axiom)
 
-        # Process the hierarchy extractions.
-        hierset, axiomset = self._getEntitiesInHierarchies(
-            self.signatures[methods.HIERARCHY]
-        )
-
-        # Add the entities from the entity hierarchies to the set of entities
-        # to extract individually.
-        self.signatures[methods.SINGLE].update(hierset)
-
         # Do all single-entity extractions.
         self._extractSingleEntities(self.signatures[methods.SINGLE], modont)
 
         # Add any subclass/subproperty axioms.
-        for axiom in axiomset:
+        for axiom in self.saved_axioms:
             modont.addEntityAxiom(axiom)
 
         # Add an annotation for the source of the module.
@@ -167,6 +173,87 @@ class ModuleExtractor:
             modont.setOntologySource(sourceIRI)
 
         return modont
+
+    def _getAncestors(self, leaf_entity):
+        """
+        Returns two sets: 1) a set of OntologyEntity objects that includes the
+        leaf entity and all entities in the ancestor hierarchy of the leaf
+        entity; and 2) a set of all subclass/subproperty axioms needed to
+        create the entity hierarhy.
+
+        leaf_entity: An OWL API OWLEntity object.
+        """
+        hierset = set()
+        axiomset = set()
+
+        # Initialize a list to serve as a stack for tracking the "recursion"
+        # up the entity hierarchy.
+        entstack = [leaf_entity]
+
+        while len(entstack) > 0:
+            entity = entstack.pop()
+
+            hierset.add(entity)
+
+            if entity.getEntityType() == EntityType.CLASS:
+                axioms = self.owlont.getSubClassAxiomsForSubClass(entity)
+                for axiom in axioms:
+                    super_ce = axiom.getSuperClass()
+                    if not(super_ce.isAnonymous()):
+                        superclass = super_ce.asOWLClass()
+                        axiomset.add(axiom)
+
+                        # Check whether the parent class has already been
+                        # processed so we don't get stuck in cyclic
+                        # relationship graphs.
+                        if not(superclass in hierset):
+                            entstack.append(superclass)
+
+            elif entity.getEntityType() == EntityType.OBJECT_PROPERTY:
+                axioms = self.owlont.getObjectSubPropertyAxiomsForSubProperty(
+                    entity
+                )
+                for axiom in axioms:
+                    super_pe = axiom.getSuperProperty()
+                    if not(super_pe.isAnonymous()):
+                        superprop = super_pe.asOWLObjectProperty()
+                        axiomset.add(axiom)
+
+                        # Check whether the parent property has already been
+                        # processed so we don't get stuck in cyclic
+                        # relationship graphs.
+                        if not(superprop in hierset):
+                            entstack.append(superprop)
+
+            elif entity.getEntityType() == EntityType.DATA_PROPERTY:
+                axioms = self.owlont.getDataSubPropertyAxiomsForSubProperty(
+                    entity
+                )
+                for axiom in axioms:
+                    super_pe = axiom.getSuperProperty()
+                    if not(super_pe.isAnonymous()):
+                        superprop = super_pe.asOWLDataProperty()
+                        axiomset.add(axiom)
+
+                        # Check whether the parent property has already been
+                        # processed so we don't get stuck in cyclic
+                        # relationship graphs.
+                        if not(superprop in hierset):
+                            entstack.append(superprop)
+
+            elif entity.getEntityType() == EntityType.ANNOTATION_PROPERTY:
+                axioms = self.owlont.getSubAnnotationPropertyOfAxioms(entity)
+                for axiom in axioms:
+                    superprop = axiom.getSuperProperty()
+                    axiomset.add(axiom)
+
+                    # Check whether the parent property has already been
+                    # processed so we don't get stuck in cyclic relationship
+                    # graphs.
+                    if not(superprop in hierset):
+                        entstack.append(superprop)
+
+        return (hierset, axiomset)
 
     def _getBranch(self, root_entity):
         """
@@ -255,84 +342,6 @@ class ModuleExtractor:
                             entstack.append(subprop)
 
         return (br_entset, br_axiomset)
-
-    def _getEntitiesInHierarchies(self, signature):
-        """
-        Returns two sets: 1) a set of OntologyEntity objects that includes the
-        entities in the signature set and all entities in the ancestor
-        hierarchies of the entities in the signature set; and 2) a set of all
-        subclass/subproperty axioms needed to create the desired entity
-        hierarchies.
-
-        signature: A set of OWL API OWLEntity objects.
-        """
-        hierset = set()
-        axiomset = set()
-
-        while len(signature) > 0:
-            entity = signature.pop()
-
-            hierset.add(entity)
-
-            if entity.getEntityType() == EntityType.CLASS:
-                axioms = self.owlont.getSubClassAxiomsForSubClass(entity)
-                for axiom in axioms:
-                    super_ce = axiom.getSuperClass()
-                    if not(super_ce.isAnonymous()):
-                        superclass = super_ce.asOWLClass()
-                        axiomset.add(axiom)
-
-                        # Check whether the parent class has already been
-                        # processed so we don't get stuck in cyclic
-                        # relationship graphs.
-                        if not(superclass in hierset):
-                            signature.add(superclass)
-
-            elif entity.getEntityType() == EntityType.OBJECT_PROPERTY:
-                axioms = self.owlont.getObjectSubPropertyAxiomsForSubProperty(
-                    entity
-                )
-                for axiom in axioms:
-                    super_pe = axiom.getSuperProperty()
-                    if not(super_pe.isAnonymous()):
-                        superprop = super_pe.asOWLObjectProperty()
-                        axiomset.add(axiom)
-
-                        # Check whether the parent property has already been
-                        # processed so we don't get stuck in cyclic
-                        # relationship graphs.
-                        if not(superprop in hierset):
-                            signature.add(superprop)
-
-            elif entity.getEntityType() == EntityType.DATA_PROPERTY:
-                axioms = self.owlont.getDataSubPropertyAxiomsForSubProperty(
-                    entity
-                )
-                for axiom in axioms:
-                    super_pe = axiom.getSuperProperty()
-                    if not(super_pe.isAnonymous()):
-                        superprop = super_pe.asOWLDataProperty()
-                        axiomset.add(axiom)
-
-                        # Check whether the parent property has already been
-                        # processed so we don't get stuck in cyclic
-                        # relationship graphs.
-                        if not(superprop in hierset):
-                            signature.add(superprop)
-
-            elif entity.getEntityType() == EntityType.ANNOTATION_PROPERTY:
-                axioms = self.owlont.getSubAnnotationPropertyOfAxioms(entity)
-                for axiom in axioms:
-                    superprop = axiom.getSuperProperty()
-                    axiomset.add(axiom)
-
-                    # Check whether the parent property has already been
-                    # processed so we don't get stuck in cyclic relationship
-                    # graphs.
-                    if not(superprop in hierset):
-                        signature.add(superprop)
-
-        return (hierset, axiomset)
 
     def _extractSingleEntities(self, signature, target):
         """
