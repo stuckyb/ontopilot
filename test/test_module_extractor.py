@@ -21,19 +21,6 @@ from ontopilot.module_extractor import methods as me_methods
 import unittest
 
 # Java imports.
-from org.semanticweb.owlapi.model import IRI
-from org.semanticweb.owlapi.model.parameters import Imports as ImportsEnum
-
-
-# IRIs of entities in the test ontology.
-OBJPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0001'
-DATAPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0020'
-ANNOTPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0030'
-CLASS_IRI = 'http://purl.obolibrary.org/obo/OBTO_0010'
-INDIVIDUAL_IRI = 'https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology.owl#individual_002'
-
-# IRI that is not used in the test ontology.
-NULL_IRI = 'http://purl.obolibrary.org/obo/OBTO_9999'
 
 
 class Test_ModuleExtractor(unittest.TestCase):
@@ -76,22 +63,22 @@ class Test_ModuleExtractor(unittest.TestCase):
         # class hierarchy that is 3 levels deep (starting from OBTO:0010),
         # which should provide a good test case for the traversal algorithm.
         ent = self.ont.getExistingClass('OBITO:0001')
-        newent = self.ont.createNewClass('OBTO:9999')
+        self.ont.createNewClass('OBTO:9999')
         ent.addSubclassOf('OBTO:9999')
 
         # Create a superproperty for 'test object property 1'.
         ent = self.ont.getExistingObjectProperty('OBTO:0001')
-        newent = self.ont.createNewObjectProperty('OBTO:0002')
+        self.ont.createNewObjectProperty('OBTO:0002')
         ent.addSuperproperty('OBTO:0002')
 
         # Create a superproperty for 'test data property 1'.
         ent = self.ont.getExistingDataProperty('OBTO:0020')
-        newent = self.ont.createNewDataProperty('OBTO:0021')
+        self.ont.createNewDataProperty('OBTO:0021')
         ent.addSuperproperty('OBTO:0021')
 
         # Create a superproperty for 'annotation property 1'.
         ent = self.ont.getExistingAnnotationProperty('OBTO:0030')
-        newent = self.ont.createNewAnnotationProperty('OBTO:0031')
+        self.ont.createNewAnnotationProperty('OBTO:0031')
         ent.addSuperproperty('OBTO:0031')
 
         # Test class ancestors retrieval.
@@ -196,7 +183,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         # class hierarchy that is 3 levels deep (starting from OBTO:0010),
         # which should provide a good test case for the traversal algorithm.
         ent = self.ont.getExistingClass('OBITO:0001')
-        newent = self.ont.createNewClass('OBTO:9999')
+        self.ont.createNewClass('OBTO:9999')
         ent.addSubclassOf('OBTO:9999')
 
         #--------
