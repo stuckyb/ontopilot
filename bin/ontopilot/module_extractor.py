@@ -83,12 +83,22 @@ class ModuleExtractor:
 
     def clearSignatures(self):
         """
-        Resets all signature sets and the saved axoim set to empty.
+        Resets all signature sets and the saved axiom set to empty.
         """
         self.saved_axioms.clear()
 
         for method in methods.all_methods:
             self.signatures[method] = set()
+
+    def getSignatureSize(self):
+        """
+        Returns the total number of entities in the starting module signature.
+        """
+        sigsize = 0
+        for method in methods.all_methods:
+            sigsize += len(self.signatures[method])
+
+        return sigsize
 
     def addEntity(self, entity_id, method, include_branch=False, include_ancestors=False):
         """

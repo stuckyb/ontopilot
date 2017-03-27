@@ -46,6 +46,19 @@ class Test_ModuleExtractor(unittest.TestCase):
 
         self.me = ModuleExtractor(self.ont)
 
+    def test_getSignatureSize(self):
+        self.assertEqual(0, self.me.getSignatureSize())
+
+        self.me.addEntity('OBTO:0001', me_methods.SINGLE, False, False)
+        self.me.addEntity('OBTO:0010', me_methods.SINGLE, False, False)
+        self.me.addEntity('OBTO:0001', me_methods.LOCALITY, False, False)
+        self.assertEqual(3, self.me.getSignatureSize())
+
+        # Confirm that adding entities already in the signature does not
+        # increase the signature size.
+        self.me.addEntity('OBTO:0010', me_methods.SINGLE, False, False)
+        self.assertEqual(3, self.me.getSignatureSize())
+
     def _compareEntitySets(self, ent_list, result):
         """
         Compares a list of expected entities to a result set of OWLEntity
