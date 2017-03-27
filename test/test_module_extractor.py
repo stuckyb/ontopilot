@@ -79,14 +79,14 @@ class Test_ModuleExtractor(unittest.TestCase):
     def test_getSignatureSize(self):
         self.assertEqual(0, self.me.getSignatureSize())
 
-        self.me.addEntity('OBTO:0001', me_methods.SINGLE, False, False)
-        self.me.addEntity('OBTO:0010', me_methods.SINGLE, False, False)
-        self.me.addEntity('OBTO:0001', me_methods.LOCALITY, False, False)
+        self.me.addEntity('OBTO:0001', me_methods.SINGLE)
+        self.me.addEntity('OBTO:0010', me_methods.SINGLE)
+        self.me.addEntity('OBTO:0001', me_methods.LOCALITY)
         self.assertEqual(3, self.me.getSignatureSize())
 
         # Confirm that adding entities already in the signature does not
         # increase the signature size.
-        self.me.addEntity('OBTO:0010', me_methods.SINGLE, False, False)
+        self.me.addEntity('OBTO:0010', me_methods.SINGLE)
         self.assertEqual(3, self.me.getSignatureSize())
 
     def _compareEntitySets(self, ent_list, result):
@@ -430,66 +430,7 @@ class Test_ModuleExtractor(unittest.TestCase):
             )
             self.assertTrue(axiom.getSubject().equals(owlent))
 
-    def test_getAncestors(self):
-        # Create a parent class for OBITO:0001.  This results in an explicit
-        # class hierarchy that is 3 levels deep (starting from OBTO:0010),
-        # which should provide a good test case for the traversal algorithm.
-        ent = self.ont.getExistingClass('OBITO:0001')
-        self.ont.createNewClass('OBTO:9999')
-        ent.addSubclassOf('OBTO:9999')
-
-        # Create a superproperty for 'test object property 1'.
-        ent = self.ont.getExistingObjectProperty('OBTO:0001')
-        self.ont.createNewObjectProperty('OBTO:0002')
-        ent.addSuperproperty('OBTO:0002')
-
-        # Create a superproperty for 'test data property 1'.
-        ent = self.ont.getExistingDataProperty('OBTO:0020')
-        self.ont.createNewDataProperty('OBTO:0021')
-        ent.addSuperproperty('OBTO:0021')
-
-        # Create a superproperty for 'annotation property 1'.
-        ent = self.ont.getExistingAnnotationProperty('OBTO:0030')
-        self.ont.createNewAnnotationProperty('OBTO:0031')
-        ent.addSuperproperty('OBTO:0031')
-
-        # Test class ancestors retrieval.
-        ent = self.ont.getExistingClass('OBTO:0010').getOWLAPIObj()
-        entset, axset = self.me._getAncestors(ent)
-        self._compareEntitySets(
-            ['OBITO:0001', 'OBTO:0010', 'OBTO:9999'], entset
-        )
-        self.assertEqual(2, len(axset))
-
-        # Test object property ancestors retrieval.
-        ent = self.ont.getExistingObjectProperty('OBTO:0001').getOWLAPIObj()
-        entset, axset = self.me._getAncestors(ent)
-        self._compareEntitySets(['OBTO:0001', 'OBTO:0002'], entset)
-        self.assertEqual(1, len(axset))
-
-        # Test data property branch retrieval.
-        ent = self.ont.getExistingDataProperty('OBTO:0020').getOWLAPIObj()
-        entset, axset = self.me._getAncestors(ent)
-        self._compareEntitySets(['OBTO:0020', 'OBTO:0021'], entset)
-        self.assertEqual(1, len(axset))
-
-        # Test annotation property branch retrieval.
-        ent = self.ont.getExistingAnnotationProperty('OBTO:0030').getOWLAPIObj()
-        entset, axset = self.me._getAncestors(ent)
-        self._compareEntitySets(['OBTO:0030', 'OBTO:0031'], entset)
-        self.assertEqual(1, len(axset))
-
-        # Make a cyclic parent/child relationship for 'test class 1'.
-        ent = self.ont.getExistingClass('OBTO:9999')
-        ent.addSubclassOf('OBITO:0001')
-
-        # Verify that the cycle is correctly handled.
-        ent = self.ont.getExistingClass('OBITO:0001').getOWLAPIObj()
-        entset, axset = self.me._getAncestors(ent)
-        self._compareEntitySets(['OBITO:0001', 'OBTO:9999'], entset)
-        self.assertEqual(2, len(axset))
-
-    def test_getBranch(self):
+    def test_getRelatedComponents(self):
         # Create a subclass for 'test class 2'.  This results in an explicit
         # class hierarchy that is 3 levels deep and includes a node with
         # multiple child classes, all of which should provide a good test case
@@ -497,44 +438,17 @@ class Test_ModuleExtractor(unittest.TestCase):
         newent = self.ont.createNewClass('OBTO:9999')
         newent.addSubclassOf('OBTO:0011')
 
-        # Create a subproperty for 'test object property 1'.
-        newent = self.ont.createNewObjectProperty('OBTO:0002')
-        newent.addSuperproperty('OBTO:0001')
-
-        # Create a subproperty for 'test data property 1'.
-        newent = self.ont.createNewDataProperty('OBTO:0021')
-        newent.addSuperproperty('OBTO:0020')
-
-        # Create a subproperty for 'annotation property 1'.
-        newent = self.ont.createNewAnnotationProperty('OBTO:0031')
-        newent.addSuperproperty('OBTO:0030')
-
-        # Test class branch retrieval.
+        # Test class descendant retrieval.
         ent = self.ont.getExistingClass('OBITO:0001').getOWLAPIObj()
-        entset, axset = self.me._getBranch(ent)
+        entset, axiomset = self.me._getRelatedComponents(
+            ent, {rel_axiom_types.DESCENDANTS}
+        )
+
         self._compareEntitySets(
             ['OBITO:0001', 'OBTO:0010', 'OBTO:0011', 'OBTO:0012', 'OBTO:9999'],
             entset
         )
-        self.assertEqual(4, len(axset))
-
-        # Test object property branch retrieval.
-        ent = self.ont.getExistingObjectProperty('OBTO:0001').getOWLAPIObj()
-        entset, axset = self.me._getBranch(ent)
-        self._compareEntitySets(['OBTO:0001', 'OBTO:0002'], entset)
-        self.assertEqual(1, len(axset))
-
-        # Test data property branch retrieval.
-        ent = self.ont.getExistingDataProperty('OBTO:0020').getOWLAPIObj()
-        entset, axset = self.me._getBranch(ent)
-        self._compareEntitySets(['OBTO:0020', 'OBTO:0021'], entset)
-        self.assertEqual(1, len(axset))
-
-        # Test annotation property branch retrieval.
-        ent = self.ont.getExistingAnnotationProperty('OBTO:0030').getOWLAPIObj()
-        entset, axset = self.me._getBranch(ent)
-        self._compareEntitySets(['OBTO:0030', 'OBTO:0031'], entset)
-        self.assertEqual(1, len(axset))
+        self.assertEqual(4, len(axiomset))
 
         # Make a cyclic parent/child relationship for 'test class 2'.
         ent = self.ont.getExistingClass('OBTO:0011')
@@ -542,9 +456,13 @@ class Test_ModuleExtractor(unittest.TestCase):
 
         # Verify that the cycle is correctly handled.
         ent = self.ont.getExistingClass('OBTO:0011').getOWLAPIObj()
-        entset, axset = self.me._getBranch(ent)
+
+        entset, axiomset = self.me._getRelatedComponents(
+            ent, {rel_axiom_types.DESCENDANTS}
+        )
+
         self._compareEntitySets(['OBTO:0011', 'OBTO:9999'], entset)
-        self.assertEqual(2, len(axset))
+        self.assertEqual(2, len(axiomset))
 
     def test_extractSingleTerms(self):
         """
@@ -594,10 +512,13 @@ class Test_ModuleExtractor(unittest.TestCase):
 
         self.me.clearSignatures()
 
+        # Define a set of related axiom types for descendants.
+        descendants = {rel_axiom_types.DESCENDANTS}
+
         # Add 'imported test class 1'.
-        self.me.addEntity('OBITO:0001', me_methods.SINGLE, True, False)
+        self.me.addEntity('OBITO:0001', me_methods.SINGLE, descendants)
         # Add 'test object property 1'.
-        self.me.addEntity('OBTO:0001', me_methods.SINGLE, True, False)
+        self.me.addEntity('OBTO:0001', me_methods.SINGLE, descendants)
 
         module = self.me.extractModule('http://test.mod/id2')
 
@@ -633,14 +554,17 @@ class Test_ModuleExtractor(unittest.TestCase):
 
         self.me.clearSignatures()
 
+        # Define a set of related axiom types for ancestors and descendants.
+        relatives = {rel_axiom_types.ANCESTORS, rel_axiom_types.DESCENDANTS}
+
         # Add 'imported test class 1'.
-        self.me.addEntity('OBITO:0001', me_methods.SINGLE, True, True)
+        self.me.addEntity('OBITO:0001', me_methods.SINGLE, relatives)
         # Add 'test class 3'.  This should already be part of the signature
         # thanks to the preceding call, but we add it again here to verify that
         # repeated entities are not somehow duplicated in the extracted module.
-        self.me.addEntity('OBTO:0012', me_methods.SINGLE, False, False)
+        self.me.addEntity('OBTO:0012', me_methods.SINGLE)
         # Add 'test object property 1'.
-        self.me.addEntity('OBTO:0001', me_methods.SINGLE, True, True)
+        self.me.addEntity('OBTO:0001', me_methods.SINGLE, relatives)
 
         module = self.me.extractModule('http://test.mod/id3')
 
@@ -679,10 +603,10 @@ class Test_ModuleExtractor(unittest.TestCase):
 
         # Add 'imported test class 1', including all of its descendants and
         # ancestors, then exclude it and its descendants.
-        self.me.addEntity('OBITO:0001', me_methods.SINGLE, True, True)
-        self.me.excludeEntity('OBITO:0001', True, False)
+        self.me.addEntity('OBITO:0001', me_methods.SINGLE, relatives)
+        self.me.excludeEntity('OBITO:0001', descendants)
         # Add 'test object property 1'.
-        self.me.addEntity('OBTO:0001', me_methods.SINGLE, True, True)
+        self.me.addEntity('OBTO:0001', me_methods.SINGLE, relatives)
 
         module = self.me.extractModule('http://test.mod/id4')
 

@@ -172,13 +172,12 @@ class ModuleExtractor:
 
         return sigsize
 
-    def addEntity(self, entity_id, method, include_branch=False, include_ancestors=False):
+    def addEntity(self, entity_id, method, rel_types=set()):
         """
-        Adds an entity to the module signature.  If include_branch is True, all
-        descendants of the entity will be retrieved and added to the signature.
-        If include_ancestors is True, all ancestors of the entity will be
-        retrieved and added to the signature.  The final module will preserve
-        all parent/child relationships in the retrieved hierarchies.
+        Adds an entity to the module signature.  If rel_types includes one or
+        more entity relationship type constants, all relevant related entities
+        will be retrieved recursively.  The final module will preserve all
+        retrieved entity relationships.
 
         entity_id: The identifier of the entity.  Can be either an OWL API IRI
             object or a string containing: a label (with or without a prefix),
@@ -187,10 +186,7 @@ class ModuleExtractor:
             Labels should be enclosed in single quotes (e.g., 'label text' or
             prefix:'label txt').
         method: The extraction method to use for this entity.
-        include_branch: If True, all descendants of the entity will also be
-            added to the signature.
-        include_ancestors: If True, all ancestors of the entity will also be
-            added to the signature.
+        rel_types: A set of related axiom type constants.
         """
         entity = self.ontology.getExistingEntity(entity_id)
         if entity == None:
@@ -201,25 +197,17 @@ class ModuleExtractor:
 
         owlent = entity.getOWLAPIObj()
 
-        entset = {owlent}
-        if include_branch:
-            br_ents, br_axioms = self._getBranch(owlent)
-            entset.update(br_ents)
-            self.saved_axioms.update(br_axioms)
+        entset, axiomset = self._getRelatedComponents(owlent, rel_types)
 
-        if include_ancestors:
-            an_ents, an_axioms = self._getAncestors(owlent)
-            entset.update(an_ents)
-            self.saved_axioms.update(an_axioms)
-
+        self.saved_axioms.update(axiomset)
         self.signatures[method].update(entset)
 
-    def excludeEntity(self, entity_id, exclude_branch=False, exclude_ancestors=False):
+    def excludeEntity(self, entity_id, rel_types=set()):
         """
-        Adds an entity to exclude from the final module.  If exclude_branch is
-        True, all descendants of the entity will be retrieved and excluded.  If
-        exclude_ancestors is True, all ancestors of the entity will be
-        retrieved and excluded.
+        Adds an entity to exclude from the final module.  If rel_types includes
+        one or more entity relationship type constants, all relevant related
+        entities will be retrieved recursively and also excluded from the final
+        module.
 
         entity_id: The identifier of the entity.  Can be either an OWL API IRI
             object or a string containing: a label (with or without a prefix),
@@ -227,10 +215,7 @@ class ModuleExtractor:
             a full IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
             Labels should be enclosed in single quotes (e.g., 'label text' or
             prefix:'label txt').
-        exclude_branch: If True, all descendants of the entity will be
-            excluded.
-        exclude_ancestors: If True, all ancestors of the entity will be
-            excluded.
+        rel_types: A set of related axiom type constants.
         """
         entity = self.ontology.getExistingEntity(entity_id)
         if entity == None:
@@ -241,14 +226,7 @@ class ModuleExtractor:
 
         owlent = entity.getOWLAPIObj()
 
-        entset = {owlent}
-        if exclude_branch:
-            br_ents, br_axioms = self._getBranch(owlent)
-            entset.update(br_ents)
-
-        if exclude_ancestors:
-            an_ents, an_axioms = self._getAncestors(owlent)
-            entset.update(an_ents)
+        entset, axiomset = self._getRelatedComponents(owlent, rel_types)
 
         self.excluded_entities.update(entset)
 
@@ -278,13 +256,13 @@ class ModuleExtractor:
         # Do all single-entity extractions.
         self._extractSingleEntities(self.signatures[methods.SINGLE], modont)
 
-        # Add any subclass/subproperty axioms.
+        # Add all saved axioms.
         for axiom in self.saved_axioms:
             modont.addEntityAxiom(axiom)
 
         # Remove any entities that should be excluded from the final module.
         for ent in self.excluded_entities:
-            modont.removeEntity(ent)
+            modont.removeEntity(ent, remove_annotations=True)
 
         # Add an annotation for the source of the module.
         sourceIRI = None
@@ -298,6 +276,93 @@ class ModuleExtractor:
             modont.setOntologySource(sourceIRI)
 
         return modont
+
+    def _extractSingleEntities(self, signature, target):
+        """
+        Extracts entities from the source ontology using the single-entity
+        extraction method, which pulls individual entities without any
+        associated axioms (except for annotations).  Annotation properties that
+        are used to annotate entities in the signature will also be extracted
+        from the source ontology.
+
+        signature: A set of OWL API OWLEntity objects.
+        target: The target module ontopilot.Ontology object.
+        """
+        rdfslabel = self.ontology.df.getRDFSLabel()
+
+        while len(signature) > 0:
+            owlent = signature.pop()
+
+            # Get the declaration axiom for this entity and add it to the
+            # target ontology.
+            ontset = self.owlont.getImportsClosure()
+            for ont in ontset:
+                dec_axioms = ont.getDeclarationAxioms(owlent)
+                for axiom in dec_axioms:
+                    target.addEntityAxiom(axiom)
+
+            # Get all annotation axioms for this entity and add them to the
+            # target ontology.
+            for ont in ontset:
+                annot_axioms = ont.getAnnotationAssertionAxioms(owlent.getIRI())
+
+                for annot_axiom in annot_axioms:
+                    target.addEntityAxiom(annot_axiom)
+
+                    # Check if the relevant annotation property is already
+                    # included in the target ontology.  If not, add it to the
+                    # set of terms to extract.
+
+                    # Ignore rdfs:label since it is always included.
+                    if annot_axiom.getProperty().equals(rdfslabel):
+                        continue
+
+                    prop_iri = annot_axiom.getProperty().getIRI()
+
+                    if target.getExistingAnnotationProperty(prop_iri) == None:
+                        annot_ent = self.ontology.getExistingAnnotationProperty(prop_iri)
+                        # Built-in annotation properties, such as rdfs:label,
+                        # will not "exist" because they have no declaration
+                        # axioms, so we need to check for this.
+                        if annot_ent != None:
+                            signature.add(annot_ent.getOWLAPIObj())
+
+    def _getRelatedComponents(self, target_entity, rel_types):
+        """
+        Gets all entities and axioms that are recursively (i.e., either
+        directly or indirectly) related to the target entity by the specified
+        axiom types.  Returns a tuple containing two sets: 1) A set consisting
+        of the target entity plus all related entities; and 2) a set of axioms
+        that define the relationships among the entities plus any additional
+        required axioms.
+
+        target_entity: An OWL API OWLEntity object.
+        rel_types: A set of related axiom type constants.
+        """
+        entset = set()
+        axiomset = set()
+
+        # Initialize a list to serve as a stack for tracking the "recursion"
+        # through the entity graph.
+        entstack = [target_entity]
+
+        while len(entstack) > 0:
+            entity = entstack.pop()
+
+            entset.add(entity)
+
+            new_sets = self._getDirectlyRelatedComponents(entity, rel_types)
+            new_entset, new_axiomset = new_sets
+
+            axiomset.update(new_axiomset)
+
+            for new_entity in new_entset:
+                # Check whether this entity has already been processed so we
+                # don't get stuck in cyclic relationship graphs.
+                if not(new_entity in entset):
+                    entstack.append(new_entity)
+
+        return (entset, axiomset)
 
     def _getDirectlyRelatedComponents(self, entity, rel_types):
         """
@@ -646,223 +711,4 @@ class ModuleExtractor:
                     axiomset.add(axiom)
 
         return (entset, axiomset)
-
-    def _getAncestors(self, leaf_entity):
-        """
-        Returns two sets: 1) a set of OntologyEntity objects that includes the
-        leaf entity and all entities in the ancestor hierarchy of the leaf
-        entity; and 2) a set of all subclass/subproperty axioms needed to
-        create the entity hierarhy.
-
-        leaf_entity: An OWL API OWLEntity object.
-        """
-        hierset = set()
-        axiomset = set()
-
-        # Initialize a list to serve as a stack for tracking the "recursion"
-        # up the entity hierarchy.
-        entstack = [leaf_entity]
-
-        while len(entstack) > 0:
-            entity = entstack.pop()
-
-            hierset.add(entity)
-
-            if entity.getEntityType() == EntityType.CLASS:
-                axioms = self.owlont.getSubClassAxiomsForSubClass(entity)
-                for axiom in axioms:
-                    super_ce = axiom.getSuperClass()
-                    if not(super_ce.isAnonymous()):
-                        superclass = super_ce.asOWLClass()
-                        axiomset.add(axiom)
-
-                        # Check whether the parent class has already been
-                        # processed so we don't get stuck in cyclic
-                        # relationship graphs.
-                        if not(superclass in hierset):
-                            entstack.append(superclass)
-
-            elif entity.getEntityType() == EntityType.OBJECT_PROPERTY:
-                axioms = self.owlont.getObjectSubPropertyAxiomsForSubProperty(
-                    entity
-                )
-                for axiom in axioms:
-                    super_pe = axiom.getSuperProperty()
-                    if not(super_pe.isAnonymous()):
-                        superprop = super_pe.asOWLObjectProperty()
-                        axiomset.add(axiom)
-
-                        # Check whether the parent property has already been
-                        # processed so we don't get stuck in cyclic
-                        # relationship graphs.
-                        if not(superprop in hierset):
-                            entstack.append(superprop)
-
-            elif entity.getEntityType() == EntityType.DATA_PROPERTY:
-                axioms = self.owlont.getDataSubPropertyAxiomsForSubProperty(
-                    entity
-                )
-                for axiom in axioms:
-                    super_pe = axiom.getSuperProperty()
-                    if not(super_pe.isAnonymous()):
-                        superprop = super_pe.asOWLDataProperty()
-                        axiomset.add(axiom)
-
-                        # Check whether the parent property has already been
-                        # processed so we don't get stuck in cyclic
-                        # relationship graphs.
-                        if not(superprop in hierset):
-                            entstack.append(superprop)
-
-            elif entity.getEntityType() == EntityType.ANNOTATION_PROPERTY:
-                axioms = self.owlont.getSubAnnotationPropertyOfAxioms(entity)
-                for axiom in axioms:
-                    superprop = axiom.getSuperProperty()
-                    axiomset.add(axiom)
-
-                    # Check whether the parent property has already been
-                    # processed so we don't get stuck in cyclic relationship
-                    # graphs.
-                    if not(superprop in hierset):
-                        entstack.append(superprop)
-
-        return (hierset, axiomset)
-
-    def _getBranch(self, root_entity):
-        """
-        Retrieves all entities that are descendants of the root entity.
-        Returns two sets: 1) a set of all entities in the branch; and 2) a set
-        of all subclass/subproperty axioms relating the entities in the branch.
-
-        root_entity: An OWL API OWLEntity object.
-        """
-        # Initialize the results sets.
-        br_entset = set()
-        br_axiomset = set()
-
-        # Initialize a list to serve as a stack for tracking the "recursion"
-        # through the branch.
-        entstack = [root_entity]
-
-        while len(entstack) > 0:
-            entity = entstack.pop()
-
-            br_entset.add(entity)
-
-            if entity.getEntityType() == EntityType.CLASS:
-                axioms = self.owlont.getSubClassAxiomsForSuperClass(entity)
-                for axiom in axioms:
-                    sub_ce = axiom.getSubClass()
-                    if not(sub_ce.isAnonymous()):
-                        subclass = sub_ce.asOWLClass()
-                        br_axiomset.add(axiom)
-
-                        # Check whether the child class has already been
-                        # processed so we don't get stuck in cyclic
-                        # relationship graphs.
-                        if not(subclass in br_entset):
-                            entstack.append(subclass)
-
-            elif entity.getEntityType() == EntityType.OBJECT_PROPERTY:
-                axioms = self.owlont.getObjectSubPropertyAxiomsForSuperProperty(
-                    entity
-                )
-                for axiom in axioms:
-                    sub_pe = axiom.getSubProperty()
-                    if not(sub_pe.isAnonymous()):
-                        subprop = sub_pe.asOWLObjectProperty()
-                        br_axiomset.add(axiom)
-
-                        # Check whether the child property has already been
-                        # processed so we don't get stuck in cyclic
-                        # relationship graphs.
-                        if not(subprop in br_entset):
-                            entstack.append(subprop)
-
-            elif entity.getEntityType() == EntityType.DATA_PROPERTY:
-                axioms = self.owlont.getDataSubPropertyAxiomsForSuperProperty(
-                    entity
-                )
-                for axiom in axioms:
-                    sub_pe = axiom.getSubProperty()
-                    if not(sub_pe.isAnonymous()):
-                        subprop = sub_pe.asOWLDataProperty()
-                        br_axiomset.add(axiom)
-
-                        # Check whether the child property has already been
-                        # processed so we don't get stuck in cyclic
-                        # relationship graphs.
-                        if not(subprop in br_entset):
-                            entstack.append(subprop)
-
-            elif entity.getEntityType() == EntityType.ANNOTATION_PROPERTY:
-                # The OWL API does not include a method to retrieve annotation
-                # subproperty axioms by the parent property, so we instead
-                # examine all annotation subproperty axioms to see which ones
-                # have the current entity as a superproperty.
-                axioms = self.owlont.getAxioms(
-                    AxiomType.SUB_ANNOTATION_PROPERTY_OF, True
-                )
-                for axiom in axioms:
-                    if axiom.getSuperProperty().equals(entity):
-                        br_axiomset.add(axiom)
-
-                        # Check whether the child property has already been
-                        # processed so we don't get stuck in cyclic
-                        # relationship graphs.
-                        subprop = axiom.getSubProperty()
-                        if not(subprop in br_entset):
-                            entstack.append(subprop)
-
-        return (br_entset, br_axiomset)
-
-    def _extractSingleEntities(self, signature, target):
-        """
-        Extracts entities from the source ontology using the single-entity
-        extraction method, which pulls individual entities without any
-        associated axioms (except for annotations).  Annotation properties that
-        are used to annotate entities in the signature will also be extracted
-        from the source ontology.
-
-        signature: A set of OWL API OWLEntity objects.
-        target: The target module ontopilot.Ontology object.
-        """
-        rdfslabel = self.ontology.df.getRDFSLabel()
-
-        while len(signature) > 0:
-            owlent = signature.pop()
-
-            # Get the declaration axiom for this entity and add it to the
-            # target ontology.
-            ontset = self.owlont.getImportsClosure()
-            for ont in ontset:
-                dec_axioms = ont.getDeclarationAxioms(owlent)
-                for axiom in dec_axioms:
-                    target.addEntityAxiom(axiom)
-
-            # Get all annotation axioms for this entity and add them to the
-            # target ontology.
-            for ont in ontset:
-                annot_axioms = ont.getAnnotationAssertionAxioms(owlent.getIRI())
-
-                for annot_axiom in annot_axioms:
-                    target.addEntityAxiom(annot_axiom)
-
-                    # Check if the relevant annotation property is already
-                    # included in the target ontology.  If not, add it to the
-                    # set of terms to extract.
-
-                    # Ignore rdfs:label since it is always included.
-                    if annot_axiom.getProperty().equals(rdfslabel):
-                        continue
-
-                    prop_iri = annot_axiom.getProperty().getIRI()
-
-                    if target.getExistingAnnotationProperty(prop_iri) == None:
-                        annot_ent = self.ontology.getExistingAnnotationProperty(prop_iri)
-                        # Built-in annotation properties, such as rdfs:label,
-                        # will not "exist" because they have no declaration
-                        # axioms, so we need to check for this.
-                        if annot_ent != None:
-                            signature.add(annot_ent.getOWLAPIObj())
 
