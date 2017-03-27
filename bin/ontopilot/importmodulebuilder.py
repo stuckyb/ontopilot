@@ -33,7 +33,7 @@ import ontopilot
 from ontopilot import TRUE_STRS
 from ontology import Ontology
 from ontopilot.module_extractor import ModuleExtractor
-from ontopilot.module_extractor import methods as me_methods
+from ontopilot.module_extractor import methods as me_methods, rel_axiom_types
 
 # Java imports.
 from java.util import HashSet
@@ -289,21 +289,19 @@ class ImportModuleBuilder:
                     idstr = row['ID']
                     ontopilot.logger.info('Processing entity "' + idstr + '".')
     
-                    descendants = row['Add descendants'].lower() in TRUE_STRS
-                    ancestors = row['Add ancestors'].lower() in TRUE_STRS
-
                     try:
+                        rel_types = rel_axiom_types.getAxiomTypesFromStr(
+                            row['Related entities']
+                        )
+
                         if row['Exclude'].lower() in TRUE_STRS:
-                            mod_ext.addExcludedEntity(
-                                idstr, descendants, ancestors
-                            )
+                            mod_ext.excludeEntity(idstr, rel_types)
                         else:
                             method = me_methods.getMethodFromStr(
                                 row['Method']
                             )
-                            mod_ext.addEntity(
-                                idstr, method, descendants, ancestors
-                            )
+                            mod_ext.addEntity(idstr, method, rel_types)
+
                     except RuntimeError as err:
                         raise ImportModSpecError(str(err), row)
 
