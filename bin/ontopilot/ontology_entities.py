@@ -483,6 +483,32 @@ class _OntologyObjectProperty(_OntologyEntity):
         iaxiom = self.df.getOWLInverseObjectPropertiesAxiom(self.entityobj, inv_propobj)
         self.ontology.addEntityAxiom(iaxiom)
 
+    def addEquivalentTo(self, prop_id):
+        """
+        Sets this property as equivalent to another property.
+
+        prop_id: The identifier of an object property.  Can be either an OWL
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
+        """
+        # Get the OWL property object, making sure that it is actually defined.
+        prop = self.ontology.getExistingObjectProperty(prop_id)
+        if prop == None:
+            raise RuntimeError(
+                'The designated equivalent property, "{0}", could not be '
+                'found in the source ontology.'.format(parent_id)
+            )
+        owlprop = prop.getOWLAPIObj()
+
+        # Add the equivalency axiom.
+        daxiom = self.df.getOWLEquivalentObjectPropertiesAxiom(
+            self.entityobj, owlprop
+        )
+        self.ontology.addEntityAxiom(daxiom)
+
     def addDisjointWith(self, prop_id):
         """
         Sets this property as disjoint with another property.
