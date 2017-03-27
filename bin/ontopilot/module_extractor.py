@@ -15,33 +15,12 @@
 
 
 # Python imports.
-from idresolver import IDResolver
 from ontology import Ontology
-from ontology_entities import (
-    CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,
-    ANNOTATIONPROPERTY_ENTITY, INDIVIDUAL_ENTITY
-)
-from ontology_entities import _OntologyClass, _OntologyDataProperty
-from ontology_entities import _OntologyObjectProperty, _OntologyAnnotationProperty
-from ontology_entities import _OntologyIndividual, _OntologyEntity
-from reasoner_manager import ReasonerManager
-from observable import Observable
 
 # Java imports.
-from java.io import File, FileOutputStream
-from java.util import HashSet
-from org.semanticweb.owlapi.apibinding import OWLManager
-from org.semanticweb.owlapi.model import IRI, OWLOntologyID
-from org.semanticweb.owlapi.model import AddAxiom, AddImport, RemoveImport
-from org.semanticweb.owlapi.model import SetOntologyID, AxiomType, OWLOntology
-from org.semanticweb.owlapi.model import AddOntologyAnnotation
-from org.semanticweb.owlapi.formats import RDFXMLDocumentFormat
+from org.semanticweb.owlapi.model import AxiomType
 from uk.ac.manchester.cs.owlapi.modularity import SyntacticLocalityModuleExtractor
 from uk.ac.manchester.cs.owlapi.modularity import ModuleType
-from com.google.common.base import Optional
-from org.semanticweb.owlapi.io import OWLOntologyCreationIOException
-from org.semanticweb.owlapi.model import OWLOntologyFactoryNotFoundException
-from org.semanticweb.owlapi.model.parameters import Imports as ImportsEnum
 from org.semanticweb.owlapi.model import EntityType
 
 
@@ -423,8 +402,6 @@ class ModuleExtractor:
         signature: A set of OWL API OWLEntity objects.
         target: The target module ontopilot.Ontology object.
         """
-        owltarget = target.getOWLOntology()
-
         rdfslabel = self.ontology.df.getRDFSLabel()
 
         while len(signature) > 0:
