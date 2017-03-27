@@ -17,10 +17,52 @@
 # Python imports.
 from ontopilot.ontology import Ontology
 from ontopilot.module_extractor import ModuleExtractor
-from ontopilot.module_extractor import methods as me_methods
+from ontopilot.module_extractor import methods as me_methods, rel_axiom_types
 import unittest
 
 # Java imports.
+
+
+class Test_RelatedAxiomTypes(unittest.TestCase):
+    """
+    Tests the _RelatedAxiomTypes class.
+    """
+    def setUp(self):
+        pass
+
+    def test_getAxiomTypesFromStr(self):
+        axset = rel_axiom_types.getAxiomTypesFromStr('')
+        self.assertEqual(0, len(axset))
+
+        axset = rel_axiom_types.getAxiomTypesFromStr(' \t  ')
+        self.assertEqual(0, len(axset))
+
+        axset = rel_axiom_types.getAxiomTypesFromStr(' ,,  ,\t ,')
+        self.assertEqual(0, len(axset))
+
+        axset = rel_axiom_types.getAxiomTypesFromStr('ancestors')
+        expctd = {rel_axiom_types.ANCESTORS}
+        self.assertEqual(expctd, axset)
+
+        axset = rel_axiom_types.getAxiomTypesFromStr('ANCESTORS')
+        self.assertEqual(expctd, axset)
+
+        axset = rel_axiom_types.getAxiomTypesFromStr('ancestors, ancestors')
+        self.assertEqual(expctd, axset)
+
+        axset = rel_axiom_types.getAxiomTypesFromStr(
+            'ancestors, domains, inverses'
+        )
+        expctd = {
+            rel_axiom_types.ANCESTORS, rel_axiom_types.DOMAINS,
+            rel_axiom_types.INVERSES
+        }
+        self.assertEqual(expctd, axset)
+
+        axset = rel_axiom_types.getAxiomTypesFromStr(
+            ',ancestors,, ,  domains, domains, ,inverses,'
+        )
+        self.assertEqual(expctd, axset)
 
 
 class Test_ModuleExtractor(unittest.TestCase):

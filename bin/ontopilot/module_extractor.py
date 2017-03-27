@@ -24,7 +24,8 @@ from uk.ac.manchester.cs.owlapi.modularity import ModuleType
 from org.semanticweb.owlapi.model import EntityType
 
 
-# Define constants for the supported extraction methods.
+# Define constants for the supported extraction methods and methods for
+# handling the constants.
 class _ExtractMethods:
     # The STAR syntactic locality extraction method.
     LOCALITY = 0
@@ -56,6 +57,65 @@ class _ExtractMethods:
             )
 
 methods = _ExtractMethods()
+
+
+# Define constants for the kinds of axioms from which related terms can be
+# extracted and methods for handling the constants.
+class _RelatedAxiomTypes:
+    ANCESTORS = 0
+    DESCENDANTS = 1
+    EQUIVALENTS = 2
+    DISJOINTS = 3
+    DOMAINS = 4
+    RANGES = 5
+    INVERSES = 6
+
+    # Combine all supported axiom types in a single tuple.
+    all_ax_types = (
+        ANCESTORS, DESCENDANTS, EQUIVALENTS, DISJOINTS, DOMAINS, RANGES,
+        INVERSES
+    )
+
+    # Define string values that map to the axiom types.
+    strings = {
+        'ancestors': ANCESTORS,
+        'descendants': DESCENDANTS,
+        'equivalents': EQUIVALENTS,
+        'disjoints': DISJOINTS,
+        'domains': DOMAINS,
+        'ranges': RANGES,
+        'inverses': INVERSES
+    }
+
+    def getAxiomTypesFromStr(self, ax_types_str):
+        """
+        Returns a set of axiom type constants parsed from the input string,
+        which should contain a comma-separated list of axiom type string
+        values.  Matching is not case sensitive.
+        """
+        ax_types = set()
+
+        type_strs = ax_types_str.split(',')
+
+        for type_str in type_strs:
+            type_str = type_str.strip()
+            if type_str == '':
+                continue
+
+            if type_str.lower() in self.strings:
+                ax_types.add(self.strings[type_str.lower()])
+            else:
+                raise RuntimeError(
+                    'Invalid axiom type for specifying related terms to '
+                    'extract: "{0}".  Axiom type strings must be one of '
+                    '{{"{1}"}}.'.format(
+                        type_str, '", "'.join(self.strings.keys())
+                    )
+                )
+
+        return ax_types
+
+rel_axiom_types = _RelatedAxiomTypes()
 
 
 class ModuleExtractor:
