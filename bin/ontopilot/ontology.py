@@ -721,33 +721,3 @@ class Ontology(Observable):
         self.ontman.saveOntology(self.ontology, oformat, foutputstream)
         foutputstream.close()
 
-    def extractModule(self, signature, mod_iri):
-        """
-        Extracts a module that is a subset of the entities in this ontology.
-        The result is returned as an Ontology object.
-
-        signature: A Java Set of all entities to include in the module.
-        mod_iri: The IRI for the extracted ontology module.  Can be either an
-            IRI object or a string containing a relative IRI, prefix IRI, or
-            full IRI.
-        """
-        modIRI = self.idr.expandIRI(mod_iri)
-
-        slme = SyntacticLocalityModuleExtractor(
-            self.ontman, self.getOWLOntology(), ModuleType.STAR
-        )
-        modont = Ontology(slme.extractAsOntology(signature, modIRI))
-
-        # Add an annotation for the source of the module.
-        sourceIRI = None
-        ontid = self.getOWLOntology().getOntologyID()
-        if ontid.getVersionIRI().isPresent():
-            sourceIRI = ontid.getVersionIRI().get()
-        elif ontid.getOntologyIRI().isPresent():
-            sourceIRI = ontid.getOntologyIRI().get()
-
-        if sourceIRI != None:
-            modont.setOntologySource(sourceIRI)
-
-        return modont
-
