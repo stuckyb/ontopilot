@@ -62,13 +62,25 @@ methods = _ExtractMethods()
 # Define constants for the kinds of axioms from which related terms can be
 # extracted and methods for handling the constants.
 class _RelatedAxiomTypes:
+    # Superclasses and superproperties.
     ANCESTORS = 0
+    # Subclasses and subproperties.
     DESCENDANTS = 1
+    # Equivalent classes and properties.
     EQUIVALENTS = 2
+    # Disjoint classes and properties.
     DISJOINTS = 3
+    # Domains of object and data properties.
     DOMAINS = 4
+    # Ranges of object and data properties.
     RANGES = 5
+    # Object property inverses.
     INVERSES = 6
+    # Types (class assertions) of named individuals.
+    TYPES = 7
+    # Object and data property assertions of named individuals, including
+    # negative property assertions.
+    PROPERTY_ASSERTIONS = 8
 
     # Combine all supported axiom types in a single tuple.
     all_ax_types = (
@@ -84,7 +96,9 @@ class _RelatedAxiomTypes:
         'disjoints': DISJOINTS,
         'domains': DOMAINS,
         'ranges': RANGES,
-        'inverses': INVERSES
+        'inverses': INVERSES,
+        'types': TYPES,
+        'property assertions': PROPERTY_ASSERTIONS
     }
 
     def getAxiomTypesFromStr(self, ax_types_str):
@@ -284,6 +298,354 @@ class ModuleExtractor:
             modont.setOntologySource(sourceIRI)
 
         return modont
+
+    def _getDirectlyRelatedComponents(self, entity, rel_types):
+        """
+        Gets all entities and axioms that are directly related to the target
+        entity by the specified axiom types.  Returns a tuple containing two
+        sets: 1) A set of all related entities; and 2) a set of axioms that
+        define the relationships plus any additional required axioms.
+
+        entity: An OWL API OWLEntity object.
+        rel_types: A set of related axiom type constants.
+        """
+        if entity.getEntityType() == EntityType.CLASS:
+            return self._getRelComponentsForClass(entity, rel_types)
+
+        elif entity.getEntityType() == EntityType.OBJECT_PROPERTY:
+            return self._getRelComponentsForObjectProp(entity, rel_types)
+
+        elif entity.getEntityType() == EntityType.DATA_PROPERTY:
+            return self._getRelComponentsForDataProp(entity, rel_types)
+
+        elif entity.getEntityType() == EntityType.ANNOTATION_PROPERTY:
+            return self._getRelComponentsForAnnotProp(entity, rel_types)
+
+        elif entity.getEntityType() == EntityType.NAMED_INDIVIDUAL:
+            return self._getRelComponentsForIndividual(entity, rel_types)
+
+    def _getRelComponentsForClass(self, entity, rel_types):
+        """
+        Gets all entities and axioms that are directly related to a class by
+        the specified axiom types.  Returns a tuple containing two sets: 1) A
+        set of all related entities; and 2) a set of axioms that define the
+        relationships.
+
+        entity: An OWL API OWLEntity object for a class.
+        rel_types: A set of related axiom type constants.
+        """
+        entset = set()
+        axiomset = set()
+
+        if rel_axiom_types.ANCESTORS in rel_types:
+            axioms = self.owlont.getSubClassAxiomsForSubClass(entity)
+            for axiom in axioms:
+                super_ce = axiom.getSuperClass()
+                if not(super_ce.isAnonymous()):
+                    entset.add(super_ce.asOWLClass())
+                    axiomset.add(axiom)
+
+        if rel_axiom_types.DESCENDANTS in rel_types:
+            axioms = self.owlont.getSubClassAxiomsForSuperClass(entity)
+            for axiom in axioms:
+                sub_ce = axiom.getSubClass()
+                if not(sub_ce.isAnonymous()):
+                    entset.add(sub_ce.asOWLClass())
+                    axiomset.add(axiom)
+
+        if rel_axiom_types.EQUIVALENTS in rel_types:
+            rawaxioms = self.owlont.getEquivalentClassesAxioms(entity)
+            for rawaxiom in rawaxioms:
+                # Only examine pairwise axioms so we don't add axioms with
+                # unnamed class expressions.
+                for axiom in rawaxiom.asPairwiseAxioms():
+                    # Converting a set of axioms to pairwise representations
+                    # might include pairs that don't include the target class,
+                    # so we need to check for this.
+                    if not(axiom.contains(entity)):
+                        continue
+
+                    namedclasses = axiom.getNamedClasses()
+                    for namedclass in namedclasses:
+                        if not(namedclass.equals(entity)):
+                            entset.add(namedclass)
+                            axiomset.add(axiom)
+
+        if rel_axiom_types.DISJOINTS in rel_types:
+            rawaxioms = self.owlont.getDisjointClassesAxioms(entity)
+            for rawaxiom in rawaxioms:
+                # Only examine pairwise axioms so we don't add axioms with
+                # unnamed class expressions.
+                for axiom in rawaxiom.asPairwiseAxioms():
+                    # Converting a set of axioms to pairwise representations
+                    # might include pairs that don't include the target class,
+                    # so we need to check for this.
+                    if not(axiom.contains(entity)):
+                        continue
+
+                    cexps = axiom.getClassExpressions()
+                    for cexp in cexps:
+                        if not(cexp.isAnonymous()):
+                            namedclass = cexp.asOWLClass()
+                            if not(namedclass.equals(entity)):
+                                entset.add(namedclass)
+                                axiomset.add(axiom)
+
+        return (entset, axiomset)
+
+    def _getRelComponentsForObjectProp(self, entity, rel_types):
+        """
+        Gets all entities and axioms that are directly related to an object
+        property by the specified axiom types.  Returns a tuple containing two
+        sets: 1) A set of all related entities; and 2) a set of axioms that
+        define the relationships.
+
+        entity: An OWL API OWLEntity object for an object property.
+        rel_types: A set of related axiom type constants.
+        """
+        entset = set()
+        axiomset = set()
+
+        if rel_axiom_types.ANCESTORS in rel_types:
+            axioms = self.owlont.getObjectSubPropertyAxiomsForSubProperty(
+                entity
+            )
+            for axiom in axioms:
+                super_pe = axiom.getSuperProperty()
+                if not(super_pe.isAnonymous()):
+                    entset.add(super_pe.asOWLObjectProperty())
+                    axiomset.add(axiom)
+
+        if rel_axiom_types.DESCENDANTS in rel_types:
+            axioms = self.owlont.getObjectSubPropertyAxiomsForSuperProperty(
+                entity
+            )
+            for axiom in axioms:
+                sub_pe = axiom.getSubProperty()
+                if not(sub_pe.isAnonymous()):
+                    entset.add(sub_pe.asOWLObjectProperty())
+                    axiomset.add(axiom)
+
+        if rel_axiom_types.DOMAINS in rel_types:
+            axioms = self.owlont.getObjectPropertyDomainAxioms(entity)
+            for axiom in axioms:
+                cexp = axiom.getDomain()
+                if not(cexp.isAnonymous()):
+                    entset.add(cexp.asOWLClass())
+                    axiomset.add(axiom)
+
+        if rel_axiom_types.RANGES in rel_types:
+            axioms = self.owlont.getObjectPropertyRangeAxioms(entity)
+            for axiom in axioms:
+                cexp = axiom.getRange()
+                if not(cexp.isAnonymous()):
+                    entset.add(cexp.asOWLClass())
+                    axiomset.add(axiom)
+
+        if rel_axiom_types.INVERSES in rel_types:
+            axioms = self.owlont.getInverseObjectPropertyAxioms(entity)
+            for axiom in axioms:
+                for pexp in axiom.getPropertiesMinus(entity):
+                    if not(pexp.isAnonymous()):
+                        entset.add(pexp.asOWLObjectProperty())
+                        axiomset.add(axiom)
+
+        if rel_axiom_types.EQUIVALENTS in rel_types:
+            rawaxioms = self.owlont.getEquivalentObjectPropertiesAxioms(entity)
+            for rawaxiom in rawaxioms:
+                # Only examine pairwise axioms so we don't add axioms with
+                # unnamed property expressions.
+                for axiom in rawaxiom.asPairwiseAxioms():
+                    # Converting a set of axioms to pairwise representations
+                    # might include pairs that don't include the target
+                    # property, so we need to check for this.
+                    if not(axiom.getProperties().contains(entity)):
+                        continue
+
+                    for pexp in axiom.getPropertiesMinus(entity):
+                        if not(pexp.isAnonymous()):
+                            entset.add(pexp.asOWLObjectProperty())
+                            axiomset.add(axiom)
+
+        if rel_axiom_types.DISJOINTS in rel_types:
+            rawaxioms = self.owlont.getDisjointObjectPropertiesAxioms(entity)
+            for rawaxiom in rawaxioms:
+                # Only examine pairwise axioms so we don't add axioms with
+                # unnamed property expressions.
+                for axiom in rawaxiom.asPairwiseAxioms():
+                    # Converting a set of axioms to pairwise representations
+                    # might include pairs that don't include the target
+                    # property, so we need to check for this.
+                    if not(axiom.getProperties().contains(entity)):
+                        continue
+
+                    for pexp in axiom.getPropertiesMinus(entity):
+                        if not(pexp.isAnonymous()):
+                            entset.add(pexp.asOWLObjectProperty())
+                            axiomset.add(axiom)
+
+        return (entset, axiomset)
+
+    def _getRelComponentsForDataProp(self, entity, rel_types):
+        """
+        Gets all entities and axioms that are directly related to a data
+        property by the specified axiom types.  Returns a tuple containing two
+        sets: 1) A set of all related entities; and 2) a set of axioms that
+        define the relationships.
+
+        entity: An OWL API OWLEntity object for a data property.
+        rel_types: A set of related axiom type constants.
+        """
+        entset = set()
+        axiomset = set()
+
+        if rel_axiom_types.ANCESTORS in rel_types:
+            axioms = self.owlont.getDataSubPropertyAxiomsForSubProperty(
+                entity
+            )
+            for axiom in axioms:
+                super_pe = axiom.getSuperProperty()
+                if not(super_pe.isAnonymous()):
+                    entset.add(super_pe.asOWLDataProperty())
+                    axiomset.add(axiom)
+
+        if rel_axiom_types.DESCENDANTS in rel_types:
+            axioms = self.owlont.getDataSubPropertyAxiomsForSuperProperty(
+                entity
+            )
+            for axiom in axioms:
+                sub_pe = axiom.getSubProperty()
+                if not(sub_pe.isAnonymous()):
+                    entset.add(sub_pe.asOWLDataProperty())
+                    axiomset.add(axiom)
+
+        if rel_axiom_types.DOMAINS in rel_types:
+            axioms = self.owlont.getDataPropertyDomainAxioms(entity)
+            for axiom in axioms:
+                cexp = axiom.getDomain()
+                if not(cexp.isAnonymous()):
+                    entset.add(cexp.asOWLClass())
+                    axiomset.add(axiom)
+
+        if rel_axiom_types.RANGES in rel_types:
+            axioms = self.owlont.getDataPropertyRangeAxioms(entity)
+            for axiom in axioms:
+                axiomset.add(axiom)
+
+        if rel_axiom_types.EQUIVALENTS in rel_types:
+            rawaxioms = self.owlont.getEquivalentDataPropertiesAxioms(entity)
+            for rawaxiom in rawaxioms:
+                # Only examine pairwise axioms so we don't add axioms with
+                # unnamed property expressions.
+                for axiom in rawaxiom.asPairwiseAxioms():
+                    # Converting a set of axioms to pairwise representations
+                    # might include pairs that don't include the target
+                    # property, so we need to check for this.
+                    if not(axiom.getProperties().contains(entity)):
+                        continue
+
+                    for pexp in axiom.getPropertiesMinus(entity):
+                        if not(pexp.isAnonymous()):
+                            entset.add(pexp.asOWLDataProperty())
+                            axiomset.add(axiom)
+
+        if rel_axiom_types.DISJOINTS in rel_types:
+            rawaxioms = self.owlont.getDisjointDataPropertiesAxioms(entity)
+            for rawaxiom in rawaxioms:
+                # Only examine pairwise axioms so we don't add axioms with
+                # unnamed property expressions.
+                for axiom in rawaxiom.asPairwiseAxioms():
+                    # Converting a set of axioms to pairwise representations
+                    # might include pairs that don't include the target
+                    # property, so we need to check for this.
+                    if not(axiom.getProperties().contains(entity)):
+                        continue
+
+                    for pexp in axiom.getPropertiesMinus(entity):
+                        if not(pexp.isAnonymous()):
+                            entset.add(pexp.asOWLDataProperty())
+                            axiomset.add(axiom)
+
+        return (entset, axiomset)
+
+    def _getRelComponentsForAnnotProp(self, entity, rel_types):
+        """
+        Gets all entities and axioms that are directly related to an annotation
+        property by the specified axiom types.  Returns a tuple containing two
+        sets: 1) A set of all related entities; and 2) a set of axioms that
+        define the relationships.
+
+        entity: An OWL API OWLEntity object for an annotation property.
+        rel_types: A set of related axiom type constants.
+        """
+        entset = set()
+        axiomset = set()
+
+        if rel_axiom_types.ANCESTORS in rel_types:
+            axioms = self.owlont.getSubAnnotationPropertyOfAxioms(entity)
+            for axiom in axioms:
+                    entset.add(axiom.getSuperProperty())
+                    axiomset.add(axiom)
+
+        if rel_axiom_types.DESCENDANTS in rel_types:
+            # The OWL API does not include a method to retrieve annotation
+            # subproperty axioms by the parent property, so we instead examine
+            # all annotation subproperty axioms to see which ones have the
+            # current entity as a superproperty.
+            axioms = self.owlont.getAxioms(
+                AxiomType.SUB_ANNOTATION_PROPERTY_OF, True
+            )
+            for axiom in axioms:
+                if axiom.getSuperProperty().equals(entity):
+                    entset.add(axiom.getSubProperty())
+                    axiomset.add(axiom)
+
+        return (entset, axiomset)
+
+    def _getRelComponentsForIndividual(self, entity, rel_types):
+        """
+        Gets all entities and axioms that are directly related to a named
+        individual.  Returns a tuple containing two sets: 1) A set of all
+        related entities; and 2) a set of axioms that define the relationships.
+
+        entity: An OWL API OWLEntity object for a named individual.
+        rel_types: A set of related axiom type constants.
+        """
+        entset = set()
+        axiomset = set()
+
+        if rel_axiom_types.TYPES in rel_types:
+            axioms = self.owlont.getClassAssertionAxioms(entity)
+            for axiom in axioms:
+                cexp = axiom.getClassExpression()
+                if not(cexp.isAnonymous()):
+                    entset.add(cexp.asOWLClass())
+                    axiomset.add(axiom)
+
+        if rel_axiom_types.PROPERTY_ASSERTIONS in rel_types:
+            axioms = self.owlont.getObjectPropertyAssertionAxioms(entity)
+            axioms.update(
+                self.owlont.getNegativeObjectPropertyAssertionAxioms(entity)
+            )
+            for axiom in axioms:
+                pexp = axiom.getProperty()
+                indv = axiom.getObject()
+                if not(pexp.isAnonymous()) and indv.isNamed():
+                    entset.add(pexp.asOWLObjectProperty())
+                    entset.add(indv.asOWLNamedIndividual())
+                    axiomset.add(axiom)
+
+            axioms = self.owlont.getDataPropertyAssertionAxioms(entity)
+            axioms.update(
+                self.owlont.getNegativeDataPropertyAssertionAxioms(entity)
+            )
+            for axiom in axioms:
+                pexp = axiom.getProperty()
+                if not(pexp.isAnonymous()):
+                    entset.add(pexp.asOWLDataProperty())
+                    axiomset.add(axiom)
+
+        return (entset, axiomset)
 
     def _getAncestors(self, leaf_entity):
         """

@@ -21,6 +21,7 @@ from ontopilot.module_extractor import methods as me_methods, rel_axiom_types
 import unittest
 
 # Java imports.
+from org.semanticweb.owlapi.model import AxiomType
 
 
 class Test_RelatedAxiomTypes(unittest.TestCase):
@@ -99,6 +100,335 @@ class Test_ModuleExtractor(unittest.TestCase):
             expset.add(ent.getOWLAPIObj())
 
         self.assertEqual(expset, result)
+
+    def test_getDirectlyRelatedComponents(self):
+        # Define a set of related axiom types for ancestors and descendants.
+        relatives = {rel_axiom_types.ANCESTORS, rel_axiom_types.DESCENDANTS}
+
+        #--------
+        # Tests for classes.
+        #--------
+
+        # Create a parent class for OBITO:0001.  This results in an explicit
+        # class hierarchy that is 3 levels deep (starting from OBTO:9999).
+        ent = self.ont.getExistingClass('OBITO:0001')
+        owlent = ent.getOWLAPIObj()
+        self.ont.createNewClass('OBTO:9999')
+        ent.addSubclassOf('OBTO:9999')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, relatives
+        )
+
+        self._compareEntitySets(
+            ['OBTO:9999', 'OBTO:0010', 'OBTO:0011', 'OBTO:0012'], entset
+        )
+        self.assertEqual(4, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(axiom.isOfType(AxiomType.SUBCLASS_OF))
+            self.assertTrue(axiom.containsEntityInSignature(owlent))
+
+        # Test a disjointness relationship.
+        owlent = self.ont.getExistingClass('OBTO:0010').getOWLAPIObj()
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.DISJOINTS}
+        )
+
+        self._compareEntitySets(['OBTO:0011'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(axiom.isOfType(AxiomType.DISJOINT_CLASSES))
+            self.assertTrue(axiom.contains(owlent))
+
+        # Test equivalency relationships, and verify that the pairwise
+        # equivalency axioms are properly analyzed.
+        ent = self.ont.getExistingClass('OBTO:0010')
+        owlent = ent.getOWLAPIObj()
+        self.ont.createNewClass('OBTO:0013')
+        self.ont.createNewClass('OBTO:0014')
+        ent.addEquivalentTo('OBTO:0013')
+        ent.addEquivalentTo('OBTO:0014')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.EQUIVALENTS}
+        )
+
+        self._compareEntitySets(['OBTO:0013', 'OBTO:0014'], entset)
+        self.assertEqual(2, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(axiom.isOfType(AxiomType.EQUIVALENT_CLASSES))
+            self.assertTrue(axiom.contains(owlent))
+
+        #--------
+        # Tests for object properties.
+        #--------
+
+        # Create a superproperty for 'test object property 1'.
+        ent = self.ont.getExistingObjectProperty('OBTO:0001')
+        owlent = ent.getOWLAPIObj()
+        self.ont.createNewObjectProperty('OBTO:0002')
+        ent.addSuperproperty('OBTO:0002')
+
+        # Create a subproperty for 'test object property 1'.
+        newent = self.ont.createNewObjectProperty('OBTO:0003')
+        newent.addSuperproperty('OBTO:0001')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, relatives
+        )
+
+        self._compareEntitySets(['OBTO:0002', 'OBTO:0003'], entset)
+        self.assertEqual(2, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(axiom.isOfType(AxiomType.SUB_OBJECT_PROPERTY))
+            self.assertTrue(axiom.containsEntityInSignature(owlent))
+
+        # Test an equivalency relationship.
+        self.ont.createNewObjectProperty('OBTO:0004')
+        ent.addEquivalentTo('OBTO:0004')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.EQUIVALENTS}
+        )
+
+        self._compareEntitySets(['OBTO:0004'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.EQUIVALENT_OBJECT_PROPERTIES)
+            )
+            self.assertTrue(axiom.getProperties().contains(owlent))
+
+        # Test a disjointness relationship.
+        self.ont.createNewObjectProperty('OBTO:0005')
+        ent.addDisjointWith('OBTO:0005')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.DISJOINTS}
+        )
+
+        self._compareEntitySets(['OBTO:0005'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.DISJOINT_OBJECT_PROPERTIES)
+            )
+            self.assertTrue(axiom.getProperties().contains(owlent))
+
+        # Test an inverse relationship.
+        self.ont.createNewObjectProperty('OBTO:0006')
+        ent.addInverse('OBTO:0006')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.INVERSES}
+        )
+
+        self._compareEntitySets(['OBTO:0006'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.INVERSE_OBJECT_PROPERTIES)
+            )
+            self.assertTrue(axiom.getProperties().contains(owlent))
+
+        # Test a domain axiom.
+        ent.addDomain('OBTO:0010')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.DOMAINS}
+        )
+
+        self._compareEntitySets(['OBTO:0010'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.OBJECT_PROPERTY_DOMAIN)
+            )
+            self.assertTrue(axiom.getProperty().equals(owlent))
+
+        # Test a range axiom.
+        ent.addRange('OBTO:0011')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.RANGES}
+        )
+
+        self._compareEntitySets(['OBTO:0011'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.OBJECT_PROPERTY_RANGE)
+            )
+            self.assertTrue(axiom.getProperty().equals(owlent))
+
+        #--------
+        # Tests for data properties.
+        #--------
+
+        # Create a superproperty for 'test data property 1'.
+        ent = self.ont.getExistingDataProperty('OBTO:0020')
+        owlent = ent.getOWLAPIObj()
+        self.ont.createNewDataProperty('OBTO:0021')
+        ent.addSuperproperty('OBTO:0021')
+
+        # Create a subproperty for 'test data property 1'.
+        newent = self.ont.createNewDataProperty('OBTO:0022')
+        newent.addSuperproperty('OBTO:0020')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, relatives
+        )
+
+        self._compareEntitySets(['OBTO:0021', 'OBTO:0022'], entset)
+        self.assertEqual(2, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(axiom.isOfType(AxiomType.SUB_DATA_PROPERTY))
+            self.assertTrue(axiom.containsEntityInSignature(owlent))
+
+        # Test an equivalency relationship.
+        self.ont.createNewDataProperty('OBTO:0023')
+        ent.addEquivalentTo('OBTO:0023')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.EQUIVALENTS}
+        )
+
+        self._compareEntitySets(['OBTO:0023'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.EQUIVALENT_DATA_PROPERTIES)
+            )
+            self.assertTrue(axiom.getProperties().contains(owlent))
+
+        # Test a disjointness relationship.
+        self.ont.createNewDataProperty('OBTO:0024')
+        ent.addDisjointWith('OBTO:0024')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.DISJOINTS}
+        )
+
+        self._compareEntitySets(['OBTO:0024'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.DISJOINT_DATA_PROPERTIES)
+            )
+            self.assertTrue(axiom.getProperties().contains(owlent))
+
+        # Test a domain axiom.
+        ent.addDomain('OBTO:0010')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.DOMAINS}
+        )
+
+        self._compareEntitySets(['OBTO:0010'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.DATA_PROPERTY_DOMAIN)
+            )
+            self.assertTrue(axiom.getProperty().equals(owlent))
+
+        # Test a range axiom.
+        ent.addRange('xsd:string')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.RANGES}
+        )
+
+        self.assertEqual(0, len(entset))
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.DATA_PROPERTY_RANGE)
+            )
+            self.assertTrue(axiom.getProperty().equals(owlent))
+
+        #--------
+        # Tests for annotation properties.
+        #--------
+
+        # Create a superproperty for 'annotation property 1'.
+        ent = self.ont.getExistingAnnotationProperty('OBTO:0030')
+        owlent = ent.getOWLAPIObj()
+        self.ont.createNewAnnotationProperty('OBTO:0031')
+        ent.addSuperproperty('OBTO:0031')
+
+        # Create a subproperty for 'annotation property 1'.
+        newent = self.ont.createNewAnnotationProperty('OBTO:0032')
+        newent.addSuperproperty('OBTO:0030')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, relatives
+        )
+
+        self._compareEntitySets(['OBTO:0031', 'OBTO:0032'], entset)
+        self.assertEqual(2, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.SUB_ANNOTATION_PROPERTY_OF)
+            )
+            self.assertTrue(axiom.containsEntityInSignature(owlent))
+
+        #--------
+        # Tests for named individuals.
+        #--------
+
+        # Test a class assertion (type).
+        ent = self.ont.createNewIndividual('OBTO:0042')
+        owlent = ent.getOWLAPIObj()
+        ent.addType('OBTO:0010')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.TYPES}
+        )
+
+        self._compareEntitySets(['OBTO:0010'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.CLASS_ASSERTION)
+            )
+            self.assertTrue(axiom.getIndividual().equals(owlent))
+
+        # Test an object property assertion.
+        self.ont.createNewIndividual('OBTO:0043')
+        ent.addObjectPropertyFact('OBTO:0001', 'OBTO:0043')
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.PROPERTY_ASSERTIONS}
+        )
+
+        self._compareEntitySets(['OBTO:0001', 'OBTO:0043'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.OBJECT_PROPERTY_ASSERTION)
+            )
+            self.assertTrue(axiom.getSubject().equals(owlent))
+
+        # Test a negative data property assertion.
+        ent = self.ont.createNewIndividual('OBTO:0044')
+        owlent = ent.getOWLAPIObj()
+        ent.addDataPropertyFact(
+            'OBTO:0020', '"literal"^^xsd:string', is_negative=True
+        )
+
+        entset, axiomset = self.me._getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.PROPERTY_ASSERTIONS}
+        )
+
+        self._compareEntitySets(['OBTO:0020'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.NEGATIVE_DATA_PROPERTY_ASSERTION)
+            )
+            self.assertTrue(axiom.getSubject().equals(owlent))
 
     def test_getAncestors(self):
         # Create a parent class for OBITO:0001.  This results in an explicit
