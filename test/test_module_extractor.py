@@ -265,7 +265,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         # Verify that the parent/child axioms are present.
         ent = module.getExistingClass('OBITO:0001')
         axioms = owlont.getSubClassAxiomsForSuperClass(ent.getOWLAPIObj())
-        self.assertTrue(3, axioms.size())
+        self.assertEqual(3, axioms.size())
 
         #--------
         # Create a new module to test adding single terms with their
@@ -285,9 +285,7 @@ class Test_ModuleExtractor(unittest.TestCase):
 
         module = self.me.extractModule('http://test.mod/id3')
 
-        # Verify that all expected entities are present in the module.  Use at
-        # least one label reference to verify that labels are mapped correctly
-        # in the module ontology.
+        # Verify that all expected entities are present in the module.
         self.assertIsNotNone(module.getExistingClass('OBTO:9999'))
         self.assertIsNotNone(module.getExistingClass('OBITO:0001'))
         self.assertIsNotNone(module.getExistingClass('OBTO:0010'))
@@ -309,9 +307,45 @@ class Test_ModuleExtractor(unittest.TestCase):
         # Verify that the parent/child axioms are present.
         ent = module.getExistingClass('OBITO:0001')
         axioms = owlont.getSubClassAxiomsForSuperClass(ent.getOWLAPIObj())
-        self.assertTrue(3, axioms.size())
+        self.assertEqual(3, axioms.size())
         axioms = owlont.getSubClassAxiomsForSubClass(ent.getOWLAPIObj())
-        self.assertTrue(1, axioms.size())
+        self.assertEqual(1, axioms.size())
+
+        #--------
+        # Create a new module to test adding single terms combined with
+        # explicitly excluding some entities.
+        #--------
+
+        self.me.clearSignatures()
+
+        # Add 'imported test class 1', including all of its descendants and
+        # ancestors, then exclude it and its descendants.
+        self.me.addEntity('OBITO:0001', me_methods.SINGLE, True, True)
+        self.me.excludeEntity('OBITO:0001', True, False)
+        # Add 'test object property 1'.
+        self.me.addEntity('OBTO:0001', me_methods.SINGLE, True, True)
+
+        module = self.me.extractModule('http://test.mod/id4')
+
+        # Verify that all expected entities are present in the module.
+        self.assertIsNotNone(module.getExistingClass('OBTO:9999'))
+        self.assertIsNotNone(module.getExistingObjectProperty('OBTO:0001'))
+        self.assertIsNotNone(module.getExistingAnnotationProperty('OBTO:0030'))
+
+        # Verify that there are no unexpected entities.  Note that the
+        # annotation properties in the signature will include rdfs:label and
+        # dc:source.
+        owlont = module.getOWLOntology()
+        self.assertEqual(1, owlont.getClassesInSignature(True).size())
+        self.assertEqual(1, owlont.getObjectPropertiesInSignature(True).size())
+        self.assertEqual(0, owlont.getDataPropertiesInSignature(True).size())
+        self.assertEqual(3, owlont.getAnnotationPropertiesInSignature(False).size())
+        self.assertEqual(0, owlont.getIndividualsInSignature(True).size())
+
+        # Verify that no parent/child axioms are present.
+        ent = module.getExistingClass('OBTO:9999')
+        axioms = owlont.getSubClassAxiomsForSuperClass(ent.getOWLAPIObj())
+        self.assertTrue(axioms.isEmpty())
 
     def test_extractLocality(self):
         """

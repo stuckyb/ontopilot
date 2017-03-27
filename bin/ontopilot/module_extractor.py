@@ -88,17 +88,20 @@ class ModuleExtractor:
         self.ontology = ontology_source
         self.owlont = self.ontology.getOWLOntology()
 
-        # Initialize data structures for holding the extraction signatures and
-        # axioms that need to be retained.
+        # Initialize data structures for holding the extraction signature,
+        # axioms that need to be retained, and entities to exclude.
         self.signatures = {}
         self.saved_axioms = set()
+        self.excluded_entities = set()
         self.clearSignatures()
 
     def clearSignatures(self):
         """
-        Resets all signature sets and the saved axiom set to empty.
+        Resets all signature sets, the saved axiom set, and the excluded
+        entities set to empty.
         """
         self.saved_axioms.clear()
+        self.excluded_entities.clear()
 
         for method in methods.all_methods:
             self.signatures[method] = set()
@@ -117,8 +120,9 @@ class ModuleExtractor:
         """
         Adds an entity to the module signature.  If include_branch is True, all
         descendants of the entity will be retrieved and added to the signature.
-        The final module will ensure that all parent/child relationships in the
-        retrieved branch are preserved.
+        If include_ancestors is True, all ancestors of the entity will be
+        retrieved and added to the signature.  The final module will preserve
+        all parent/child relationships in the retrieved hierarchies.
 
         entity_id: The identifier of the entity.  Can be either an OWL API IRI
             object or a string containing: a label (with or without a prefix),
@@ -154,6 +158,44 @@ class ModuleExtractor:
 
         self.signatures[method].update(entset)
 
+    def excludeEntity(self, entity_id, exclude_branch=False, exclude_ancestors=False):
+        """
+        Adds an entity to exclude from the final module.  If exclude_branch is
+        True, all descendants of the entity will be retrieved and excluded.  If
+        exclude_ancestors is True, all ancestors of the entity will be
+        retrieved and excluded.
+
+        entity_id: The identifier of the entity.  Can be either an OWL API IRI
+            object or a string containing: a label (with or without a prefix),
+            a prefix IRI (i.e., a curie, such as "owl:Thing"), a relative IRI,
+            a full IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label text' or
+            prefix:'label txt').
+        exclude_branch: If True, all descendants of the entity will be
+            excluded.
+        exclude_ancestors: If True, all ancestors of the entity will be
+            excluded.
+        """
+        entity = self.ontology.getExistingEntity(entity_id)
+        if entity == None:
+            raise RuntimeError(
+                'The entity "{0}" could not be found in the source '
+                'ontology.'.format(entity_id)
+            )
+
+        owlent = entity.getOWLAPIObj()
+
+        entset = {owlent}
+        if exclude_branch:
+            br_ents, br_axioms = self._getBranch(owlent)
+            entset.update(br_ents)
+
+        if exclude_ancestors:
+            an_ents, an_axioms = self._getAncestors(owlent)
+            entset.update(an_ents)
+
+        self.excluded_entities.update(entset)
+
     def extractModule(self, mod_iri):
         """
         Extracts a module that is a subset of the entities in the source
@@ -183,6 +225,10 @@ class ModuleExtractor:
         # Add any subclass/subproperty axioms.
         for axiom in self.saved_axioms:
             modont.addEntityAxiom(axiom)
+
+        # Remove any entities that should be excluded from the final module.
+        for ent in self.excluded_entities:
+            modont.removeEntity(ent)
 
         # Add an annotation for the source of the module.
         sourceIRI = None
