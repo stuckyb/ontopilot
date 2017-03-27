@@ -49,7 +49,10 @@ class _ExtractMethods:
             return self.strings[method_str.lower()]
         else:
             raise RuntimeError(
-                'Invalid module extraction method: "{0}".'.format(method_str)
+                'Invalid module extraction method: "{0}".  Method must be one '
+                'of {{"{1}"}}.'.format(
+                    method_str, '", "'.join(self.strings.keys())
+                )
             )
 
 methods = _ExtractMethods()
