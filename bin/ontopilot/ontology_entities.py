@@ -357,6 +357,32 @@ class _OntologyDataProperty(_OntologyEntity):
             raxiom = self.df.getOWLDataPropertyRangeAxiom(self.entityobj, datarange)
             self.ontology.addEntityAxiom(raxiom)
 
+    def addEquivalentTo(self, prop_id):
+        """
+        Sets this property as equivalent to another property.
+
+        prop_id: The identifier of a data property.  Can be either an OWL API
+            IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
+        """
+        # Get the OWL property object, making sure that it is actually defined.
+        prop = self.ontology.getExistingDataProperty(prop_id)
+        if prop == None:
+            raise RuntimeError(
+                'The designated equivalent property, "{0}", could not be '
+                'found in the source ontology.'.format(parent_id)
+            )
+        owlprop = prop.getOWLAPIObj()
+
+        # Add the equivalency axiom.
+        daxiom = self.df.getOWLEquivalentDataPropertiesAxiom(
+            self.entityobj, owlprop
+        )
+        self.ontology.addEntityAxiom(daxiom)
+
     def addDisjointWith(self, prop_id):
         """
         Sets this property as disjoint with another property.

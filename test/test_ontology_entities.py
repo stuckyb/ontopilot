@@ -260,6 +260,21 @@ class Test_OntologyDataProperty(_TestOntologyEntity, unittest.TestCase):
 
         self.assertTrue(found_drange)
 
+    def test_addEquivalentTo(self):
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0022')
+        newprop = self.test_ont.createNewDataProperty(newpropIRI)
+
+        self.t_ent.addEquivalentTo('http://purl.obolibrary.org/obo/OBTO_0022')
+
+        # Check that the property has the correct equivalency relationship.
+        found_prop = False
+        for axiom in self.owlont.getEquivalentDataPropertiesAxioms(self.t_owlapiobj):
+            for dprop in axiom.getProperties():
+                if dprop.getIRI().equals(newpropIRI):
+                    found_prop = True
+
+        self.assertTrue(found_prop)
+
     def test_addDisjointWith(self):
         newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0022')
         newprop = self.test_ont.createNewDataProperty(newpropIRI)
