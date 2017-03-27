@@ -46,7 +46,7 @@ from org.semanticweb.owlapi.model import EntityType
 
 
 # Define constants for the supported extraction methods.
-class _ExtractMethodsStruct:
+class _ExtractMethods:
     # The STAR syntactic locality extraction method.
     LOCALITY = 0
     # Extract single entities without any other axioms (except annotations).
@@ -60,7 +60,20 @@ class _ExtractMethodsStruct:
         'locality': LOCALITY,
         'single': SINGLE
     }
-methods = _ExtractMethodsStruct()
+
+    def getMethodFromStr(self, method_str):
+        """
+        Returns the module extraction method constant that corresponds with the
+        provided string value.
+        """
+        if method_str.lower() in self.strings:
+            return self.strings[method_str.lower()]
+        else:
+            raise RuntimeError(
+                'Invalid module extraction method: "{0}".'.format(method_str)
+            )
+
+methods = _ExtractMethods()
 
 
 class ModuleExtractor:
@@ -122,7 +135,7 @@ class ModuleExtractor:
         entity = self.ontology.getExistingEntity(entity_id)
         if entity == None:
             raise RuntimeError(
-                'The entity {0} could not be found in the source '
+                'The entity "{0}" could not be found in the source '
                 'ontology.'.format(entity_id)
             )
 
