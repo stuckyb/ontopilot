@@ -213,29 +213,6 @@ class _OntologyClass(_OntologyEntity):
     def getTypeConst(self):
         return CLASS_ENTITY
         
-    def addSuperclass(self, parent_id):
-        """
-        Adds a parent class for this class.
-
-        parent_id: The identifier of the parent class.  Can be either an OWL
-            API IRI object or a string containing: a label (with or without a
-            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
-            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
-            Labels should be enclosed in single quotes (e.g., 'label txt' or
-            prefix:'label txt').
-        """
-        # Get the OWLClass object of the parent class, making sure that it is
-        # actually defined.
-        parentclass = self.ontology.getExistingClass(parent_id)
-        if parentclass == None:
-            raise RuntimeError('The designated superclass, ' + str(parent_id)
-                    + ', could not be found in the source ontology.')
-        parentclass = parentclass.getOWLAPIObj()
-        
-        # Add the subclass axiom to the ontology.
-        newaxiom = self.df.getOWLSubClassOfAxiom(self.entityobj, parentclass)
-        self.ontology.addEntityAxiom(newaxiom)
-
     def addSubclassOf(self, manchester_exp):
         """
         Adds a class expression as a "subclass of" axiom.  The class expression
