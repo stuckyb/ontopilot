@@ -213,16 +213,28 @@ class _OntologyClass(_OntologyEntity):
     def getTypeConst(self):
         return CLASS_ENTITY
         
-    def addSubclassOf(self, manchester_exp):
+    def addSuperclass(self, manchester_exp):
         """
-        Adds a class expression as a "subclass of" axiom.  The class expression
-        should be written in Manchester Syntax (MS).
+        Adds a class expression as a superclass of this class.  The class
+        expression should be written in Manchester Syntax (MS).
 
         manchester_exp: A string containing an MS "description" production.
         """
         if manchester_exp != '':
             cexp = self._getClassExpression(manchester_exp)
             eaxiom = self.df.getOWLSubClassOfAxiom(self.entityobj, cexp)
+            self.ontology.addEntityAxiom(eaxiom)
+
+    def addSubclass(self, manchester_exp):
+        """
+        Adds a class expression as a subclass of this class.  The class
+        expression should be written in Manchester Syntax (MS).
+
+        manchester_exp: A string containing an MS "description" production.
+        """
+        if manchester_exp != '':
+            cexp = self._getClassExpression(manchester_exp)
+            eaxiom = self.df.getOWLSubClassOfAxiom(cexp, self.entityobj)
             self.ontology.addEntityAxiom(eaxiom)
 
     def addEquivalentTo(self, manchester_exp):

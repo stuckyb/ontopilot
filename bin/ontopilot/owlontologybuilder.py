@@ -171,7 +171,7 @@ class OWLOntologyBuilder:
             + self.dsparser.parseString(classdesc['Subclass of'])
         )
         for ms_exp in ms_exps:
-            classobj.addSubclassOf(ms_exp)
+            classobj.addSuperclass(ms_exp)
  
         # Add any equivalency axioms (specified as class expressions in
         # Manchester Syntax).

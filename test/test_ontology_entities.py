@@ -155,11 +155,11 @@ class Test_OntologyClass(_TestOntologyEntity, unittest.TestCase):
     def test_getTypeConst(self):
         self.assertEqual(CLASS_ENTITY, self.t_ent.getTypeConst())
 
-    def test_addSubclassOf(self):
+    def test_addSuperclass(self):
         superclassIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
 
         # Test a simple class expression that is only a class label.
-        self.t_ent.addSubclassOf("'test class 1'")
+        self.t_ent.addSuperclass("'test class 1'")
 
         # Check that the class has the correct superclass.
         found_superclass = False
@@ -168,6 +168,20 @@ class Test_OntologyClass(_TestOntologyEntity, unittest.TestCase):
                 found_superclass = True
 
         self.assertTrue(found_superclass)
+
+    def test_addSubclass(self):
+        subclassIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
+
+        # Test a simple class expression that is only a class label.
+        self.t_ent.addSubclass("'test class 1'")
+
+        # Check that the class has the correct subclass.
+        found_subclass = False
+        for axiom in self.owlont.getSubClassAxiomsForSuperClass(self.t_owlapiobj):
+            if axiom.getSubClass().getIRI().equals(subclassIRI):
+                found_subclass = True
+
+        self.assertTrue(found_subclass)
 
     def test_addEquivalentTo(self):
         equivclassIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')

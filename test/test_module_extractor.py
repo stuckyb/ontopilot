@@ -156,7 +156,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         ent = self.ont.getExistingClass('OBITO:0001')
         owlent = ent.getOWLAPIObj()
         self.ont.createNewClass('OBTO:9999')
-        ent.addSubclassOf('OBTO:9999')
+        ent.addSuperclass('OBTO:9999')
 
         entset, axiomset = self.me._getDirectlyRelatedComponents(
             owlent, relatives
@@ -478,7 +478,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         # multiple child classes, all of which should provide a good test case
         # for the traversal algorithm.
         newent = self.ont.createNewClass('OBTO:9999')
-        newent.addSubclassOf('OBTO:0011')
+        newent.addSuperclass('OBTO:0011')
 
         # Test class descendant retrieval.
         ent = self.ont.getExistingClass('OBITO:0001').getOWLAPIObj()
@@ -494,7 +494,7 @@ class Test_ModuleExtractor(unittest.TestCase):
 
         # Make a cyclic parent/child relationship for 'test class 2'.
         ent = self.ont.getExistingClass('OBTO:0011')
-        ent.addSubclassOf('OBTO:9999')
+        ent.addSuperclass('OBTO:9999')
 
         # Verify that the cycle is correctly handled.
         ent = self.ont.getExistingClass('OBTO:0011').getOWLAPIObj()
@@ -516,7 +516,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         # which should provide a good test case for the traversal algorithm.
         ent = self.ont.getExistingClass('OBITO:0001')
         self.ont.createNewClass('OBTO:9999')
-        ent.addSubclassOf('OBTO:9999')
+        ent.addSuperclass('OBTO:9999')
 
         #--------
         # Create a new module to test adding single terms without any ancestors
