@@ -22,6 +22,9 @@ import unittest
 
 # Java imports.
 from org.semanticweb.owlapi.model import AxiomType
+from org.semanticweb.owlapi.model import OWLObjectPropertyCharacteristicAxiom
+from org.semanticweb.owlapi.model import OWLFunctionalDataPropertyAxiom
+from org.semanticweb.owlapi.model import OWLTransitiveObjectPropertyAxiom
 
 
 class Test_RelatedAxiomTypes(unittest.TestCase):
@@ -88,6 +91,45 @@ class Test_ModuleExtractor(unittest.TestCase):
         # increase the signature size.
         self.me.addEntity('OBTO:0010', me_methods.SINGLE)
         self.assertEqual(3, self.me.getSignatureSize())
+
+    def test_getPropertyCharacteristicsAxioms(self):
+        # Test object property characteristics.
+        ent = self.ont.getExistingObjectProperty('OBTO:0001')
+        owlent = ent.getOWLAPIObj()
+
+        axioms = self.me._getPropertyCharacteristicsAxioms(owlent)
+        self.assertEqual(0, len(axioms))
+
+        ent.makeFunctional()
+        ent.makeInverseFunctional()
+        ent.makeReflexive()
+        ent.makeIrreflexive()
+        ent.makeSymmetric()
+        ent.makeAsymmetric()
+        ent.makeTransitive()
+
+        axioms = self.me._getPropertyCharacteristicsAxioms(owlent)
+        self.assertEqual(7, len(axioms))
+        for axiom in axioms:
+            self.assertTrue(
+                isinstance(axiom, OWLObjectPropertyCharacteristicAxiom)
+            )
+            self.assertTrue(axiom.getProperty().equals(owlent))
+
+        # Test data property characteristics.
+        ent = self.ont.getExistingDataProperty('OBTO:0020')
+        owlent = ent.getOWLAPIObj()
+
+        axioms = self.me._getPropertyCharacteristicsAxioms(owlent)
+        self.assertEqual(0, len(axioms))
+
+        ent.makeFunctional()
+
+        axioms = self.me._getPropertyCharacteristicsAxioms(owlent)
+        self.assertEqual(1, len(axioms))
+        for axiom in axioms:
+            self.assertTrue(isinstance(axiom, OWLFunctionalDataPropertyAxiom))
+            self.assertTrue(axiom.getProperty().equals(owlent))
 
     def _compareEntitySets(self, ent_list, result):
         """
@@ -486,6 +528,10 @@ class Test_ModuleExtractor(unittest.TestCase):
         # Add 'test object property 1'.
         self.me.addEntity('OBTO:0001', me_methods.SINGLE)
 
+        # Make 'test object property 1' transitive.
+        prop = self.ont.getExistingObjectProperty('OBTO:0001')
+        prop.makeTransitive()
+
         module = self.me.extractModule('http://test.mod/id')
 
         # Verify that all expected entities are present in the module.  Use at
@@ -494,6 +540,17 @@ class Test_ModuleExtractor(unittest.TestCase):
         self.assertIsNotNone(module.getExistingClass("'test class 1'"))
         self.assertIsNotNone(module.getExistingObjectProperty('OBTO:0001'))
         self.assertIsNotNone(module.getExistingAnnotationProperty('OBTO:0030'))
+
+        # Verify that 'test object property 1' is transitive.
+        owlprop = module.getExistingObjectProperty('OBTO:0001').getOWLAPIObj()
+        owlmod = module.getOWLOntology()
+        axioms = owlmod.getTransitiveObjectPropertyAxioms(owlprop)
+        self.assertEqual(1, len(axioms))
+        for axiom in axioms:
+            self.assertTrue(
+                isinstance(axiom, OWLTransitiveObjectPropertyAxiom)
+            )
+            self.assertTrue(axiom.getProperty().equals(owlprop))
 
         # Verify that there are no unexpected entities.  Note that the
         # annotation properties in the signature will include rdfs:label and

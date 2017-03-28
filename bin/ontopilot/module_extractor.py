@@ -301,6 +301,14 @@ class ModuleExtractor:
                 for axiom in dec_axioms:
                     target.addEntityAxiom(axiom)
 
+            # If the current entity is a data or object property, make sure to
+            # preserve its characteristics.
+            proptypes = (EntityType.OBJECT_PROPERTY, EntityType.DATA_PROPERTY)
+            if owlent.getEntityType() in proptypes:
+                axioms = self._getPropertyCharacteristicsAxioms(owlent)
+                for axiom in axioms:
+                    target.addEntityAxiom(axiom)
+
             # Get all annotation axioms for this entity and add them to the
             # target ontology.
             for ont in ontset:
@@ -326,6 +334,44 @@ class ModuleExtractor:
                         # axioms, so we need to check for this.
                         if annot_ent != None:
                             signature.add(annot_ent.getOWLAPIObj())
+
+    def _getPropertyCharacteristicsAxioms(self, entity):
+        """
+        Gets all axioms that define the characteristics of the target property.
+
+        entity: An OWL API OWLEntity object for an object or data property.
+        """
+        axiomset = set()
+
+        if entity.getEntityType() == EntityType.OBJECT_PROPERTY:
+            axiomset.update(
+                self.owlont.getSymmetricObjectPropertyAxioms(entity)
+            )
+            axiomset.update(
+                self.owlont.getTransitiveObjectPropertyAxioms(entity)
+            )
+            axiomset.update(
+                self.owlont.getReflexiveObjectPropertyAxioms(entity)
+            )
+            axiomset.update(
+                self.owlont.getIrreflexiveObjectPropertyAxioms(entity)
+            )
+            axiomset.update(
+                self.owlont.getFunctionalObjectPropertyAxioms(entity)
+            )
+            axiomset.update(
+                self.owlont.getInverseFunctionalObjectPropertyAxioms(entity)
+            )
+            axiomset.update(
+                self.owlont.getAsymmetricObjectPropertyAxioms(entity)
+            )
+
+        elif entity.getEntityType() == EntityType.DATA_PROPERTY:
+            axiomset.update(
+                self.owlont.getFunctionalDataPropertyAxioms(entity)
+            )
+
+        return axiomset
 
     def _getRelatedComponents(self, target_entity, rel_types):
         """
