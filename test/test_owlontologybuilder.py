@@ -95,6 +95,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         # Define additional row values.
         self.tr['Parent'] = NEW_IRI
         self.tr['Subclass of'] = "'test class 1'; OBITO:0001"
+        self.tr['Superclass of'] = 'OBTO:0011'
         self.tr['Equivalent to'] = 'OBTO:1001; obo:OBTO_1002'
         self.tr['Disjoint with'] = 'OBTO:1000'
 
@@ -126,6 +127,14 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         actualIRIs = set()
         for axiom in self.owlont.getSubClassAxiomsForSubClass(new_oaent):
             actualIRIs.add(axiom.getSuperClass().getIRI().toString())
+
+        self.assertEqual(expIRIs, actualIRIs)
+
+        # Check the superclass axiom.
+        expIRIs = {'http://purl.obolibrary.org/obo/OBTO_0011', NEW_IRI}
+        actualIRIs = set()
+        for axiom in self.owlont.getSubClassAxiomsForSuperClass(new_oaent):
+            actualIRIs.add(axiom.getSubClass().getIRI().toString())
 
         self.assertEqual(expIRIs, actualIRIs)
 
