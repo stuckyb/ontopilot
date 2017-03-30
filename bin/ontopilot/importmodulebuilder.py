@@ -78,7 +78,7 @@ class ImportModuleBuilder:
 
     # Fields for which no warnings are issued if the field is missing.
     OPTIONAL_COLS = (
-        'Exclude', 'Method', 'Add descendants', 'Add ancestors', 'Ignore'
+        'Exclude', 'Method', 'Related entities', 'Ignore'
     )
 
     # Default values for input table columns.
