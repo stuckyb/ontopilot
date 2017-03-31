@@ -26,15 +26,6 @@ from ontoconfig import OntoConfig
 # Java imports.
 
 
-# Required columns in terms files.
-REQUIRED_COLS = ('Type', 'ID')
-
-# Optional columns in terms files.
-OPTIONAL_COLS = (
-    'Comments', 'Parent', 'Subclass of', 'Equivalent to', 'Disjoint with',
-    'Ignore'
-)
-        
 class ProjectCreator:
     """
     Contains methods for initializing the folder structure and starting files
