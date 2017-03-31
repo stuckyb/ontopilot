@@ -207,9 +207,9 @@ class ProjectCreator:
         self._copyAndModify(srcpath, destpath, replacements)
 
         # Copy and rename the sample import terms file.
-        srcpath = os.path.join(self.templatedir, 'bfo_sample_terms.csv')
+        srcpath = os.path.join(self.templatedir, 'bfo_sample_entities.csv')
         destpath = os.path.join(
-            config.getImportsSrcDir(), 'bfo_{0}_terms.csv'.format(projname)
+            config.getImportsSrcDir(), 'bfo_{0}_entities.csv'.format(projname)
         )
         self._robustCopy(srcpath, destpath)
 

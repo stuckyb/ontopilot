@@ -39,7 +39,7 @@ ModuleInfo = namedtuple('ModuleInfo', ['filename', 'iristr'])
 
 
 # Required columns in terms files.
-REQUIRED_COLS = ('Termsfile', 'IRI')
+REQUIRED_COLS = ('Entities file', 'IRI')
 
 # Optional columns in terms files.
 OPTIONAL_COLS = ('Ignore',)
@@ -123,7 +123,7 @@ class ImportsBuildTarget(BuildTargetWithConfig):
 
         trow: An input table row.
         """
-        termsfile_path = trow['Termsfile']
+        termsfile_path = trow['Entities file']
 
         # Verify that a terms file was provided.  If not, we will import the
         # entire source ontology, so just return an empty string.
