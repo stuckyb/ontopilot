@@ -32,7 +32,7 @@ Copy `jfact-1.2.4.jar` to the `javalib` directory.
 
 ## Creating the custom, data type-aware and data restriction-aware ELK reasoner
 
-"Disable" the standard ELK reasoner library by renaming it.
+Disable the standard ELK reasoner library by renaming it.
 
 ```
 $ mv elk-0.4.3-owlapi.jar elk-0.4.3-owlapi.jar.standard
@@ -68,7 +68,7 @@ Line 86, in `public class ElkDatatypeMap {`:
  	public static final IntegerDatatype XSD_INTEGER = new IntegerDatatypeImpl(PredefinedElkIri.XSD_INTEGER.get());
 ```
 
-The next addition is not strictly necessary, but is helpful for debuggin data type lookups.
+The next addition is not strictly necessary, but is helpful for debugging data type lookups.
 
 `elk-owlapi/src/main/java/org/semanticweb/elk/owlapi/wrapper/OwlConverter.java`
 
