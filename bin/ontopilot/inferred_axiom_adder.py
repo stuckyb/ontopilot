@@ -36,6 +36,7 @@ from org.semanticweb.owlapi.util import InferredDisjointClassesAxiomGenerator
 from org.semanticweb.owlapi.util import InferredOntologyGenerator
 from org.semanticweb.owlapi.util import InferredInverseObjectPropertiesAxiomGenerator
 from org.semanticweb.owlapi.util import InferredPropertyAssertionGenerator
+from org.semanticweb.owlapi.model import AxiomType
 
 
 # Strings for identifying supported types of inferences for generating inferred
@@ -243,16 +244,108 @@ class InferredAxiomAdder:
 
         return redundants
 
-    def addInferredAxioms(self, inference_types, annotate=False):
+    def _addInversePropAssertions(self):
+        """
+        Finds inverse property pairs in the ontology (including symmetric
+        properties) and all property assertions and negative property
+        assertions using those properties, then materializes the inverse
+        property assertions.  This is all done without using a reasoner.
+        """
+        owlont = self.ont.getOWLOntology()
+
+        # Use a pair of dictionaries to create a bi-directional lookup table
+        # for inverse property pairs.
+        inverses_1 = {}
+        inverses_2 = {}
+
+        # Use a set to store symmetric properties.
+        symmetrics = set()
+
+        axioms = owlont.getAxioms(AxiomType.INVERSE_OBJECT_PROPERTIES)
+        for axiom in axioms:
+            pexp1 = axiom.getFirstProperty()
+            pexp2 = axiom.getSecondProperty()
+
+            inverses_1[pexp1] = pexp2
+            inverses_2[pexp2] = pexp1
+
+        axioms = owlont.getAxioms(AxiomType.SYMMETRIC_OBJECT_PROPERTY)
+        for axiom in axioms:
+            symmetrics.add(axiom.getProperty())
+
+        # Materialize all inverse object property assertions.
+        new_axioms = set()
+        axioms = owlont.getAxioms(AxiomType.OBJECT_PROPERTY_ASSERTION)
+        for axiom in axioms:
+            pexp = axiom.getProperty()
+            inv_pexp = None
+
+            if pexp in inverses_1:
+                inv_pexp = inverses_1[pexp]
+            elif pexp in inverses_2:
+                inv_pexp = inverses_2[pexp]
+            elif pexp in symmetrics:
+                inv_pexp = pexp
+
+            if inv_pexp != None:
+                new_axioms.add(
+                    self.ont.df.getOWLObjectPropertyAssertionAxiom(
+                        inv_pexp, axiom.getObject(), axiom.getSubject()
+                    )
+                )
+
+        self.ont.ontman.addAxioms(owlont, new_axioms)
+
+        # Do the same thing for all negative object property assertions.
+        new_axioms.clear()
+        axioms = owlont.getAxioms(AxiomType.NEGATIVE_OBJECT_PROPERTY_ASSERTION)
+        for axiom in axioms:
+            pexp = axiom.getProperty()
+            inv_pexp = None
+
+            if pexp in inverses_1:
+                inv_pexp = inverses_1[pexp]
+            elif pexp in inverses_2:
+                inv_pexp = inverses_2[pexp]
+            elif pexp in symmetrics:
+                inv_pexp = pexp
+
+            if inv_pexp != None:
+                new_axioms.add(
+                    self.ont.df.getOWLNegativeObjectPropertyAssertionAxiom(
+                        inv_pexp, axiom.getObject(), axiom.getSubject()
+                    )
+                )
+
+        self.ont.ontman.addAxioms(owlont, new_axioms)
+
+    def addInferredAxioms(self, inference_types, add_inverses=False, annotate=False):
         """
         Runs a reasoner on this ontology and adds the inferred axioms.
 
         inference_types: A list of strings specifying the kinds of inferred
             axioms to generate.  Valid values are detailed in the sample
             configuration file.
-        annotate: If true, annotate inferred axioms to mark them as inferred.
+        add_inverses: If True, inverse property assertions will be explicitly
+            added to the ontology *prior* to running the reasoner.  This is
+            useful for cases in which a reasoner that does not support inverses
+            must be used (e.g., for runtime considerations) on an ontology with
+            inverse property axioms.
+        annotate: If True, annotate inferred axioms to mark them as inferred.
         """
         timer = BasicTimer()
+
+        if add_inverses:
+            logger.info(
+                'Generating inverse property assertions...'
+            )
+            timer.start()
+            self._addInversePropAssertions(self)
+            logger.info(
+                'Inverse property assertions generated in {0} s.'.format(
+                    timer.stop()
+                )
+            )
 
         # First, make sure that the ontology is consistent; otherwise, all
         # inference attempts will fail.
