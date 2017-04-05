@@ -46,9 +46,18 @@ $ cd elk-reasoner
 $ git checkout elk-parent-datatypes
 ```
 
-Next, we need to hack in support for xsd:float data types.  This requires adding code to several files.
+Next, we need to hack in support for xsd:float and xsd:date data types.  This requires adding code to several files.  Note that the changes below really is a hack.  In particular, scientific notation literals are not supported, and all xsd:date values are just treated like strings.
 
 `elk-owl-parent/elk-owl-model/src/main/java/org/semanticweb/elk/owl/predefined/PredefinedElkIri.java`
+
+Line 46, in `public enum PredefinedElkIri {`:
+```
+	RDFS_LITERAL(new ElkFullIri(PredefinedElkPrefix.RDFS.get(), "Literal")), //
+
++	XSD_DATE(new ElkFullIri(PredefinedElkPrefix.XSD.get(), "date")), //
++
+	XSD_DATE_TIME(new ElkFullIri(PredefinedElkPrefix.XSD.get(), "dateTime")), //
+```
 
 Line 64, in `public enum PredefinedElkIri {`:
 ```
@@ -60,6 +69,13 @@ Line 64, in `public enum PredefinedElkIri {`:
 ```
 
 `elk-owl-parent/elk-owl-implementation/src/main/java/org/semanticweb/elk/owl/managers/ElkDatatypeMap.java`
+
+Line 78, in `public class ElkDatatypeMap {`:
+```
+	public static final LiteralDatatype RDFS_LITERAL = new LiteralDatatypeImpl(PredefinedElkIri.RDFS_LITERAL.get());
+	public static final StringDatatype XSD_DATE = new StringDatatypeImpl(PredefinedElkIri.XSD_DATE.get());
+	public static final DateTimeDatatype XSD_DATE_TIME = new DateTimeDatatypeImpl(PredefinedElkIri.XSD_DATE_TIME.get());
+```
 
 Line 86, in `public class ElkDatatypeMap {`:
 ```
