@@ -319,19 +319,19 @@ class InferredAxiomAdder:
 
         self.ont.ontman.addAxioms(owlont, new_axioms)
 
-    def addInferredAxioms(self, inference_types, add_inverses=False, annotate=False):
+    def addInferredAxioms(self, inference_types, annotate=False, add_inverses=False):
         """
         Runs a reasoner on this ontology and adds the inferred axioms.
 
         inference_types: A list of strings specifying the kinds of inferred
             axioms to generate.  Valid values are detailed in the sample
             configuration file.
+        annotate: If True, annotate inferred axioms to mark them as inferred.
         add_inverses: If True, inverse property assertions will be explicitly
             added to the ontology *prior* to running the reasoner.  This is
             useful for cases in which a reasoner that does not support inverses
             must be used (e.g., for runtime considerations) on an ontology with
             inverse property axioms.
-        annotate: If True, annotate inferred axioms to mark them as inferred.
         """
         timer = BasicTimer()
 

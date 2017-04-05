@@ -62,7 +62,6 @@ class Test_InferredAxiomAdder(unittest.TestCase):
         self.owlont = self.ont.getOWLOntology()
         self.iaa = InferredAxiomAdder(ont, 'hermit')
 
-    @unittest.skip('')
     def test_getGeneratorsList(self):
         # Check all supported inference types.  There are 8 total.
         inftypes = INFERENCE_TYPES
@@ -205,7 +204,6 @@ class Test_InferredAxiomAdder(unittest.TestCase):
         self.assertTrue(axiom.getSubject().equals(indv_49))
         self.assertTrue(axiom.getObject().equals(indv_48))
 
-    @unittest.skip('')
     def test_addInferredAxioms(self):
         """
         This does not attempt to exhaustively test every available type of
@@ -288,7 +286,6 @@ class Test_InferredAxiomAdder(unittest.TestCase):
             axioms.iterator().next().containsEntityInSignature(disjointclass)
         )
 
-    @unittest.skip('')
     def test_inconsistent(self):
         """
         Tests that attempts to add inferred axioms to an inconsistent ontology
