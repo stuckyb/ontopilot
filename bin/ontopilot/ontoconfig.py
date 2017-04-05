@@ -545,3 +545,15 @@ class OntoConfig(RawConfigParser):
 
         return annotate_inferred.lower() in TRUE_STRS
 
+    def getPreprocessInverses(self):
+        """
+        Returns True if inverse object property assertions and inverse negative
+        object property assertions should be added to the ontology prior
+        generating inferred axioms with a reasoner; returns False otherwise.
+        """
+        preprocess_inverses = self.getCustom(
+            'Reasoning', 'preprocess_inverses', 'False'
+        )
+
+        return preprocess_inverses.lower() in TRUE_STRS
+

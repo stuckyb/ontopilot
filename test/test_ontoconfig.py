@@ -546,3 +546,12 @@ class TestOntoConfig(unittest.TestCase):
         self.oc.set('Reasoning', 'annotate_inferred', 'yes')
         self.assertTrue(self.oc.getAnnotateInferred())
 
+    def test_getPreprocessInverses(self):
+        self.assertFalse(self.oc.getPreprocessInverses())
+
+        self.oc.set('Reasoning', 'preprocess_inverses', 'false')
+        self.assertFalse(self.oc.getPreprocessInverses())
+
+        self.oc.set('Reasoning', 'preprocess_inverses', 'true')
+        self.assertTrue(self.oc.getPreprocessInverses())
+
