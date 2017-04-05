@@ -261,22 +261,43 @@ class InferredAxiomAdder:
         # Use a set to store symmetric properties.
         symmetrics = set()
 
-        axioms = owlont.getAxioms(AxiomType.INVERSE_OBJECT_PROPERTIES)
-        for axiom in axioms:
+        # Retrieve all inverse object property axioms and symmetric property
+        # axioms from this ontology and its imports closure.
+        inv_axioms = set()
+        symm_axioms = set()
+        for ont in owlont.getImportsClosure():
+            inv_axioms.update(
+                ont.getAxioms(AxiomType.INVERSE_OBJECT_PROPERTIES)
+            )
+            symm_axioms.update(
+                ont.getAxioms(AxiomType.SYMMETRIC_OBJECT_PROPERTY)
+            )
+
+        for axiom in inv_axioms:
             pexp1 = axiom.getFirstProperty()
             pexp2 = axiom.getSecondProperty()
 
             inverses_1[pexp1] = pexp2
             inverses_2[pexp2] = pexp1
 
-        axioms = owlont.getAxioms(AxiomType.SYMMETRIC_OBJECT_PROPERTY)
-        for axiom in axioms:
+        for axiom in symm_axioms:
             symmetrics.add(axiom.getProperty())
+
+        # Retrieve all object property assertions and negative object property
+        # assertions from this ontology and its imports closure.
+        pa_axioms = set()
+        npa_axioms = set()
+        for ont in owlont.getImportsClosure():
+            pa_axioms.update(
+                ont.getAxioms(AxiomType.OBJECT_PROPERTY_ASSERTION)
+            )
+            npa_axioms.update(
+                ont.getAxioms(AxiomType.NEGATIVE_OBJECT_PROPERTY_ASSERTION)
+            )
 
         # Materialize all inverse object property assertions.
         new_axioms = set()
-        axioms = owlont.getAxioms(AxiomType.OBJECT_PROPERTY_ASSERTION)
-        for axiom in axioms:
+        for axiom in pa_axioms:
             pexp = axiom.getProperty()
             inv_pexp = None
 
@@ -298,8 +319,7 @@ class InferredAxiomAdder:
 
         # Do the same thing for all negative object property assertions.
         new_axioms.clear()
-        axioms = owlont.getAxioms(AxiomType.NEGATIVE_OBJECT_PROPERTY_ASSERTION)
-        for axiom in axioms:
+        for axiom in npa_axioms:
             pexp = axiom.getProperty()
             inv_pexp = None
 
@@ -345,7 +365,7 @@ class InferredAxiomAdder:
                 'Generating inverse property assertions...'
             )
             timer.start()
-            self._addInversePropAssertions(self)
+            self._addInversePropAssertions()
             logger.info(
                 'Inverse property assertions generated in {0} s.'.format(
                     timer.stop()
