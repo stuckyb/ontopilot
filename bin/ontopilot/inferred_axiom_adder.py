@@ -335,6 +335,11 @@ class InferredAxiomAdder:
         """
         timer = BasicTimer()
 
+        owlont = self.ont.getOWLOntology()
+        ontman = self.ont.ontman
+        df = self.ont.df
+        oldaxioms = owlont.getAxioms(ImportsEnum.INCLUDED)
+
         if add_inverses:
             logger.info(
                 'Generating inverse property assertions...'
@@ -347,8 +352,8 @@ class InferredAxiomAdder:
                 )
             )
 
-        # First, make sure that the ontology is consistent; otherwise, all
-        # inference attempts will fail.
+        # Make sure that the ontology is consistent; otherwise, all inference
+        # attempts will fail.
         logger.info(
             'Checking whether the ontology is logically consistent...'
         )
@@ -379,11 +384,6 @@ class InferredAxiomAdder:
             'Generating inferred axioms...'
         )
         timer.start()
-
-        owlont = self.ont.getOWLOntology()
-        ontman = self.ont.ontman
-        df = self.ont.df
-        oldaxioms = owlont.getAxioms(ImportsEnum.INCLUDED)
 
         generators = self._getGeneratorsList(inference_types)
         iog = InferredOntologyGenerator(self.reasoner, generators)
