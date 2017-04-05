@@ -30,3 +30,64 @@ This will create the directory `target`, which will contain the JFact jar files.
 
 Copy `jfact-1.2.4.jar` to the `javalib` directory.
 
+## Creating the custom, data type-aware and data restriction-aware ELK reasoner
+
+"Disable" the standard ELK reasoner library by renaming it.
+
+```
+$ mv elk-0.4.3-owlapi.jar elk-0.4.3-owlapi.jar.standard
+```
+
+Clone the ELK repository and fetch the "elk-parent-datatypes" branch.  Do this in the "javalib" folder.
+
+```
+$ git clone https://github.com/liveontologies/elk-reasoner.git
+$ cd elk-reasoner
+$ git checkout elk-parent-datatypes
+```
+
+Next, we need to hack in support for xsd:float data types.  This requires adding code to several files.
+
+`elk-owl-parent/elk-owl-model/src/main/java/org/semanticweb/elk/owl/predefined/PredefinedElkIri.java`
+
+Line 64, in `public enum PredefinedElkIri {`:
+```
+ 	XSD_DECIMAL(new ElkFullIri(PredefinedElkPrefix.XSD.get(), "decimal")), //
+ 
++	XSD_FLOAT(new ElkFullIri(PredefinedElkPrefix.XSD.get(), "float")), //
++
+ 	XSD_INTEGER(new ElkFullIri(PredefinedElkPrefix.XSD.get(), "integer")), //
+```
+
+`elk-owl-parent/elk-owl-implementation/src/main/java/org/semanticweb/elk/owl/managers/ElkDatatypeMap.java`
+
+Line 86, in `public class ElkDatatypeMap {`:
+```
+ 	public static final DecimalDatatype XSD_DECIMAL = new DecimalDatatypeImpl(PredefinedElkIri.XSD_DECIMAL.get());
++	public static final DecimalDatatype XSD_FLOAT = new DecimalDatatypeImpl(PredefinedElkIri.XSD_FLOAT.get());
+ 	public static final IntegerDatatype XSD_INTEGER = new IntegerDatatypeImpl(PredefinedElkIri.XSD_INTEGER.get());
+```
+
+The next addition is not strictly necessary, but is helpful for debuggin data type lookups.
+
+`elk-owlapi/src/main/java/org/semanticweb/elk/owlapi/wrapper/OwlConverter.java`
+
+Line 507 in `public class OwlConverter {`:
+```
+ 		if (owlDatatype != null && (owlLiteral.getLang() == null || owlLiteral.getLang().isEmpty())) {
++			System.out.println("DATATYPE LOOKUP: " + owlDatatype.toString());
+ 			ElkDatatype datatype = ElkDatatypeMap.get(PredefinedElkIri.lookup(new ElkFullIri(owlDatatype.getIRI().toString())).get());
+```
+
+Now build the ELK reasoner.
+
+```
+$ mvn clean install
+```
+
+Run the script to extract the new ELK library and add it to javalib.
+
+```
+$ ./install_custom_elk.sh
+```
+
