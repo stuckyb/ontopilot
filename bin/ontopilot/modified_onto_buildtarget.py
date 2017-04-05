@@ -27,7 +27,7 @@ from inferred_axiom_adder import InferredAxiomAdder
 
 class ModifiedOntoBuildTarget(BuildTargetWithConfig):
     """
-    Manages the process of building an "modified" ontology from the standard
+    Manages the process of building a "modified" ontology from the standard
     compiled ontology.  In this case, "modified" means either with imports
     merged into the main ontology, with inferred axioms added, or both.
     """
