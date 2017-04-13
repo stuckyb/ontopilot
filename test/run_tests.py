@@ -45,7 +45,7 @@ test_modules = [
     'test_modified_onto_buildtarget', 'test_buildtarget_manager',
     'test_obohelper', 'test_idresolver', 'test_observable',
     'test_update_base_imports_buildtarget', 'test_release_buildtarget',
-    'test_basictimer', 'test_module_extractor'
+    'test_basictimer', 'test_module_extractor', 'test_nethelper'
 ]
 
 successful = True

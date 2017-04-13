@@ -127,14 +127,14 @@ class UpdateBaseImportsBuildTarget(BuildTargetWithConfig):
         Runs the build process and produces a compiled OWL ontology file.
         """
         # Get the imports modules IRIs from the imports build target.
-        importsIRIs = self.ibt.getImportsIRIs()
+        importinfos = self.ibt.getImportsInfo()
 
         self._retrieveAndCheckFilePaths()
 
         baseont = Ontology(self.base_ont_path)
         # Add an import declaration for each import module.
-        for importIRI in importsIRIs:
-            baseont.addImport(importIRI, True)
+        for importinfo in importinfos:
+            baseont.addImport(importinfo.iristr, True)
 
         # Write the base ontology to the output file.
         fileoutpath = self.getOutputFilePath()
