@@ -20,6 +20,7 @@
 # Python imports.
 import ontopilot
 from ontopilot import logger
+from basictimer import BasicTimer
 
 # Java imports.
 from java.util import HashSet
@@ -251,12 +252,18 @@ class InferredAxiomAdder:
             configuration file.
         annotate: If true, annotate inferred axioms to mark them as inferred.
         """
+        timer = BasicTimer()
+
         # First, make sure that the ontology is consistent; otherwise, all
         # inference attempts will fail.
         logger.info(
             'Checking whether the ontology is logically consistent...'
         )
+        timer.start()
+
         entcheck_res = self.ont.checkEntailmentErrors(self.reasoner_str)
+        logger.info('Consistency check completed in {0} s.'.format(timer.stop()))
+
         if not(entcheck_res['is_consistent']):
             raise RuntimeError(
                 'The ontology is inconsistent (that is, it has no models).  '
@@ -275,6 +282,11 @@ class InferredAxiomAdder:
         # from the inferred axiom set, and the inferred axioms are merged into
         # the main ontology.
 
+        logger.info(
+            'Generating inferred axioms...'
+        )
+        timer.start()
+
         owlont = self.ont.getOWLOntology()
         ontman = self.ont.ontman
         df = self.ont.df
@@ -285,6 +297,13 @@ class InferredAxiomAdder:
 
         inferredont = ontman.createOntology()
         iog.fillOntology(self.ont.df, inferredont)
+
+        logger.info('Inferred axioms generated in {0} s.'.format(timer.stop()))
+
+        logger.info(
+            'Cleaning up redundant and trivial axioms and merging with main ontology...'
+        )
+        timer.start()
 
         # Delete axioms in the inferred set that are explicitly stated in the
         # source ontology (or its imports closure).
@@ -321,7 +340,13 @@ class InferredAxiomAdder:
         # Merge the inferred axioms into the main ontology.
         ontman.addAxioms(owlont, inferredont.getAxioms())
 
-        # Find and remove redundant "subclass of" axioms.
-        redundants = self._getRedundantSubclassOfAxioms()
-        ontman.removeAxioms(owlont, redundants)
+        # Find and remove redundant "subclass of" axioms.  This is only
+        # necessary if we inferred the class hierarchy.
+        if 'subclasses' in inference_types:
+            redundants = self._getRedundantSubclassOfAxioms()
+            ontman.removeAxioms(owlont, redundants)
+
+        logger.info(
+            'Axiom clean up and merge completed in {0} s.'.format(timer.stop())
+        )
 

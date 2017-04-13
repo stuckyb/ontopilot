@@ -526,9 +526,9 @@ class Ontology(Observable):
         """
         Adds an OWL import statement to this ontology.
 
-        source_iri: The IRI of the source ontology.  Can be either an IRI
-            object or a string containing a relative IRI, prefix IRI, or full
-            IRI.
+        source_iri: The document IRI of the source ontology.  Can be either an
+            IRI object or a string containing a relative IRI, prefix IRI, or
+            full IRI.
         load_import: If True, the new import will be automatically loaded and
             its terms labels will be added to the internal LabelMap.
         """
@@ -548,7 +548,20 @@ class Ontology(Observable):
         if load_import:
             # Manually load the newly added import.
             try:
-                importont = self.ontman.loadOntology(sourceIRI)
+                # The call to makeLoadImportRequest() might seem redundant, and
+                # in general, it is redundant if the new import's document IRI
+                # is the same as its ontology IRI.  However, if those IRIs
+                # differ, then without explicitly calling
+                # makeLoadImportRequest(), the new import will not show up in
+                # the main ontology's imports closure (true as of version 4.2.4
+                # of the OWL API).  I examined the OWL API source code and
+                # confirmed that if the ontology has already been loaded when
+                # makeLoadImportRequest() is called, the already-loaded version
+                # of the ontology is used (that is, it is not parsed again), so
+                # these method calls should not hurt performance.
+                importont = self.ontman.loadOntologyFromOntologyDocument(sourceIRI)
+                self.ontman.makeLoadImportRequest(importdec)
+
             except (
                 OWLOntologyFactoryNotFoundException,
                 OWLOntologyCreationIOException
@@ -707,34 +720,4 @@ class Ontology(Observable):
         foutputstream = FileOutputStream(File(filepath))
         self.ontman.saveOntology(self.ontology, oformat, foutputstream)
         foutputstream.close()
-
-    def extractModule(self, signature, mod_iri):
-        """
-        Extracts a module that is a subset of the entities in this ontology.
-        The result is returned as an Ontology object.
-
-        signature: A Java Set of all entities to include in the module.
-        mod_iri: The IRI for the extracted ontology module.  Can be either an
-            IRI object or a string containing a relative IRI, prefix IRI, or
-            full IRI.
-        """
-        modIRI = self.idr.expandIRI(mod_iri)
-
-        slme = SyntacticLocalityModuleExtractor(
-            self.ontman, self.getOWLOntology(), ModuleType.STAR
-        )
-        modont = Ontology(slme.extractAsOntology(signature, modIRI))
-
-        # Add an annotation for the source of the module.
-        sourceIRI = None
-        ontid = self.getOWLOntology().getOntologyID()
-        if ontid.getVersionIRI().isPresent():
-            sourceIRI = ontid.getVersionIRI().get()
-        elif ontid.getOntologyIRI().isPresent():
-            sourceIRI = ontid.getOntologyIRI().get()
-
-        if sourceIRI != None:
-            modont.setOntologySource(sourceIRI)
-
-        return modont
 

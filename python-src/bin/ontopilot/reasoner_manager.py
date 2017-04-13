@@ -22,6 +22,7 @@ from org.semanticweb.elk.owlapi import ElkReasonerFactory
 #from org.semanticweb import HermiT
 from org.semanticweb.HermiT import ReasonerFactory
 from com.clarkparsia.pellet.owlapiv3 import PelletReasonerFactory
+from uk.ac.manchester.cs.jfact import JFactFactory
 
 
 class ReasonerManager:
@@ -48,9 +49,9 @@ class ReasonerManager:
     def getReasoner(self, reasoner_name):
         """
         Returns an instance of a reasoner matching the value of the string
-        "reasoner_name".  Supported values are "ELK", "HermiT", or "Pellet"
-        (the strings are not case sensitive).  ReasonerManager ensures that
-        reasoner instances are effectively singletons (that is, subsequent
+        "reasoner_name".  Supported values are "ELK", "HermiT", "Pellet", or
+        "JFact" (the strings are not case sensitive).  ReasonerManager ensures
+        that reasoner instances are effectively singletons (that is, subsequent
         requests for the same reasoner type return the same reasoner instance).
 
         reasoner_name: A string specifying the type of reasoner to instantiate.
@@ -70,6 +71,9 @@ class ReasonerManager:
             elif reasoner_name == 'pellet':
                 logger.info('Creating Pellet reasoner...')
                 rfact = PelletReasonerFactory()
+            elif reasoner_name == 'jfact':
+                logger.info('Creating JFact reasoner...')
+                rfact = JFactFactory()
 
             if rfact != None:
                 self.reasoners[reasoner_name] = rfact.createNonBufferingReasoner(owlont)

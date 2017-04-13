@@ -80,6 +80,14 @@ jlibpaths = glob.glob(jlibdir)
 for jlibpath in jlibpaths:
     sys.path.append(jlibpath)
 
+# Configure log4j and set the root logging level to WARN.  Without these lines,
+# using the ELK reasoner (version 0.4.3) will trigger a warning about log4j not
+# being configured, and then, once log4j is configured, it will print all
+# messages to the console by default, so the logging level needs to be set.
+from  org.apache.log4j import BasicConfigurator, Logger, Level
+BasicConfigurator.configure()
+Logger.getRootLogger().setLevel(Level.WARN)
+
 # Initialize the logger for this package.
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

@@ -58,6 +58,22 @@ class _OntologyEntity:
         self.entityIRI = entityIRI
         self.entityobj = entityobj
 
+    def __hash__(self):
+        """
+        The hash value for an ontology entity should be derived from its
+        underlying OWL API entity object.
+        """
+        return hash(self.entityobj)
+
+    def __eq__(self, other):
+        if isinstance(other, _OntologyEntity):
+            return self.entityobj.equals(other.getOWLAPIObj())
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not(self == other)
+
     def getIRI(self):
         return self.entityIRI
     
@@ -197,39 +213,28 @@ class _OntologyClass(_OntologyEntity):
     def getTypeConst(self):
         return CLASS_ENTITY
         
-    def addSuperclass(self, parent_id):
+    def addSuperclass(self, manchester_exp):
         """
-        Adds a parent class for this class.
-
-        parent_id: The identifier of the parent class.  Can be either an OWL
-            API IRI object or a string containing: a label (with or without a
-            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
-            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
-            Labels should be enclosed in single quotes (e.g., 'label txt' or
-            prefix:'label txt').
-        """
-        # Get the OWLClass object of the parent class, making sure that it is
-        # actually defined.
-        parentclass = self.ontology.getExistingClass(parent_id)
-        if parentclass == None:
-            raise RuntimeError('The designated superclass, ' + str(parent_id)
-                    + ', could not be found in the source ontology.')
-        parentclass = parentclass.getOWLAPIObj()
-        
-        # Add the subclass axiom to the ontology.
-        newaxiom = self.df.getOWLSubClassOfAxiom(self.entityobj, parentclass)
-        self.ontology.addEntityAxiom(newaxiom)
-
-    def addSubclassOf(self, manchester_exp):
-        """
-        Adds a class expression as a "subclass of" axiom.  The class expression
-        should be written in Manchester Syntax (MS).
+        Adds a class expression as a superclass of this class.  The class
+        expression should be written in Manchester Syntax (MS).
 
         manchester_exp: A string containing an MS "description" production.
         """
         if manchester_exp != '':
             cexp = self._getClassExpression(manchester_exp)
             eaxiom = self.df.getOWLSubClassOfAxiom(self.entityobj, cexp)
+            self.ontology.addEntityAxiom(eaxiom)
+
+    def addSubclass(self, manchester_exp):
+        """
+        Adds a class expression as a subclass of this class.  The class
+        expression should be written in Manchester Syntax (MS).
+
+        manchester_exp: A string containing an MS "description" production.
+        """
+        if manchester_exp != '':
+            cexp = self._getClassExpression(manchester_exp)
+            eaxiom = self.df.getOWLSubClassOfAxiom(cexp, self.entityobj)
             self.ontology.addEntityAxiom(eaxiom)
 
     def addEquivalentTo(self, manchester_exp):
@@ -340,6 +345,32 @@ class _OntologyDataProperty(_OntologyEntity):
             # Add the range axiom.
             raxiom = self.df.getOWLDataPropertyRangeAxiom(self.entityobj, datarange)
             self.ontology.addEntityAxiom(raxiom)
+
+    def addEquivalentTo(self, prop_id):
+        """
+        Sets this property as equivalent to another property.
+
+        prop_id: The identifier of a data property.  Can be either an OWL API
+            IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
+        """
+        # Get the OWL property object, making sure that it is actually defined.
+        prop = self.ontology.getExistingDataProperty(prop_id)
+        if prop == None:
+            raise RuntimeError(
+                'The designated equivalent property, "{0}", could not be '
+                'found in the source ontology.'.format(parent_id)
+            )
+        owlprop = prop.getOWLAPIObj()
+
+        # Add the equivalency axiom.
+        daxiom = self.df.getOWLEquivalentDataPropertiesAxiom(
+            self.entityobj, owlprop
+        )
+        self.ontology.addEntityAxiom(daxiom)
 
     def addDisjointWith(self, prop_id):
         """
@@ -466,6 +497,32 @@ class _OntologyObjectProperty(_OntologyEntity):
         # Add the "inverse of" axiom.
         iaxiom = self.df.getOWLInverseObjectPropertiesAxiom(self.entityobj, inv_propobj)
         self.ontology.addEntityAxiom(iaxiom)
+
+    def addEquivalentTo(self, prop_id):
+        """
+        Sets this property as equivalent to another property.
+
+        prop_id: The identifier of an object property.  Can be either an OWL
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
+        """
+        # Get the OWL property object, making sure that it is actually defined.
+        prop = self.ontology.getExistingObjectProperty(prop_id)
+        if prop == None:
+            raise RuntimeError(
+                'The designated equivalent property, "{0}", could not be '
+                'found in the source ontology.'.format(parent_id)
+            )
+        owlprop = prop.getOWLAPIObj()
+
+        # Add the equivalency axiom.
+        daxiom = self.df.getOWLEquivalentObjectPropertiesAxiom(
+            self.entityobj, owlprop
+        )
+        self.ontology.addEntityAxiom(daxiom)
 
     def addDisjointWith(self, prop_id):
         """

@@ -175,15 +175,22 @@ class LabelMap:
         else:
             if not(self.lmap[label].equals(termIRI)):
                 self._addAmbiguousLabel(label, termIRI)
-                owlont = self.ontology.getOWLOntology()
+                ontiri_opt = self.ontology.getOWLOntology().getOntologyID().getOntologyIRI()
+                if ontiri_opt.isPresent():
+                    ontidstr = str(ontiri_opt.get())
+                else:
+                    ontidstr = 'anonymous'
+
                 logging.warning(
-                    'The label "' + label +
-                    '" is used for more than one IRI in the ontology <'
-                    + str(owlont.getOntologyID().getOntologyIRI().get())
-                    + '>, including its imports closure.  The label "' + label
-                    + '" is associated with the following IRIs: ' + '<'
-                    + '>, <'.join([str(labelIRI) for labelIRI in self.ambiglabels[label]])
-                    + '>.'
+                    'The label "{0}" is used for more than one IRI in the '
+                    'ontology <{1}>, including its imports closure.  The '
+                    'label "{0}" is associated with the following IRIs: '
+                    '<{2}>.'.format(
+                        label, ontidstr,
+                        '>, <'.join(
+                            [str(labelIRI) for labelIRI in self.ambiglabels[label]]
+                        )
+                    )
                 )
 
     def addOntologyTerms(self, ontology):

@@ -28,15 +28,6 @@ from ontoconfig import OntoConfig
 # Java imports.
 
 
-# Required columns in terms files.
-REQUIRED_COLS = ('Type', 'ID')
-
-# Optional columns in terms files.
-OPTIONAL_COLS = (
-    'Comments', 'Parent', 'Subclass of', 'Equivalent to', 'Disjoint with',
-    'Ignore'
-)
-        
 class ProjectCreator:
     """
     Contains methods for initializing the folder structure and starting files
@@ -52,12 +43,13 @@ class ProjectCreator:
         self.ontfilename = ontfilename
         self.templatedir = os.path.abspath(templatedir)
 
-        # Extract template_files here
-        zip_ref = ZipFile("C://Users/Annie Luc/Downloads/ontoApp/dist/OntoApp.jar")
-        
-        for file in zip_ref.namelist():
-            if file.startswith('template_files/'):
-                zip_ref.extract(file, "../")
+        if os.path.isfile('../ontoApp.jar'):
+            # Extract template_files here
+            zip_ref = ZipFile('../ontoApp.jar')
+            
+            for file in zip_ref.namelist():
+                if file.startswith('template_files/'):
+                    zip_ref.extract(file, '../')
 
         if not(os.path.isdir(self.targetdir)):
             raise RuntimeError(
@@ -225,9 +217,9 @@ class ProjectCreator:
         self._copyAndModify(srcpath, destpath, replacements)
 
         # Copy and rename the sample import terms file.
-        srcpath = os.path.join(self.templatedir, 'bfo_sample_terms.csv')
+        srcpath = os.path.join(self.templatedir, 'bfo_sample_entities.csv')
         destpath = os.path.join(
-            config.getImportsSrcDir(), 'bfo_{0}_terms.csv'.format(projname)
+            config.getImportsSrcDir(), 'bfo_{0}_entities.csv'.format(projname)
         )
         self._robustCopy(srcpath, destpath)
 

@@ -47,6 +47,5 @@ public class Main {
         InteractiveConsole interp = newInterpreter(interactive);
         systemState.__setattr__("_jy_interpreter", Py.java2py(interp));
         interp.exec("try:\n import entrypoint\nexcept SystemExit: pass");
-        //interp.execfile("ontopilot.py");
     }
 }

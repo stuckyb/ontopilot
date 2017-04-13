@@ -116,6 +116,28 @@ class _TestOntologyEntity:
         annotvals = self.t_ent.getAnnotationValues(self.COMMENT_IRI)
         self.assertEqual(sorted(commentvals), sorted(annotvals))
 
+    def test_hash(self):
+        """
+        Tests that entities will behave as expected when they are hashed.  Two
+        entity instances that point to the same ontology entity should produce
+        equal hashes.
+        """
+        # Get another instance of the same entity.
+        entcpy = self.test_ont.getExistingEntity(self.t_entIRI)
+
+        # Verify that the instances are not the same.
+        self.assertFalse(self.t_entIRI is entcpy)
+
+        # Check the hash values.
+        self.assertEqual(hash(self.t_ent), hash(entcpy))
+        self.assertEqual(hash(self.t_owlapiobj), hash(entcpy.getOWLAPIObj()))
+
+        # Check the equality operator.
+        self.assertTrue(self.t_ent == entcpy)
+
+        # Check the inequality operator.
+        self.assertFalse(self.t_ent != entcpy)
+
 
 class Test_OntologyClass(_TestOntologyEntity, unittest.TestCase):
     """
@@ -133,11 +155,11 @@ class Test_OntologyClass(_TestOntologyEntity, unittest.TestCase):
     def test_getTypeConst(self):
         self.assertEqual(CLASS_ENTITY, self.t_ent.getTypeConst())
 
-    def test_addSubclassOf(self):
+    def test_addSuperclass(self):
         superclassIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
 
         # Test a simple class expression that is only a class label.
-        self.t_ent.addSubclassOf("'test class 1'")
+        self.t_ent.addSuperclass("'test class 1'")
 
         # Check that the class has the correct superclass.
         found_superclass = False
@@ -146,6 +168,20 @@ class Test_OntologyClass(_TestOntologyEntity, unittest.TestCase):
                 found_superclass = True
 
         self.assertTrue(found_superclass)
+
+    def test_addSubclass(self):
+        subclassIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
+
+        # Test a simple class expression that is only a class label.
+        self.t_ent.addSubclass("'test class 1'")
+
+        # Check that the class has the correct subclass.
+        found_subclass = False
+        for axiom in self.owlont.getSubClassAxiomsForSuperClass(self.t_owlapiobj):
+            if axiom.getSubClass().getIRI().equals(subclassIRI):
+                found_subclass = True
+
+        self.assertTrue(found_subclass)
 
     def test_addEquivalentTo(self):
         equivclassIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
@@ -237,6 +273,21 @@ class Test_OntologyDataProperty(_TestOntologyEntity, unittest.TestCase):
                     found_drange = True
 
         self.assertTrue(found_drange)
+
+    def test_addEquivalentTo(self):
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0022')
+        newprop = self.test_ont.createNewDataProperty(newpropIRI)
+
+        self.t_ent.addEquivalentTo('http://purl.obolibrary.org/obo/OBTO_0022')
+
+        # Check that the property has the correct equivalency relationship.
+        found_prop = False
+        for axiom in self.owlont.getEquivalentDataPropertiesAxioms(self.t_owlapiobj):
+            for dprop in axiom.getProperties():
+                if dprop.getIRI().equals(newpropIRI):
+                    found_prop = True
+
+        self.assertTrue(found_prop)
 
     def test_addDisjointWith(self):
         newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0022')
@@ -339,6 +390,21 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
 
         self.assertTrue(found_prop)
 
+
+    def test_addEquivalentTo(self):
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0003')
+        newprop = self.test_ont.createNewObjectProperty(newpropIRI)
+
+        self.t_ent.addEquivalentTo('http://purl.obolibrary.org/obo/OBTO_0003')
+
+        # Check that the property has the correct equivalency relationship.
+        found_prop = False
+        for axiom in self.owlont.getEquivalentObjectPropertiesAxioms(self.t_owlapiobj):
+            for dprop in axiom.getProperties():
+                if dprop.getIRI().equals(newpropIRI):
+                    found_prop = True
+
+        self.assertTrue(found_prop)
 
     def test_addDisjointWith(self):
         newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0003')

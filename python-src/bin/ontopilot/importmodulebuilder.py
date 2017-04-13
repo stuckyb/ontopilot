@@ -32,6 +32,8 @@ from tablereader import TableRowError
 import ontopilot
 from ontopilot import TRUE_STRS
 from ontology import Ontology
+from ontopilot.module_extractor import ModuleExtractor
+from ontopilot.module_extractor import methods as me_methods, rel_axiom_types
 
 # Java imports.
 from java.util import HashSet
@@ -75,10 +77,12 @@ class ImportModuleBuilder:
     REQUIRED_COLS = ('ID',)
 
     # Fields for which no warnings are issued if the field is missing.
-    OPTIONAL_COLS = ('Exclude', 'Seed descendants', 'Reasoner', 'Ignore')
+    OPTIONAL_COLS = (
+        'Exclude', 'Method', 'Related entities', 'Ignore'
+    )
 
     # Default values for input table columns.
-    DEFAULT_COL_VALS = {'Reasoner': 'HermiT'}
+    DEFAULT_COL_VALS = {'Method': 'Locality'}
 
     def __init__(self, base_IRI, module_suffix, builddir, outputdir=''):
         """
@@ -133,7 +137,9 @@ class ImportModuleBuilder:
         # Check the output directory, if it is different from the build directory.
         if self.builddir != self.outputdir:
             if not(os.path.isdir(self.outputdir)):
-                raise RuntimeError('The output directory could not be found: {0}.'.format(self.outputdir))
+                raise RuntimeError(
+                    'The output directory could not be found: {0}.'.format(self.outputdir)
+                )
 
     def _updateDownloadProgress(self, blocks_transferred, blocksize, filesize):
         """
@@ -252,10 +258,6 @@ class ImportModuleBuilder:
         ontfile = os.path.basename(ontologyIRI)
         ontfile = os.path.join(self.ontcachedir, ontfile)
 
-        # Generate the path and IRI for the output ontology OWL file.
-        outputpath = self.getModulePath(ontologyIRI)
-        ont_IRI = IRI.create(self.getModuleIRIStr(ontologyIRI))
-
         # Verify that the source ontology file exists; if not, download it.
         if not(os.path.isfile(ontfile)):
             opener = URLOpenerWithErrorHandling()
@@ -269,7 +271,7 @@ class ImportModuleBuilder:
         ontopilot.logger.info('Loading source ontology from file ' + ontfile + '.')
         sourceont = Ontology(ontfile)
 
-        signature = HashSet()
+        mod_ext = ModuleExtractor(sourceont)
         excluded_ents = []
         with TableReaderFactory(termsfile_path) as reader:
             # Read the terms to import from each table in the input file, add
@@ -281,93 +283,35 @@ class ImportModuleBuilder:
                 table.setDefaultValues(self.DEFAULT_COL_VALS)
 
                 for row in table:
-                    if not(row['Ignore'].lower() in TRUE_STRS):
-                        idstr = row['ID']
-                        ontopilot.logger.info('Processing entity "' + idstr + '".')
-                        owlent = sourceont.getExistingEntity(idstr)
-                        if owlent == None:
-                            raise ImportModSpecError(
-                                'The entity "' + idstr
-                                + '" could not be found in the source ontology.',
-                                row
-                            )
-                        owlent = owlent.getOWLAPIObj()
-        
-                        if row['Exclude'].lower() in TRUE_STRS:
-                            excluded_ents.append(owlent)
-                        else:
-                            self._addEntityToSignature(
-                                owlent, signature, row, sourceont
-                            )
+                    if row['Ignore'].lower() in TRUE_STRS:
+                        continue
 
-        if signature.size() == 0:
-            raise RuntimeError('No terms to import were found in the terms file.')
-        
-        sourceont.getReasonerManager().disposeReasoners()
-
-        module = sourceont.extractModule(signature, ont_IRI)
-
-        # Remove any entities that should be excluded from the final module.
-        for ent in excluded_ents:
-            module.removeEntity(ent)
-
-        module.saveOntology(outputpath)
-
-    def _addEntityToSignature(self, owlent, signature, trow, sourceont):
-        """
-        Adds an entity to a signature set for an import module extraction.  If
-        requested, also finds all descendents of a given ontology entity (class
-        or property) and adds them to the signature set, too.
+                    idstr = row['ID']
+                    ontopilot.logger.info('Processing entity "' + idstr + '".')
     
-        owlent: An OWL API ontology entity object.
-        signature: A Java Set.
-        trow: A row from an input table.
-        sourceont: The source ontology.
-        """
-        signature.add(owlent)
-                
-        if trow['Seed descendants'].lower() in TRUE_STRS:
-            # Get the reasoner instance, using HermiT as the default.
-            reasonerman = sourceont.getReasonerManager()
-            reasoner = reasonerman.getReasoner(trow['Reasoner'])
-        
-            # Get the entity's subclasses or subproperties.
-            ontopilot.logger.info('Adding descendant entities of ' + str(owlent) + '.')
-            if isinstance(owlent, OWLClassExpression):
-                subclasses = reasoner.getSubClasses(owlent, False).getFlattened()
-                # Reasoners can return owl:Nothing as a descendant class, so
-                # check for this and don't add it to the signature.  Also,
-                # getSubClasses() only returns named classes, so we don't need
-                # to worry about anonymous class expressions.
-                for subclass in subclasses:
-                    if not(subclass.equals(sourceont.df.getOWLNothing())):
-                        signature.add(subclass)
+                    try:
+                        rel_types = rel_axiom_types.getAxiomTypesFromStr(
+                            row['Related entities']
+                        )
 
-            elif isinstance(owlent, OWLObjectPropertyExpression):
-                propset = reasoner.getSubObjectProperties(owlent, False).getFlattened()
-                # Note that getSubObjectProperties() can return both
-                # named properties and ObjectInverseOf (i.e., unnamed)
-                # properties, so we need to check the type of each
-                # property before adding it to the module signature.  Also,
-                # reasoners can return owl:BottomObjectProperty, so we need to
-                # check for this and not add it to the signature.
-                for prop in propset:
-                    if (
-                        isinstance(prop, OWLObjectProperty) and
-                        not(prop.equals(sourceont.df.getOWLBottomObjectProperty()))
-                    ):
-                        signature.add(prop)
+                        if row['Exclude'].lower() in TRUE_STRS:
+                            mod_ext.excludeEntity(idstr, rel_types)
+                        else:
+                            method = me_methods.getMethodFromStr(
+                                row['Method']
+                            )
+                            mod_ext.addEntity(idstr, method, rel_types)
 
-            elif isinstance(owlent, OWLDataProperty):
-                propset = reasoner.getSubDataProperties(owlent, False).getFlattened()
-                # Note that getSubDataProperties() only returns OWLDataProperty
-                # objects, so we don't need to check the type of each property
-                # before adding it to the module signature.  Also, reasoners
-                # can return owl:BottomDataProperty, so we need to check for
-                # this and not add it to the signature.
-                for prop in propset:
-                    if (
-                        not(prop.equals(sourceont.df.getOWLBottomDataProperty()))
-                    ):
-                        signature.add(prop)
+                    except RuntimeError as err:
+                        raise ImportModSpecError(str(err), row)
+
+        if mod_ext.getSignatureSize() == 0:
+            ontopilot.logger.warning(
+                'No terms to import were found in the terms file '
+                '{0}.'.format(termsfile_path)
+            )
+
+        module = mod_ext.extractModule(self.getModuleIRIStr(ontologyIRI))
+
+        module.saveOntology(self.getModulePath(ontologyIRI))
 
