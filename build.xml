@@ -47,7 +47,7 @@
 			</fileset>
 		  </copy>
 		  <!-- package the new JAR -->	  
-		  <jar destfile="${dist}/${ant.project.name}.jar" basedir="${build}" zip64Mode="always">
+		  <jar destfile="${dist}/${ant.project.name}.jar" basedir="${build}">
 			<zipgroupfileset dir="${java-lib}" includes="*.jar"  excludes="${jython-jar}"/>
 			<manifest>
 			  <attribute name="Main-Class" value="Main"/>
