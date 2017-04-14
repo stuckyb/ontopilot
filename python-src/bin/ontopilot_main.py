@@ -96,6 +96,6 @@ try:
         print '\n', target.getBuildNotRequiredMsg(), '\n'
         sys.exit(1)
 except (ConfigError, RuntimeError) as err:
-    print '\n', ConfigError, '\n'
+    print '\n', err, '\n'
     sys.exit(1)
 
