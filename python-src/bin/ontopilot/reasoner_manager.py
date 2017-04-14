@@ -19,8 +19,7 @@ from ontopilot import logger
 
 # Java imports.
 from org.semanticweb.elk.owlapi import ElkReasonerFactory
-#from org.semanticweb import HermiT
-from org.semanticweb.HermiT import ReasonerFactory
+from org.semanticweb.HermiT import ReasonerFactory as HermiTReasonerFactory
 from com.clarkparsia.pellet.owlapiv3 import PelletReasonerFactory
 from uk.ac.manchester.cs.jfact import JFactFactory
 
@@ -67,7 +66,7 @@ class ReasonerManager:
                 rfact = ElkReasonerFactory()
             elif reasoner_name == 'hermit':
                 logger.info('Creating HermiT reasoner...')
-                rfact = ReasonerFactory()
+                rfact = HermiTReasonerFactory()
             elif reasoner_name == 'pellet':
                 logger.info('Creating Pellet reasoner...')
                 rfact = PelletReasonerFactory()

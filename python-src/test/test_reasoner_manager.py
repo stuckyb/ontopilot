@@ -23,6 +23,8 @@ import unittest
 # Java imports.
 from org.semanticweb.elk.owlapi import ElkReasoner
 from org.semanticweb.HermiT import Reasoner as HermitReasoner
+from com.clarkparsia.pellet.owlapiv3 import PelletReasoner
+from uk.ac.manchester.cs.jfact import JFactReasoner
 
 
 class Test_ReasonerManager(unittest.TestCase):
@@ -47,4 +49,12 @@ class Test_ReasonerManager(unittest.TestCase):
         reasoner = self.rman.getReasoner('HermiT')
         self.assertIsInstance(reasoner, HermitReasoner)
         self.assertIs(reasoner, self.rman.getReasoner('hermit'))
+
+        reasoner = self.rman.getReasoner('Pellet')
+        self.assertIsInstance(reasoner, PelletReasoner)
+        self.assertIs(reasoner, self.rman.getReasoner('pellet'))
+
+        reasoner = self.rman.getReasoner('JFact')
+        self.assertIsInstance(reasoner, JFactReasoner)
+        self.assertIs(reasoner, self.rman.getReasoner('jfact'))
 
