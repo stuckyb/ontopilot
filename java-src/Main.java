@@ -46,6 +46,6 @@ public class Main {
         // Now create an interpreter
         InteractiveConsole interp = newInterpreter(interactive);
         systemState.__setattr__("_jy_interpreter", Py.java2py(interp));
-        interp.exec("try:\n import entrypoint\nexcept SystemExit: pass");
+        interp.exec("try:\n import ontopilot_main\nexcept SystemExit: pass");
     }
 }
