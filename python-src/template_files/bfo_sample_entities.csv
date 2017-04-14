@@ -1,4 +1,4 @@
-Test,Method,Related entities,Exclude,Ignore
+ID,Method,Related entities,Exclude,Ignore
 BFO:'continuant',locality,,,
 BFO:'occurrent',locality,,,
 BFO:'spatiotemporal region',locality,,,
