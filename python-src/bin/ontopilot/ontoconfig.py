@@ -144,47 +144,13 @@ class OntoConfig(RawConfigParser):
 
         return abspath
 
-    def _splitPathToList(self, pathstr):
-        """
-        Splits a path into a list of its components.
-        """
-        if pathstr == '/':
-            clist = ['/']
-        else:
-            clist = []
-            remainder = pathstr
-            while (remainder != '/') and (remainder != ''):
-                parts = os.path.split(remainder)
-
-                if parts[1] != '':
-                    clist.append(parts[1])
-                if parts[0] == '/':
-                    clist.append(parts[0])
-
-                remainder = parts[0]
-
-            clist.reverse()
-
-        return clist
-
     def _isSubpathInPath(self, path, subpath):
         """
         Tests whether path is a parent path to subpath.  If so, returns True.
         If path is not a parent path to subath, or the two paths are the same,
         returns False.
         """
-        p_parts = self._splitPathToList(self._getAbsPath(path))
-        sp_parts = self._splitPathToList(self._getAbsPath(subpath))
-
-        # The subpath must be longer than the parent path.
-        if len(p_parts) >= len(sp_parts):
-            return False
-        
-        for p_part, sp_part in zip(p_parts, sp_parts):
-            if p_part != sp_part:
-                return False
-
-        return True
+        return self._getAbsPath(subpath).startswith(self._getAbsPath(path))
 
     def getOntFileBase(self):
         """

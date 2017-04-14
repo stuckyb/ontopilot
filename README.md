@@ -65,15 +65,15 @@ Building Jython:
     Jython installer builds so that it will work in a One-Jar
     environment:
 
-    * Download the latest Jython standalone installer (right now it's 2.5rc2) :
+    * Download the latest Jython standalone installer (right now it's 2.7.0) :
 
-        wget http://downloads.sourceforge.net/jython/jython_installer-2.5rc2.jar
+        wget http://search.maven.org/remotecontent?filepath=org/python/jython-installer/2.7.0/jython-installer-2.7.0.jar
 
     * Extract the installer, there's no need to run it:
         
 	mkdir jython-exploded
 	cd jython-exploded
-	unzip ../jython_installer-2.5rc2.jar
+	unzip ../jython-installer-2.7.0.jar
 
     * Add the Lib/ folder to a new jython jar:
         

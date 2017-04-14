@@ -25,6 +25,7 @@ from ontology_entities import _OntologyObjectProperty, _OntologyAnnotationProper
 from ontology_entities import _OntologyIndividual, _OntologyEntity
 from reasoner_manager import ReasonerManager
 from observable import Observable
+import nethelper
 
 # Java imports.
 from java.io import File, FileOutputStream
@@ -537,8 +538,17 @@ class Ontology(Observable):
         
         # Check if the imported ontology is already included in an imports
         # declaration.  If so, there's nothing to do.
-        if owlont.getDirectImportsDocuments().contains(sourceIRI):
+        importdocs = owlont.getDirectImportsDocuments()
+        if importdocs.contains(sourceIRI):
             return
+
+        # Check if the import IRI redirects to another URI, in which case get
+        # the true location and check if *it* is already included in an imports
+        # declaration.
+        redir_iri = nethelper.checkForRedirect(sourceIRI)
+        if redir_iri != '':
+            if importdocs.contains(IRI.create(redir_iri)):
+                return
 
         importdec = self.df.getOWLImportsDeclaration(sourceIRI)
         self.ontman.applyChange(
@@ -567,10 +577,9 @@ class Ontology(Observable):
                 OWLOntologyCreationIOException
             ) as err:
                 raise RuntimeError(
-                    'The import module ontology at <{0}> could not be '
-                    'loaded.  Please make sure that the IRI is correct and '
-                    'that the import module ontology is '
-                    'accessible.'.format(source_iri)
+                    'The import ontology at <{0}> could not be loaded.  '
+                    'Please make sure that the IRI is correct and that the '
+                    'import ontology is accessible.'.format(source_iri)
                 )
 
             # Notify observers that a new ontology was imported.
