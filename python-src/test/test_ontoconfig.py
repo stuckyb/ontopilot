@@ -130,6 +130,12 @@ class TestOntoConfig(unittest.TestCase):
             {'exp': False, 'ppath': '/test/path', 'spath': '/alt/path/long'},
             {'exp': True, 'ppath': '/', 'spath': '/test/path/long'},
             {'exp': True, 'ppath': '/test/path', 'spath': '/test/path/long'},
+            # A case for which simple string prefix checking would give the
+            # wrong answer.
+            {
+                'exp': False,
+                'ppath': '/test/path', 'spath': '/test/pathly/long'
+            },
             {'exp': False, 'ppath': 'relpath', 'spath': 'relpath'},
             {'exp': True, 'ppath': 'relpath', 'spath': 'relpath/long'},
         ]
