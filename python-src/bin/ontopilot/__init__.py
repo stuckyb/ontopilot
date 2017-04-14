@@ -71,10 +71,13 @@ class CustomLogHandler(logging.StreamHandler):
 System.setProperty('org.slf4j.simpleLogger.defaultLogLevel', 'WARN')
 
 # Get the paths to all of the java libraries needed by the OWL API and add them
-# to the classpath.
+# to the classpath.  If OntoPilot is run from a standalone JAR file, the java
+# libraries will automatically be in the classpath, the java-lib directory will
+# be non-existent, and jlibpaths will therefore be an empty list, so the
+# classpath will not be modified here. 
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 jlibdir = os.path.realpath(
-        os.path.join(scriptdir, '..', '..', 'javalib', '*.jar')
+        os.path.join(scriptdir, '..', '..', '..', 'java-lib', '*.jar')
     )
 jlibpaths = glob.glob(jlibdir)
 for jlibpath in jlibpaths:
