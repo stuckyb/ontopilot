@@ -59,7 +59,7 @@ project.  For example:\n$ {0} init test.owl'.format(os.path.basename(sys.argv[0]
     
         # Get the path to the project template files directory.
         templatedir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), '../../../template_files'
+            os.path.dirname(os.path.abspath(__file__)), '../../template_files'
         )
     
         projc = ProjectCreator('.', self.args.taskarg, templatedir)

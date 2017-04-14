@@ -31,6 +31,14 @@ public class Main {
     }
 
     public static void main(String[] args) throws PyException, Exception {
+
+        // To make the python interpreter accept arguments at right index
+        String[] args_new = new String[args.length + 1];
+        args_new[0] = "";
+        for(int i = 1; i < args_new.length; i++) {
+            args_new[i] = args[i - 1];
+        }
+        args = args_new;
 	
 		PySystemState.initialize(
             PySystemState.getBaseProperties(), 

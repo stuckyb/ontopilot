@@ -4,7 +4,7 @@
 
 	<property name="dist" value="${basedir}/dist" />
 	<property name="build" value="${basedir}/build" />
-	<property name="etc" value="${basedir}/etc" />
+	<property name="doc" value="${basedir}/doc" />
 	<property name="java-lib" value="${basedir}/java-lib" />
 	<property name="python-lib" value="${basedir}/python-lib" />
 	<property name="java-src" value="${basedir}/java-src" />
@@ -24,7 +24,7 @@
 
 	<target name="build" description="build the jython launcher">
 		<unzip src="${jython-jar}" dest="${build}"/>
-		<javac srcdir="${java-src}" destdir="${build}"/>
+		<javac srcdir="${java-src}" destdir="${build}" includeantruntime="false"/>
 	</target>
 	
 	<target name="assemble" description="assemble the jython standalone JAR">
@@ -53,12 +53,6 @@
 			  <attribute name="Main-Class" value="Main"/>
 			</manifest>
 		  </jar>
-		  <!-- Copy Config in dist -->
-		  <copy todir="${dist}">
-		  	<fileset dir="${etc}">
-			  <include name="**/*.cfg"/>
-			</fileset>
-		  </copy>
 	</target>
 	
 	<target name="all" depends="init, build, assemble" description="Runs the two targets"/>
