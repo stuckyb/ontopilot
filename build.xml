@@ -4,7 +4,6 @@
 
 	<property name="dist" value="${basedir}/dist" />
 	<property name="build" value="${basedir}/build" />
-	<property name="doc" value="${basedir}/doc" />
 	<property name="java-lib" value="${basedir}/java-lib" />
 	<property name="python-lib" value="${basedir}/python-lib" />
 	<property name="java-src" value="${basedir}/java-src" />
