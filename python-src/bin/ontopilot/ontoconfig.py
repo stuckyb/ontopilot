@@ -147,7 +147,7 @@ class OntoConfig(RawConfigParser):
     def _isSubpathInPath(self, path, subpath):
         """
         Tests whether path is a parent path to subpath.  If so, returns True.
-        If path is not a parent path to subath, or the two paths are the same,
+        If path is not a parent path to subpath, or the two paths are the same,
         returns False.
         """
         path = self._getAbsPath(path)
