@@ -150,8 +150,28 @@ class OntoConfig(RawConfigParser):
         If path is not a parent path to subath, or the two paths are the same,
         returns False.
         """
-        # Check for Windows and Ubuntu 
-        return self._getAbsPath(subpath).startswith(self._getAbsPath(path) + '\\') or self._getAbsPath(subpath).startswith(self._getAbsPath(path) + '/')
+        path = self._getAbsPath(path)
+        subpath = self._getAbsPath(subpath)
+
+        # If the parent path is the root directory ('/') or otherwise already
+        # ends in a separator character, we need to strip the separator from
+        # the end so we don't double it when we do the containment check.
+        if path.endswith('/') or path.endswith('\\'):
+            path = path[:-1]
+
+        # Check for identical paths, either with or without a trailing
+        # directory separator.
+        if (
+            (subpath == path) or
+            (subpath == path + '/') or (subpath == path + '\\')
+        ):
+            return False
+
+        # Check for subpath containment.  This should work on either Windows or
+        # *nix systems.
+        return (
+            subpath.startswith(path + '\\') or subpath.startswith(path + '/')
+        )
 
     def getOntFileBase(self):
         """

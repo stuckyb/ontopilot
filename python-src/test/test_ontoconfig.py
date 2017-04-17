@@ -98,29 +98,10 @@ class TestOntoConfig(unittest.TestCase):
             self.td_path + '/' + relpath, self.oc._getAbsPath(relpath)
         )
 
-    def test_splitPathToList(self):
-        testvals = [
-            {'exp': [], 'path': ''},
-            {'exp': ['/'], 'path': '/'},
-            {'exp': ['test'], 'path': 'test'},
-            {'exp': ['/', 'test'], 'path': '/test'},
-            {'exp': ['/', 'test'], 'path': '/test/'},
-            {'exp': ['/', 'test', 'path'], 'path': '/test/path'},
-            {'exp': ['/', 'test', 'path'], 'path': '/test/path/'},
-            {'exp': ['test'], 'path': 'test'},
-            {'exp': ['test', 'path'], 'path': 'test/path'},
-            {'exp': ['test', 'path'], 'path': 'test/path/'}
-        ]
-
-        for testval in testvals:
-            self.assertEqual(
-                testval['exp'], self.oc._splitPathToList(testval['path']),
-                msg='Input path: "{0}".'.format(testval['path'])
-            )
-
     def test_isSubpathInPath(self):
         testvals = [
             {'exp': False, 'ppath': '', 'spath': ''},
+            {'exp': False, 'ppath': '/', 'spath': '/'},
             {'exp': False, 'ppath': '', 'spath': '/test/path'},
             {'exp': False, 'ppath': '/test/path', 'spath': '/test/path'},
             {'exp': False, 'ppath': '/test/path', 'spath': '/test/path/'},
