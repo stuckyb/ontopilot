@@ -18,7 +18,8 @@ public class Main {
         }
 
         String interpClass = PySystemState.registry.getProperty(
-        "python.console", "");
+            "python.console", ""
+        );
         if (interpClass.length() > 0) {
             try {
                 return (InteractiveConsole)Class.forName(
@@ -27,12 +28,12 @@ public class Main {
                 // fall through
             }
         }
+
         return new InteractiveConsole();
     }
 
     public static void main(String[] args) throws PyException, Exception {
-
-        // To make the python interpreter accept arguments at right index
+        // To make the python interpreter accept arguments at right index.
         String[] args_new = new String[args.length + 1];
         args_new[0] = "";
         for(int i = 1; i < args_new.length; i++) {
@@ -40,18 +41,19 @@ public class Main {
         }
         args = args_new;
 	
-		PySystemState.initialize(
-            PySystemState.getBaseProperties(), 
-            new Properties(), args);
+        PySystemState.initialize(
+            PySystemState.getBaseProperties(), new Properties(), args
+        );
 
         PySystemState systemState = Py.getSystemState();
-        // Decide if stdin is interactive
+
+        // Decide if stdin is interactive.
         boolean interactive = ((PyFile)Py.defaultSystemState.stdin).isatty();
         if (!interactive) {
             systemState.ps1 = systemState.ps2 = Py.EmptyString;
         }
          
-        // Now create an interpreter
+        // Create an interpreter.
         InteractiveConsole interp = newInterpreter(interactive);
         systemState.__setattr__("_jy_interpreter", Py.java2py(interp));
         interp.exec("try:\n import ontopilot_main\nexcept SystemExit: pass");
