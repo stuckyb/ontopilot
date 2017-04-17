@@ -77,7 +77,7 @@ System.setProperty('org.slf4j.simpleLogger.defaultLogLevel', 'WARN')
 # classpath will not be modified here. 
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 jlibdir = os.path.realpath(
-        os.path.join(scriptdir, '..', '..', '..', 'java-lib', '*.jar')
+        os.path.join(scriptdir, '..', '..', 'java-lib', '*.jar')
     )
 jlibpaths = glob.glob(jlibdir)
 for jlibpath in jlibpaths:

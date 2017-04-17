@@ -25,7 +25,7 @@ import unittest
 ontopilot_dir = os.path.normpath(
     os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
-        '../bin'
+        '../'
     )
 )
 sys.path.append(ontopilot_dir)
