@@ -20,8 +20,6 @@
 # Python imports.
 import os, shutil
 import re
-from zipfile import ZipFile
-import shutil
 from ontopilot import logger
 from ontoconfig import OntoConfig
 
@@ -42,14 +40,6 @@ class ProjectCreator:
         self.targetdir = os.path.abspath(targetdir)
         self.ontfilename = ontfilename
         self.templatedir = os.path.abspath(templatedir)
-
-        if os.path.isfile('../ontoApp.jar'):
-            # Extract template_files here
-            zip_ref = ZipFile('../ontoApp.jar')
-            
-            for file in zip_ref.namelist():
-                if file.startswith('template_files/'):
-                    zip_ref.extract(file, '../')
 
         if not(os.path.isdir(self.targetdir)):
             raise RuntimeError(
@@ -184,14 +174,19 @@ class ProjectCreator:
         """
         if not(os.path.isfile(sourcepath)):
             raise RuntimeError(
-                'The ontology project template file, "{0}", could not be found.  Please check that the software was installed correctly.'.format(sourcepath)
+                'The ontology project template file, "{0}", could not be '
+                'found.  Please check that the software was installed '
+                'correctly.'.format(sourcepath)
             )
 
         try:
             shutil.copyfile(sourcepath, destpath)
         except IOError:
             raise RuntimeError(
-                'The ontology project file, "{0}", could not be created.  Please make sure that you have permission to create new files and directories in the new project location.'.format(destpath)
+                'The ontology project file, "{0}", could not be created.  '
+                'Please make sure that you have permission to create new '
+                'files and directories in the new project '
+                'location.'.format(destpath)
             )
 
     def _createSourceFiles(self, config):
@@ -255,10 +250,4 @@ class ProjectCreator:
 
         logger.info('Creating initial source files...')
         self._createSourceFiles(config)
-
-        # Remove temporary template_files directory
-        if os.path.isdir('../template_files'):
-            shutil.rmtree('../template_files')
-
-
 
