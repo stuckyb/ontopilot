@@ -7,9 +7,9 @@
 	<property name="java-lib" value="${basedir}/java-lib" />
 	<property name="python-lib" value="${basedir}/python-lib" />
 	<property name="java-src" value="${basedir}/java-src" />
-	<property name="python-src" value="${basedir}/python-src/bin"/>
+	<property name="python-src" value="${basedir}/python-src"/>
 	<property name="jython-jar" value="${basedir}/java-lib/jython-full.jar"/>
-	<property name="resources" value="${basedir}/python-src/template_files"/>
+	<property name="resources" value="${basedir}/template_files"/>
 
 	<target name="init" description="Initialisation">
 		<mkdir dir="${dist}"/>
