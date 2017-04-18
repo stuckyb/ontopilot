@@ -1,10 +1,15 @@
 #!/bin/bash
 
 # The location of the main OntoPilot program, relative to this launch script.
-BINPATH="../python-src/ontopilot_main.py"
+ONTOPILOTPATH="../python-src/ontopilot_main.py"
 
 # The location of the Jython run-time JAR, relative to this launch script.
 JYTHONPATH="../java-lib/jython-full.jar"
+
+# The location of the Java run-time binary.  If no location is set, we assume
+# that "java" is in the user's PATH somewhere.
+JAVAPATH=
+
 
 # Get the location of this launch script.  If the script was not run from a
 # symlink, the next two lines are all we need.
@@ -27,12 +32,15 @@ while [ -L "${SRCPATH}" ]; do
 done
 
 # Check if java is installed.
-if ! command -v java >/dev/null; then
+if [ -z $JAVAPATH ]; then
+    JAVAPATH="java"
+fi
+if ! command -v $JAVAPATH >/dev/null; then
     echo "ERROR: The Java run-time environment appears to be missing." >&2
     echo "Please install Java in order to run OntoPilot." >&2
     exit 1
 fi
 
 # Run OntoPilot, passing on all command-line arguments.
-java -jar "${SRCDIR}/${JYTHONPATH}" "${SRCDIR}/${BINPATH}" "$@"
+$JAVAPATH -jar "${SRCDIR}/${JYTHONPATH}" "${SRCDIR}/${ONTOPILOTPATH}" "$@"
 
