@@ -1,6 +1,6 @@
 <!--
 -->
-<project name="OntoApp" default="all">
+<project name="ontopilot" default="all">
 
 	<property name="dist" value="${basedir}/dist" />
 	<property name="build" value="${basedir}/build" />
