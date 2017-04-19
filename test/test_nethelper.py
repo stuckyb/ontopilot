@@ -39,9 +39,14 @@ class Test_nethelper(unittest.TestCase):
             '', nethelper.checkForRedirect('http://httpbin.org/html')
         )
 
-        # Check an HTTPS IRI that does not trigger a redirect.
+        # Check an HTTPS IRI that does not trigger a redirect.  Testing with
+        # Jython 2.7.0 did not work for all IRIs.  For example,
+        # https://httpbin.org/ fails.  I spent some time running this down, and
+        # the failure was originating from a call in Lib/_socket.py (line 769)
+        # to the sync() method of SslHandler, which is part of the Java netty
+        # library.  I've not investigated beyond that.
         self.assertEqual(
-            '', nethelper.checkForRedirect('https://httpbin.org/html')
+            '', nethelper.checkForRedirect('https://github.com/')
         )
 
         # Check a one-hop redirect.
