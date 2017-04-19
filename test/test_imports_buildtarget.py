@@ -44,18 +44,18 @@ class TestImportsBuildTarget(unittest.TestCase):
         tr = TableRow(1, TableStub())
 
         # Test an empty terms file path.
-        tr['Termsfile'] = ''
+        tr['Entities file'] = ''
         self.assertEqual('', self.ibt._getAbsTermsFilePath(tr))
 
         # Test an invalid terms file path.
-        tr['Termsfile'] = 'nonexistent/file.csv'
+        tr['Entities file'] = 'nonexistent/file.csv'
         with self.assertRaisesRegexp(
             TableRowError, 'Could not find the input terms file'
         ):
             self.ibt._getAbsTermsFilePath(tr)
 
         # Test a valid terms file path.
-        tr['Termsfile'] = 'bco_terms.csv'
+        tr['Entities file'] = 'bco_terms.csv'
         self.assertEqual(
             self.isrc_path + '/bco_terms.csv',
             self.ibt._getAbsTermsFilePath(tr)
