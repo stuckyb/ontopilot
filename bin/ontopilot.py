@@ -29,9 +29,6 @@ from ontopilot import BuildTargetManager
 # Java imports.
 
 
-# Set the format for logging output.
-logging.basicConfig(format='\n%(levelname)s: %(message)s\n')
-
 # Define the build targets.
 buildtm = BuildTargetManager()
 buildtm.addBuildTarget(InitTarget, task='initialize')
