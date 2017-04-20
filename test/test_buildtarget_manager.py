@@ -22,6 +22,13 @@ import unittest
 # Java imports.
 
 
+# Define additional build targets.
+class Target3 (Target2):
+    pass
+class Target4 (Target2):
+    pass
+
+
 class ArgVals:
     """
     A simple "struct" for defining argument values.
@@ -38,14 +45,42 @@ class TestBuildTargetManager(unittest.TestCase):
     def setUp(self):
         pass
 
+    def test_generateNamesStr(self):
+        btr = BuildTargetManager()
+
+        self.assertEqual('', btr._generateNamesStr([]))
+        self.assertEqual('"name1"', btr._generateNamesStr(['name1']))
+        self.assertEqual(
+            '"name1" or "name2"', btr._generateNamesStr(['name1', 'name2'])
+        )
+        self.assertEqual(
+            '"name1", "name2", or "name3"',
+            btr._generateNamesStr(['name1', 'name2', 'name3'])
+        )
+
+    def test_getSynonymousNamesStr(self):
+        btr = BuildTargetManager()
+
+        self.assertEqual('', btr._getSynonymousNamesStr([]))
+        self.assertEqual('"name1"', btr._getSynonymousNamesStr(['name1']))
+        self.assertEqual(
+            '"name1" (also "name2")',
+            btr._getSynonymousNamesStr(['name1', 'name2'])
+        )
+        self.assertEqual(
+            '"name1" (also "name2" or "name3")',
+            btr._getSynonymousNamesStr(['name1', 'name2', 'name3'])
+        )
+        self.assertEqual(
+            '"name1" (also "name2", "name3", or "name4")',
+            btr._getSynonymousNamesStr(['name1', 'name2', 'name3', 'name4'])
+        )
+
     def test_getBuildTargetNamesStr(self):
         """
         This unit test also indirectly tests _getBuildTargetNames().
         """
         btr = BuildTargetManager()
-
-        # To make sure the string is constructed correctly, test cases with 0,
-        # 1, 2, and 3 build targets defined.
 
         # 0 build targets.
         self.assertEqual('', btr.getBuildTargetNamesStr('task'))
@@ -56,24 +91,42 @@ class TestBuildTargetManager(unittest.TestCase):
         btr.addBuildTarget(Target1, task='target1')
         self.assertEqual('"target1"', btr.getBuildTargetNamesStr('task'))
 
-        # 2 build targets.
+        # 1 build target with two synonymous names.
         btr.addBuildTarget(Target1, task='target2')
+        self.assertEqual(
+            '"target1" (also "target2")', btr.getBuildTargetNamesStr('task')
+        )
+
+        # 1 build target with three synonymous names.
+        btr.addBuildTarget(Target1, task='target3')
+        self.assertEqual(
+            '"target1" (also "target2" or "target3")',
+            btr.getBuildTargetNamesStr('task')
+        )
+
+        # Now test cases where we have multiple build targets.
+        btr = BuildTargetManager()
+
+        # Two build targets.
+        btr.addBuildTarget(Target1, task='target1')
+        btr.addBuildTarget(Target2, task='target2')
         self.assertEqual(
             '"target1" or "target2"', btr.getBuildTargetNamesStr('task')
         )
 
-        # 3 build targets.
-        btr.addBuildTarget(Target1, task='target3')
+        # Three build targets.
+        btr.addBuildTarget(Target3, task='target3')
         self.assertEqual(
-            '"target1", "target2", or "target3"', btr.getBuildTargetNamesStr('task')
+            '"target1", "target2", or "target3"',
+            btr.getBuildTargetNamesStr('task')
         )
 
         # Now test a case where we have an argument value constraint.
         btr = BuildTargetManager()
         btr.addBuildTarget(Target1, task='target1', taskarg='val')
-        btr.addBuildTarget(Target1, task='target1', taskarg='val1')
-        btr.addBuildTarget(Target1, task='target1')
-        btr.addBuildTarget(Target1, task='target2', taskarg='val2')
+        btr.addBuildTarget(Target2, task='target1', taskarg='val1')
+        btr.addBuildTarget(Target3, task='target1')
+        btr.addBuildTarget(Target4, task='target2', taskarg='val2')
         # Check the result without the constraint.
         self.assertEqual(
             '"val", "val1", or "val2"', btr.getBuildTargetNamesStr('taskarg')
