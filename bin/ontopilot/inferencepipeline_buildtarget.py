@@ -19,7 +19,6 @@ import os
 from ontopilot import logger
 from ontology import Ontology
 from buildtarget import BuildTargetWithConfig
-from onto_buildtarget import OntoBuildTarget
 from inferred_axiom_adder import InferredAxiomAdder
 
 # Java imports.
