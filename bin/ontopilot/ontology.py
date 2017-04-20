@@ -29,6 +29,7 @@ import nethelper
 
 # Java imports.
 from java.io import File, FileOutputStream
+from java.lang import System as JavaSystem
 from java.util import HashSet
 from org.semanticweb.owlapi.apibinding import OWLManager
 from org.semanticweb.owlapi.model import IRI, OWLOntologyID
@@ -721,12 +722,27 @@ class Ontology(Observable):
             AddOntologyAnnotation(self.getOWLOntology(), s_annot)
         )
 
+    def _writeToStream(self, ostream):
+        """
+        An internal method that writes the ontology to the specified output
+        stream.
+        """
+        oformat = RDFXMLDocumentFormat()
+        self.ontman.saveOntology(self.ontology, oformat, ostream)
+
+    def printOntology(self):
+        """
+        Prints the ontology to standard output.
+        """
+        self._writeToStream(JavaSystem.out)
+
     def saveOntology(self, filepath):
         """
         Saves the ontology to a file.
         """
-        oformat = RDFXMLDocumentFormat()
         foutputstream = FileOutputStream(File(filepath))
-        self.ontman.saveOntology(self.ontology, oformat, foutputstream)
-        foutputstream.close()
+        try:
+            self._writeToStream(foutputstream)
+        finally:
+            foutputstream.close()
 

@@ -81,7 +81,10 @@ class InferencePipelineBuildTarget(BuildTargetWithConfig):
         iaa = InferredAxiomAdder(sourceont, self.config.getReasonerStr())
         iaa.addInferredAxioms(inf_types, annotate_inferred)
 
-        # Write the ontology to the output file.
-        logger.info('Writing compiled ontology to ' + self.outpath + '...')
-        sourceont.saveOntology(self.outpath)
+        # Write the ontology to the output file or stdout.
+        if self.outpath != '':
+            logger.info('Writing compiled ontology to ' + self.outpath + '...')
+            sourceont.saveOntology(self.outpath)
+        else:
+            sourceont.printOntology()
 
