@@ -70,8 +70,7 @@ class CustomLogHandler(logging.StreamHandler):
 # for this property can be obtained from SimpleLogger.DEFAULT_LOG_LEVEL_KEY.
 System.setProperty('org.slf4j.simpleLogger.defaultLogLevel', 'WARN')
 
-# Get the paths to all of the java libraries needed by the OWL API and add them
-# to the classpath.
+# Add the paths to all of the required java libraries to the classpath.
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 jlibdir = os.path.realpath(
         os.path.join(scriptdir, '..', '..', 'javalib', '*.jar')
@@ -113,5 +112,6 @@ from modified_onto_buildtarget import ModifiedOntoBuildTarget
 from release_buildtarget import ReleaseBuildTarget
 from errorcheck_buildtarget import ErrorCheckBuildTarget
 from update_base_imports_buildtarget import UpdateBaseImportsBuildTarget
+from inferencepipeline_buildtarget import InferencePipelineBuildTarget
 from buildtarget_manager import BuildTargetManager
 

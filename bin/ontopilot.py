@@ -23,6 +23,7 @@ from ontopilot import ConfigError
 from ontopilot import InitTarget, ImportsBuildTarget, OntoBuildTarget
 from ontopilot import ModifiedOntoBuildTarget, ReleaseBuildTarget
 from ontopilot import ErrorCheckBuildTarget, UpdateBaseImportsBuildTarget
+from ontopilot import InferencePipelineBuildTarget
 from ontopilot import BuildTargetManager
 
 # Java imports.
@@ -42,7 +43,12 @@ buildtm.addBuildTarget(
 buildtm.addBuildTarget(ModifiedOntoBuildTarget, task='make', taskarg='ontology')
 buildtm.addBuildTarget(ReleaseBuildTarget, task='make', taskarg='release')
 buildtm.addBuildTarget(UpdateBaseImportsBuildTarget, task='update_base')
+buildtm.addBuildTarget(UpdateBaseImportsBuildTarget, task='updatebase')
+buildtm.addBuildTarget(ErrorCheckBuildTarget, task='error_check')
 buildtm.addBuildTarget(ErrorCheckBuildTarget, task='errorcheck')
+buildtm.addBuildTarget(InferencePipelineBuildTarget, task='inference_pipeline')
+buildtm.addBuildTarget(InferencePipelineBuildTarget, task='inferencepipeline')
+buildtm.addBuildTarget(InferencePipelineBuildTarget, task='ipl')
 
 # Define the command-line arguments.
 argp = ArgumentParser(description='Manages an OWL ontology project.')
@@ -71,6 +77,17 @@ argp.add_argument(
     'YYYY-MM-DD.'
 )
 argp.add_argument(
+    '-i', '--input_data', type=str, required=False, default='', help='The '
+    'path to a source ontology/data set to use when running in inference '
+    'pipeline mode.  If no source path is provided, the input data will be '
+    'read from standard in.'
+)
+argp.add_argument(
+    '-o', '--fileout', type=str, required=False, default='', help='The path '
+    'to an output file to use when running in inference pipeline mode.  If no '
+    'output path is provided, results will be written to standard out.'
+)
+argp.add_argument(
     'task', type=str, nargs='?', default='make', help='The build task to '
     'run.  Must be one of {0}.'.format(
         buildtm.getBuildTargetNamesStr('task')
@@ -94,7 +111,7 @@ try:
         target.run(args.force)
     else:
         print '\n', target.getBuildNotRequiredMsg(), '\n'
-        sys.exit(1)
+        sys.exit(0)
 except (ConfigError, RuntimeError) as err:
     print '\n', err, '\n'
     sys.exit(1)
