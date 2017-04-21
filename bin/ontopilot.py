@@ -19,6 +19,7 @@
 import sys
 import logging
 from argparse import ArgumentParser
+import ontopilot
 from ontopilot import ConfigError
 from ontopilot import InitTarget, ImportsBuildTarget, OntoBuildTarget
 from ontopilot import ModifiedOntoBuildTarget, ReleaseBuildTarget
@@ -52,6 +53,11 @@ argp = ArgumentParser(description='Manages an OWL ontology project.')
 argp.add_argument(
     '-c', '--config_file', type=str, required=False, default='project.conf',
     help='The path to a configuration file for the ontology build process.'
+)
+argp.add_argument(
+    '-q', '--quiet', action='store_true', required=False, help='If this flag '
+    'is given, all usual console status messages will be suppressed except for '
+    'error messages.'
 )
 argp.add_argument(
     '-f', '--force', action='store_true', required=False, help='If this flag '
@@ -100,6 +106,9 @@ argp.add_argument(
 )
 
 args = argp.parse_args()
+
+if args.quiet:
+    ontopilot.setLogLevel(logging.ERROR)
 
 # Get and run the appropriate build target.
 try:
