@@ -22,6 +22,7 @@ from buildtarget import BuildTargetWithConfig
 from inferred_axiom_adder import InferredAxiomAdder
 
 # Java imports.
+from java.lang import System as JavaSystem
 
 
 class InferencePipelineBuildTarget(BuildTargetWithConfig):
@@ -73,7 +74,10 @@ class InferencePipelineBuildTarget(BuildTargetWithConfig):
         """
         #self._retrieveAndCheckFilePaths()
 
-        sourceont = Ontology(self.srcpath)
+        if self.srcpath != '':
+            sourceont = Ontology(self.srcpath)
+        else:
+            sourceont = Ontology(JavaSystem.in)
 
         logger.info('Running reasoner and adding inferred axioms...')
         inf_types = self.config.getInferenceTypeStrs()

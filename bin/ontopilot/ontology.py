@@ -28,7 +28,7 @@ from observable import Observable
 import nethelper
 
 # Java imports.
-from java.io import File, FileOutputStream
+from java.io import File, FileOutputStream, InputStream
 from java.lang import System as JavaSystem
 from java.util import HashSet
 from org.semanticweb.owlapi.apibinding import OWLManager
@@ -58,23 +58,37 @@ class Ontology(Observable):
         'http://www.geneontology.org/formats/oboInOwl#is_inferred'
     )
 
-    def __init__(self, ontology_source):
+    def __init__(self, ontology_source=None):
         """
         Initialize this Ontology instance.  The argument "ontology_source"
         should either be a path to an OWL ontology file on the local file
-        system or an instance of an OWL API OWLOntology object.
+        system, an instance of an OWL API OWLOntology object, or a Java
+        InputStream.  If ontology_source is not provided (i.e., is None), an
+        "empty" ontology will be created.
         """
-        if isinstance(ontology_source, basestring): 
+        if isinstance(ontology_source, InputStream):
+            # Load the ontology from the InputStream.
+            self.ontman = OWLManager.createOWLOntologyManager()
+            self.ontology = self.ontman.loadOntologyFromOntologyDocument(
+                ontology_source
+            )
+        elif isinstance(ontology_source, basestring): 
             # Load the ontology from the source file.
             self.ontman = OWLManager.createOWLOntologyManager()
-            ontfile = File(ontology_source)
-            self.ontology = self.ontman.loadOntologyFromOntologyDocument(ontfile)
+            self.ontology = self.ontman.loadOntologyFromOntologyDocument(
+                File(ontology_source)
+            )
         elif isinstance(ontology_source, OWLOntology):
             self.ontology = ontology_source
             self.ontman = self.ontology.getOWLOntologyManager()
+        elif ontology_source is None:
+            self.ontman = OWLManager.createOWLOntologyManager()
+            self.ontology = self.ontman.createOntology()
         else:
-            raise RuntimeError('Unrecognized type for initializing an Ontology object: '
-                + str(ontology_source))
+            raise RuntimeError(
+                'Unrecognized type for initializing an Ontology object: '
+                + str(ontology_source)
+            )
 
         # Create an OWL data factory, which is required for creating new OWL
         # entities and looking up existing entities.
