@@ -577,7 +577,7 @@ class OWLOntologyBuilder:
                 if labelID == '':
                     labelID = self.prefix_df.getPrefixIRI(labelIRI)
 
-                if labelID == None:
+                if labelID is None:
                     labelID = str(labelIRI)
 
                 if not(id_only):

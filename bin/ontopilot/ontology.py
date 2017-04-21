@@ -273,12 +273,12 @@ class Ontology(Observable):
         propIRI = self.resolveIdentifier(prop_id)
 
         prop = self.getExistingObjectProperty(propIRI)
-        if prop == None:
+        if prop is None:
             prop = self.getExistingAnnotationProperty(propIRI)
-        if prop == None:
+        if prop is None:
             prop = self.getExistingDataProperty(propIRI)
 
-        # If no matching data property was found, prop == None.
+        # If no matching data property was found, prop is None.
         return prop
 
     def getExistingIndividual(self, indv_id):
@@ -325,12 +325,12 @@ class Ontology(Observable):
         eIRI = self.resolveIdentifier(ent_id)
 
         entity = self.getExistingClass(eIRI)
-        if entity == None:
+        if entity is None:
             entity = self.getExistingProperty(eIRI)
-        if entity == None:
+        if entity is None:
             entity = self.getExistingIndividual(eIRI)
 
-        # If no matching individual was found, entity == None.
+        # If no matching individual was found, entity is None.
         return entity
 
     def createNewClass(self, class_id):

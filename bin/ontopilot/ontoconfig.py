@@ -201,7 +201,7 @@ class OntoConfig(RawConfigParser):
 
         if iristr != '':
             # Verify that we have a valid absolute IRI string.
-            if rfc3987.match(iristr, rule='absolute_IRI') == None:
+            if rfc3987.match(iristr, rule='absolute_IRI') is None:
                 raise ConfigError(
                     'Invalid development base IRI string in the build '
                     'configuration file: {0}.  Please check the value of the '
@@ -225,7 +225,7 @@ class OntoConfig(RawConfigParser):
 
         if iristr != '':
             # Verify that we have a valid absolute IRI string.
-            if rfc3987.match(iristr, rule='absolute_IRI') == None:
+            if rfc3987.match(iristr, rule='absolute_IRI') is None:
                 raise ConfigError(
                     'Invalid release base IRI string in the build '
                     'configuration file: "{0}".  Please check the value of '
@@ -315,7 +315,7 @@ class OntoConfig(RawConfigParser):
 
         if iristr != '':
             # Verify that we have a valid absolute IRI string.
-            if rfc3987.match(iristr, rule='absolute_IRI') == None:
+            if rfc3987.match(iristr, rule='absolute_IRI') is None:
                 raise ConfigError(
                     'Invalid release ontology IRI string in the build '
                     'configuration file: "{0}".  Please check the value of '

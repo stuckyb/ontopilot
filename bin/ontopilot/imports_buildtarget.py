@@ -152,7 +152,7 @@ class ImportsBuildTarget(BuildTargetWithConfig):
         field) is a valid IRI.  Raises an exception if it is invalid.
         """
         # Verify that the source IRI is valid.
-        if rfc3987.match(trow['IRI'], rule='absolute_IRI') == None:
+        if rfc3987.match(trow['IRI'], rule='absolute_IRI') is None:
             raise TableRowError(
                 'Invalid source ontology IRI string: {0}.'.format(trow['IRI']),
                 trow

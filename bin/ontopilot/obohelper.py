@@ -86,7 +86,7 @@ def termIRIToOboID(termIRI):
     rawID = termIRIstr.replace(OBO_BASE_IRI, '', 1)
     res = raw_oboid_re.match(rawID)
 
-    if res == None:
+    if res is None:
         raise OBOIdentiferError(invalid_IRI_msg)
     
     # Convert it to an OBO ID.
@@ -119,7 +119,7 @@ def getIRIForOboPrefix(obo_prefix):
     # Verify that we have a valid OBO prefix.
     res = obo_prefix_re.match(obo_prefix)
 
-    if res == None:
+    if res is None:
         raise OBOIdentiferError(
             'The string "{0}" is not a valid OBO prefix (also known as as the '
             '"ID space" for OBO identifiers), so it cannot be converted to an '

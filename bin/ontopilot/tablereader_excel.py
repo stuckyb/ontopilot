@@ -165,7 +165,7 @@ class ExcelTableReader(BaseTableReader):
 
     def getTableByName(self, tablename):
         sheet = self.wbook.getSheet(tablename)
-        if sheet == None:
+        if sheet is None:
             raise KeyError('Invalid table name: "' + str(tablename)
                     + '".  No matching sheet could be found in the file "'
                     + self.filename + '".')

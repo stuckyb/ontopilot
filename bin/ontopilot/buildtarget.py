@@ -145,7 +145,7 @@ product name key: "{2}".'.format(
         # _isBuildRequired() returns False.
         if self._isBuildRequired() or dependencies_run or force_build:
             results = self._run()
-            if results == None:
+            if results is None:
                 results = {}
         else:
             results = {}
@@ -218,7 +218,7 @@ class BuildTargetWithConfig(BuildTarget):
         """
         BuildTarget.__init__(self)
 
-        if config == None:
+        if config is None:
             try:
                 self.config = OntoConfig(args.config_file)
             except IOError as err:
