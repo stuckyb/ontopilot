@@ -1,5 +1,7 @@
 @echo off
 
+setlocal 
+
 rem The location of the main OntoPilot program, relative to this launch script.
 set ONTOPILOTPATH=..\python-src\ontopilot_main.py
 
@@ -38,6 +40,8 @@ dir "%SRCPATH%" | find "<SYMLINK>" >nul && (
  		goto :while
  	)
 )
+
+endlocal
 
 rem Check if java is installed.
 where java >nul 2>&1
