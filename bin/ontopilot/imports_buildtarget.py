@@ -49,16 +49,17 @@ class ImportsBuildTarget(BuildTargetWithConfig):
     """
     A build target for compiling the imports modules.
     """
-    def __init__(self, args, cfgfile_required=True):
+    def __init__(self, args, cfgfile_required=True, config=None):
         """
         args: A "struct" of configuration options (typically, parsed
             command-line arguments).  The only required member is 'config_file'
             (string).
-        config: An OntoConfig instance.
+        cfgfile_required (optional): Whether a config file is required.
+        config (optional): An OntoConfig object.
         """
-        BuildTargetWithConfig.__init__(self, args, cfgfile_required)
+        BuildTargetWithConfig.__init__(self, args, cfgfile_required, config)
 
-        self.addDependency(BuildDirTarget(args, self.config))
+        self.addDependency(BuildDirTarget(args, False, self.config))
 
         # The string builddir is the path to a build directory where, at a
         # minimum, source ontologies can be cached.  If we are doing an

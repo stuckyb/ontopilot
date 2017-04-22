@@ -202,37 +202,49 @@ class BuildTargetWithConfig(BuildTarget):
     An abstract base class for build targets that require an instance of an
     OntoConfig object.
     """
-    def __init__(self, args, cfgfile_required=True):
+    def __init__(self, args, cfgfile_required=True, config=None):
         """
         This constructor will attempt to instantiate an OntoConfig instance
         from the value of the 'config_file' member of args.  If
         cfgfile_required is True, and no config file could be loaded, an
         exception will be raised.  If no config file path is provided,
-        "project.conf" will be used by default.
+        "project.conf" will be used by default.  If cfgfile_required is False
+        and config is an OntoConfig object, the config will be used as the
+        OntoConfig object for this instance.
 
         args: A "struct" of configuration options (typically, parsed
             command-line arguments).  The only required member is
             'config_file', which should provide the path to a configuration
             file (although this is only used if the config argument is None).
         cfgfile_required (optional): Whether a config file is required.
+        config (optional): An OntoConfig object.
         """
         BuildTarget.__init__(self)
 
-        cfilepath = args.config_file.strip()
-        if cfilepath == '':
-            cfilepath = 'project.conf'
+        if not(cfgfile_required) and (config is not None):
+            self.config = config
+        else:
+            cfilepath = args.config_file.strip()
+            if cfilepath == '':
+                cfilepath = 'project.conf'
+    
+            try:
+                self.config = OntoConfig(cfilepath)
+            except IOError as err:
+                if not(cfgfile_required):
+                    self.config = OntoConfig()
+                else:
+                    raise RuntimeError(
+                        'Unable to load the project configuration file.  '
+                        'Please make sure the configuration file exists and '
+                        'that the path ("{0}") is correct.  Use the "-c" '
+                        '(or "--config_file") option to specify a different '
+                        'configuration file or path.'.format(cfilepath)
+                    )
 
-        try:
-            self.config = OntoConfig(cfilepath)
-        except IOError as err:
-            if not(cfgfile_required):
-                self.config = OntoConfig()
-            else:
-                raise RuntimeError(
-                    'Unable to load the project configuration file.  Please '
-                    'make sure the configuration file exists and that the '
-                    'path ("{0}") is correct.  Use the "-c" '
-                    '(or "--config_file") option to specify a different '
-                    'configuration file or path.'.format(cfilepath)
-                )
+    def getConfig(self):
+        """
+        Returns the OntoConfig object associated with this build target.
+        """
+        return self.config
 
