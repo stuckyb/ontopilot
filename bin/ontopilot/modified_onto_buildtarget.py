@@ -31,7 +31,7 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
     compiled ontology.  In this case, "modified" means either with imports
     merged into the main ontology, with inferred axioms added, or both.
     """
-    def __init__(self, args, config=None):
+    def __init__(self, args, cfgfile_required=True):
         """
         args: A "struct" of configuration options (typically, parsed
             command-line arguments).  The required members are 'merge_imports'
@@ -39,7 +39,7 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
             'config_file' (string).
         config (optional): An OntoConfig instance.
         """
-        BuildTargetWithConfig.__init__(self, args, config)
+        BuildTargetWithConfig.__init__(self, args, cfgfile_required)
 
         self.mergeimports = args.merge_imports
         self.prereason = args.reason

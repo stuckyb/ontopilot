@@ -49,14 +49,14 @@ class ImportsBuildTarget(BuildTargetWithConfig):
     """
     A build target for compiling the imports modules.
     """
-    def __init__(self, args, config=None):
+    def __init__(self, args, cfgfile_required=True):
         """
         args: A "struct" of configuration options (typically, parsed
             command-line arguments).  The only required member is 'config_file'
             (string).
         config: An OntoConfig instance.
         """
-        BuildTargetWithConfig.__init__(self, args, config)
+        BuildTargetWithConfig.__init__(self, args, cfgfile_required)
 
         self.addDependency(BuildDirTarget(args, self.config))
 

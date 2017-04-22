@@ -15,7 +15,7 @@
 
 
 # Python imports.
-from ontopilot.buildtarget import BuildTarget
+from ontopilot.buildtarget import BuildTarget, BuildTargetWithConfig
 import unittest
 
 # Java imports.
@@ -137,4 +137,53 @@ class TestBuildTarget(unittest.TestCase):
         target1.run(force_build=True)
         self.assertEqual(1, target1.run_cnt)
         self.assertEqual(1, target2.run_cnt)
+
+
+# Define a dummy concrete build targets to test TestBuildTargetWithConfig.
+class Target1Config(BuildTargetWithConfig):
+    def __init__(self, args, cfgfile_required=True):
+        BuildTargetWithConfig.__init__(self, args, cfgfile_required)
+    def _isBuildRequired(self):
+        return True
+    def _run(self):
+        return {}
+
+class ArgVals:
+    config_file = ''
+
+
+class TestBuildTargetWithConfig(unittest.TestCase):
+    """
+    Tests the BuildTargetWithConfig base class.
+    """
+    def setUp(self):
+        pass
+
+    def test_init(self):
+        argvals = ArgVals()
+
+        # Test instantiating without requiring a config file and without
+        # providing a config file.
+        argvals.config_file = ''
+        target = Target1Config(argvals, False)
+        self.assertIsNone(target.config.getConfigFilePath())
+
+        # Test instantiating without requiring a config file and providing a
+        # config file.
+        argvals.config_file = 'test_data/project.conf'
+        target = Target1Config(argvals, False)
+        self.assertIsNotNone(target.config.getConfigFilePath())
+
+        # Test instantiating requiring a config file and without providing a
+        # config file.
+        argvals.config_file = ''
+        with self.assertRaisesRegexp(
+            RuntimeError, 'Unable to load the project configuration file.'
+        ):
+            Target1Config(argvals, True)
+
+        # Test instantiating when both requiring and providing a config file.
+        argvals.config_file = 'test_data/project.conf'
+        target = Target1Config(argvals, True)
+        self.assertIsNotNone(target.config.getConfigFilePath())
 

@@ -29,14 +29,14 @@ class ErrorCheckBuildTarget(BuildTargetWithConfig):
     A build target that checks the main ontology file for common entailment
     errors, including inconsistency and incoherence.
     """
-    def __init__(self, args, config=None):
+    def __init__(self, args, cfgfile_required=True):
         """
         args: A "struct" of configuration options (typically, parsed
             command-line arguments).  The required members are
             'no_def_expand' (boolean) and 'config_file' (string).
         config (optional): An OntoConfig instance.
         """
-        BuildTargetWithConfig.__init__(self, args, config)
+        BuildTargetWithConfig.__init__(self, args, cfgfile_required)
 
         self.obt = OntoBuildTarget(args, self.config)
 
