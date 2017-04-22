@@ -49,16 +49,17 @@ class ImportsBuildTarget(BuildTargetWithConfig):
     """
     A build target for compiling the imports modules.
     """
-    def __init__(self, args, config=None):
+    def __init__(self, args, cfgfile_required=True, config=None):
         """
         args: A "struct" of configuration options (typically, parsed
             command-line arguments).  The only required member is 'config_file'
             (string).
-        config: An OntoConfig instance.
+        cfgfile_required (optional): Whether a config file is required.
+        config (optional): An OntoConfig object.
         """
-        BuildTargetWithConfig.__init__(self, args, config)
+        BuildTargetWithConfig.__init__(self, args, cfgfile_required, config)
 
-        self.addDependency(BuildDirTarget(args, self.config))
+        self.addDependency(BuildDirTarget(args, False, self.config))
 
         # The string builddir is the path to a build directory where, at a
         # minimum, source ontologies can be cached.  If we are doing an
@@ -152,7 +153,7 @@ class ImportsBuildTarget(BuildTargetWithConfig):
         field) is a valid IRI.  Raises an exception if it is invalid.
         """
         # Verify that the source IRI is valid.
-        if rfc3987.match(trow['IRI'], rule='absolute_IRI') == None:
+        if rfc3987.match(trow['IRI'], rule='absolute_IRI') is None:
             raise TableRowError(
                 'Invalid source ontology IRI string: {0}.'.format(trow['IRI']),
                 trow

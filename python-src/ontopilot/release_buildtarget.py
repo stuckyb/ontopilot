@@ -50,15 +50,16 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
     Manages the process of building a complete release version of the compiled
     ontology and imports modules.
     """
-    def __init__(self, args, config=None):
+    def __init__(self, args, cfgfile_required=True, config=None):
         """
         args: A "struct" of configuration options (typically, parsed
             command-line arguments).  The required members are 'merge_imports'
             (boolean), 'reason' (boolean), 'no_def_expand' (boolean),
             'release_date' (string), and 'config_file' (string).
-        config (optional): An OntoConfig instance.
+        cfgfile_required (optional): Whether a config file is required.
+        config (optional): An OntoConfig object.
         """
-        BuildTargetWithConfig.__init__(self, args, config)
+        BuildTargetWithConfig.__init__(self, args, cfgfile_required, config)
 
         # Each release will include a merged, prereasoned ontology file, a
         # merged, unreasoned ontology file, and an unmerged, unreasoned
@@ -66,12 +67,14 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
         # build targets.
         newargs = _ArgsType(args)
         newargs.merge_imports = True
-        self.mobt_merged = ModifiedOntoBuildTarget(newargs, self.config)
+        self.mobt_merged = ModifiedOntoBuildTarget(newargs, False, self.config)
 
         newargs = _ArgsType(args)
         newargs.merge_imports = True
         newargs.reason = True
-        self.mobt_merged_reasoned = ModifiedOntoBuildTarget(newargs, self.config)
+        self.mobt_merged_reasoned = ModifiedOntoBuildTarget(
+            newargs, False, self.config
+        )
 
         self.addDependency(self.mobt_merged)
         self.addDependency(self.mobt_merged_reasoned)

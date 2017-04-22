@@ -63,29 +63,17 @@ class TestOntoConfig(unittest.TestCase):
             self.oc.getConfigFilePath()
         )
 
-    def test_checkConfig(self):
+    def test_constructWithoutConfFile(self):
         """
-        Verifies that basic configuration file errors are correctly detected.
+        Tests the functionality of OntoConfig when no config file is provided.
+        In this case, OntoConfig should simply return default values for
+        configuration settings.
         """
-        # Start with an empty configuration.
-        self.oc.remove_section('Ontology')
+        oc = OntoConfig()
 
-        with self.assertRaisesRegexp(
-            ConfigError, 'The "Ontology" section was not found'
-        ):
-            self.oc.checkConfig()
-
-        self.oc.add_section('Ontology')
-
-        with self.assertRaisesRegexp(
-            ConfigError, 'An ontology file name was not provided.'
-        ):
-            self.oc.checkConfig()
-
-        self.oc.set('Ontology', 'ontology_file', 'ontology/test.owl')
-
-        # This should not raise an exception.
-        self.oc.checkConfig()
+        # Check a few settings to make sure we're getting back default values.
+        self.assertEqual('HermiT', oc.getReasonerStr())
+        self.assertFalse(oc.getAnnotateInferred())
 
     def test_getAbsPath(self):
         # Test an absolute input path.

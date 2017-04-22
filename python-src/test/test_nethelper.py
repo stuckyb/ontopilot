@@ -30,6 +30,46 @@ class Test_nethelper(unittest.TestCase):
     def setUp(self):
         pass
 
+    def test_httpHEAD(self):
+        # Check a valid HTTP URI.
+        result = nethelper.httpHEAD('http://httpbin.org/html')
+        self.assertEqual(200, result.status)
+        self.assertEqual('', result.read())
+
+        # Check a valid HTTPS URI.  Testing with Jython 2.7.0 did not work for
+        # all IRIs.  For example, https://httpbin.org/ fails.  I spent some
+        # time running this down, and the failure was originating from a call
+        # in Lib/_socket.py (line 769) to the sync() method of SslHandler,
+        # which is part of the Java netty library.  I've not investigated
+        # beyond that.
+        result = nethelper.httpHEAD('https://github.com/')
+        self.assertEqual(200, result.status)
+        self.assertEqual('', result.read())
+
+        # Check an IRI that does not use HTTP or HTTPS.
+        with self.assertRaisesRegexp(
+            ConnectionFailError, 'is not an HTTP or HTTPS IRI.'
+        ):
+            nethelper.httpHEAD('file:/local/path')
+
+        # Check a non-existant URI.
+        with self.assertRaisesRegexp(NotFoundError, 'could not be found'):
+            nethelper.httpHEAD('http://httpbin.org/status/404')
+
+        # Check a non-resolving URI.  Note that this might not fail with ISPs
+        # that resolve invalid domain names to a "helpful" information page
+        # hosted by the ISP.
+        with self.assertRaisesRegexp(
+            ConnectionFailError, 'TCP connection error: .* getaddrinfo failed.'
+        ):
+            nethelper.httpHEAD('http://fake.domain.blah/')
+
+        # Check a denied connection attempt.
+        with self.assertRaisesRegexp(
+            ConnectionFailError, 'TCP connection error: .* Connection refused.'
+        ):
+            nethelper.httpHEAD('http://127.0.0.1:9000/')
+
     def test_checkForRedirect(self):
         # Check an IRI that does not use HTTP or HTTPS.
         self.assertEqual('', nethelper.checkForRedirect('file:/local/path'))
@@ -39,9 +79,10 @@ class Test_nethelper(unittest.TestCase):
             '', nethelper.checkForRedirect('http://httpbin.org/html')
         )
 
-        # Check an HTTPS IRI that does not trigger a redirect.
+        # Check an HTTPS IRI that does not trigger a redirect.  See comments
+        # above for testing an HTTPS connection in test_httpHEAD().
         self.assertEqual(
-            '', nethelper.checkForRedirect('https://httpbin.org/html')
+            '', nethelper.checkForRedirect('https://github.com/')
         )
 
         # Check a one-hop redirect.
@@ -55,20 +96,4 @@ class Test_nethelper(unittest.TestCase):
             'http://httpbin.org/get',
             nethelper.checkForRedirect('http://httpbin.org/redirect/4')
         )
-
-        # Check a non-existant URI.
-        with self.assertRaisesRegexp(NotFoundError, 'could not be found'):
-            nethelper.checkForRedirect('http://httpbin.org/status/404')
-
-        # Check a non-resolving URI.
-        with self.assertRaisesRegexp(
-            ConnectionFailError, 'TCP connection error: .* getaddrinfo failed.'
-        ):
-            nethelper.checkForRedirect('http://fake.domain.blah/')
-
-        # Check a denied connection attempt.
-        with self.assertRaisesRegexp(
-            ConnectionFailError, 'TCP connection error: .* Connection refused.'
-        ):
-            nethelper.checkForRedirect('http://127.0.0.1:9000/')
 

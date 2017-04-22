@@ -66,7 +66,7 @@ class IDResolver:
         """
         if isinstance(iri, basestring):
             # Verify that we have a valid IRI string.
-            if rfc3987.match(iri, rule='IRI_reference') == None:
+            if rfc3987.match(iri, rule='IRI_reference') is None:
                 raise RuntimeError('Invalid IRI string: "' + iri + '".')
 
             try:

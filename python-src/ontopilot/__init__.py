@@ -37,7 +37,7 @@ import os, glob, sys
 import logging
 
 # Java imports.
-from java.lang import System
+from java.lang import System as JavaSystem
 
 
 class CustomLogHandler(logging.StreamHandler):
@@ -63,18 +63,42 @@ class CustomLogHandler(logging.StreamHandler):
             return self.generic_formatter.format(record)
 
 
+def setLogLevel(level):
+    """
+    Attempts to set the logging level for all Python and Java loggers.
+    Unfortunately, it appears to be impossible to programatically change the
+    logging level of SLF4J's SimpleLogger (used by the OWL API) after the SLF4J
+    library is added to the classpath, so this function applies to Pyton
+    loggers and log4j.
+
+    level: A logging level as defined in Python's logging package.
+    """
+    # Define log4j level constants that (approximately) correspond with Python
+    # logging level constants.
+    log4j_levels = {
+        logging.CRITICAL: log4j.Level.FATAL,
+        logging.ERROR: log4j.Level.ERROR,
+        logging.WARNING: log4j.Level.WARN,
+        logging.INFO: log4j.Level.INFO,
+        logging.DEBUG: log4j.Level.DEBUG
+    }
+
+    logger.setLevel(level)
+    log4j.Logger.getRootLogger().setLevel(log4j_levels[level])
+
+
 # Set the default logging level for the SLF4J SimpleLogger to suppress all
 # messages below the "WARN" level so that the console doesn't fill up with
 # "INFO" messages.  In testing, it appears that this system property needs to
 # be set before the SLF4J packages are added to the classpath.  The key string
 # for this property can be obtained from SimpleLogger.DEFAULT_LOG_LEVEL_KEY.
-System.setProperty('org.slf4j.simpleLogger.defaultLogLevel', 'WARN')
+JavaSystem.setProperty('org.slf4j.simpleLogger.defaultLogLevel', 'WARN')
 
-# Get the paths to all of the java libraries needed by the OWL API and add them
-# to the classpath.  If OntoPilot is run from a standalone JAR file, the java
-# libraries will automatically be in the classpath, the java-lib directory will
-# be non-existent, and jlibpaths will therefore be an empty list, so the
-# classpath will not be modified here. 
+# Add the paths to all of the required java libraries to the classpath.  If
+# OntoPilot is run from a standalone JAR file, the java libraries will
+# automatically be in the classpath, the java-lib directory will be
+# non-existent, and jlibpaths will therefore be an empty list, so the classpath
+# will not be modified here.
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 jlibdir = os.path.realpath(
         os.path.join(scriptdir, '..', '..', 'java-lib', '*.jar')
@@ -83,13 +107,15 @@ jlibpaths = glob.glob(jlibdir)
 for jlibpath in jlibpaths:
     sys.path.append(jlibpath)
 
+# Import Java logging components.
+from org.apache import log4j
+
 # Configure log4j and set the root logging level to WARN.  Without these lines,
 # using the ELK reasoner (version 0.4.3) will trigger a warning about log4j not
 # being configured, and then, once log4j is configured, it will print all
 # messages to the console by default, so the logging level needs to be set.
-from  org.apache.log4j import BasicConfigurator, Logger, Level
-BasicConfigurator.configure()
-Logger.getRootLogger().setLevel(Level.WARN)
+log4j.BasicConfigurator.configure()
+log4j.Logger.getRootLogger().setLevel(log4j.Level.WARN)
 
 # Initialize the logger for this package.
 logger = logging.getLogger(__name__)
@@ -116,5 +142,6 @@ from modified_onto_buildtarget import ModifiedOntoBuildTarget
 from release_buildtarget import ReleaseBuildTarget
 from errorcheck_buildtarget import ErrorCheckBuildTarget
 from update_base_imports_buildtarget import UpdateBaseImportsBuildTarget
+from inferencepipeline_buildtarget import InferencePipelineBuildTarget
 from buildtarget_manager import BuildTargetManager
 

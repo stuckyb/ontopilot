@@ -42,14 +42,15 @@ OPTIONAL_COLS = (
 )
         
 class OntoBuildTarget(BuildTargetWithConfig):
-    def __init__(self, args, config=None):
+    def __init__(self, args, cfgfile_required=True, config=None):
         """
         args: A "struct" of configuration options (typically, parsed
             command-line arguments).  The required members are
             'no_def_expand' (boolean) and 'config_file' (string).
-        config (optional): An OntoConfig instance.
+        cfgfile_required (optional): Whether a config file is required.
+        config (optional): An OntoConfig object.
         """
-        BuildTargetWithConfig.__init__(self, args, config)
+        BuildTargetWithConfig.__init__(self, args, cfgfile_required, config)
 
         # Determine whether to add IDs to term references in definitions.
         self.expanddefs = self.config.getExpandEntityDefs()
@@ -59,7 +60,7 @@ class OntoBuildTarget(BuildTargetWithConfig):
         # best for end users to make sure imports modules remain updated.  Of
         # course, for out-of-source builds, it is up to the user to make sure
         # the imports modules get copied to their destination location.
-        self.ibt = ImportsBuildTarget(args, self.config)
+        self.ibt = ImportsBuildTarget(args, False, self.config)
         self.addDependency(self.ibt)
 
     def _getExpandedSourceFilesList(self):

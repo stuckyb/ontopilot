@@ -30,14 +30,15 @@ from imports_buildtarget import ImportsBuildTarget
 
 
 class UpdateBaseImportsBuildTarget(BuildTargetWithConfig):
-    def __init__(self, args, config=None):
+    def __init__(self, args, cfgfile_required=True, config=None):
         """
         args: A "struct" of configuration options (typically, parsed
             command-line arguments).  The required members are
             'no_def_expand' (boolean) and 'config_file' (string).
-        config (optional): An OntoConfig instance.
+        cfgfile_required (optional): Whether a config file is required.
+        config (optional): An OntoConfig object.
         """
-        BuildTargetWithConfig.__init__(self, args, config)
+        BuildTargetWithConfig.__init__(self, args, cfgfile_required, config)
 
         # Set the imports modules as a dependency.  This is not strictly
         # required just to update the imports set in the base ontology.
@@ -45,7 +46,7 @@ class UpdateBaseImportsBuildTarget(BuildTargetWithConfig):
         # all imports specifications are correct and that the imports modules
         # compile before we try to update the base ontology.  This should help
         # eliminate "silent" errors in the import modules specifications.
-        self.ibt = ImportsBuildTarget(args, self.config)
+        self.ibt = ImportsBuildTarget(args, False, self.config)
         self.addDependency(self.ibt)
 
     def _retrieveAndCheckFilePaths(self):

@@ -189,7 +189,7 @@ class ModuleExtractor:
         rel_types: A set of related axiom type constants.
         """
         entity = self.ontology.getExistingEntity(entity_id)
-        if entity == None:
+        if entity is None:
             raise RuntimeError(
                 'The entity "{0}" could not be found in the source '
                 'ontology.'.format(entity_id)
@@ -218,7 +218,7 @@ class ModuleExtractor:
         rel_types: A set of related axiom type constants.
         """
         entity = self.ontology.getExistingEntity(entity_id)
-        if entity == None:
+        if entity is None:
             raise RuntimeError(
                 'The entity "{0}" could not be found in the source '
                 'ontology.'.format(entity_id)
@@ -327,7 +327,7 @@ class ModuleExtractor:
 
                     prop_iri = annot_axiom.getProperty().getIRI()
 
-                    if target.getExistingAnnotationProperty(prop_iri) == None:
+                    if target.getExistingAnnotationProperty(prop_iri) is None:
                         annot_ent = self.ontology.getExistingAnnotationProperty(prop_iri)
                         # Built-in annotation properties, such as rdfs:label,
                         # will not "exist" because they have no declaration

@@ -137,7 +137,7 @@ class _OntologyEntity:
         annottxt: The annotation text.
         """
         annotprop = self.ontology.getExistingAnnotationProperty(annotprop_id)
-        if annotprop == None:
+        if annotprop is None:
             raise RuntimeError(
                 'The specified annotation property, {0}, could not be found '
                 'in the source ontology.'.format(annotprop_id)
@@ -299,7 +299,7 @@ class _OntologyDataProperty(_OntologyEntity):
         # Get the OWL property object of the parent, making sure that it is
         # actually defined.
         parentprop = self.ontology.getExistingDataProperty(parent_id)
-        if parentprop == None:
+        if parentprop is None:
             raise RuntimeError('The designated superproperty, ' + str(parent_id)
                     + ', could not be found in the source ontology.')
         parentprop = parentprop.getOWLAPIObj()
@@ -359,7 +359,7 @@ class _OntologyDataProperty(_OntologyEntity):
         """
         # Get the OWL property object, making sure that it is actually defined.
         prop = self.ontology.getExistingDataProperty(prop_id)
-        if prop == None:
+        if prop is None:
             raise RuntimeError(
                 'The designated equivalent property, "{0}", could not be '
                 'found in the source ontology.'.format(parent_id)
@@ -439,7 +439,7 @@ class _OntologyObjectProperty(_OntologyEntity):
         # Get the OWL property object of the parent, making sure that it is
         # actually defined.
         parentprop = self.ontology.getExistingObjectProperty(parent_id)
-        if parentprop == None:
+        if parentprop is None:
             raise RuntimeError('The designated superproperty, ' + str(parent_id)
                     + ', could not be found in the source ontology.')
         parentprop = parentprop.getOWLAPIObj()
@@ -511,7 +511,7 @@ class _OntologyObjectProperty(_OntologyEntity):
         """
         # Get the OWL property object, making sure that it is actually defined.
         prop = self.ontology.getExistingObjectProperty(prop_id)
-        if prop == None:
+        if prop is None:
             raise RuntimeError(
                 'The designated equivalent property, "{0}", could not be '
                 'found in the source ontology.'.format(parent_id)
@@ -633,7 +633,7 @@ class _OntologyAnnotationProperty(_OntologyEntity):
         # Get the OWL property object of the parent, making sure that it is
         # actually defined.
         parentprop = self.ontology.getExistingAnnotationProperty(parent_id)
-        if parentprop == None:
+        if parentprop is None:
             raise RuntimeError('The designated superproperty, ' + str(parent_id)
                     + ', could not be found in the source ontology.')
         parentprop = parentprop.getOWLAPIObj()
@@ -699,7 +699,7 @@ class _OntologyIndividual(_OntologyEntity):
         """
         # Get the object property, making sure that it is actually defined.
         objprop = self.ontology.getExistingObjectProperty(objprop_id)
-        if objprop == None:
+        if objprop is None:
             raise RuntimeError(
                 'Unable to create a new object property assertion (fact) for '
                 'the individual <{0}>.  The object property "{1}" could not '
@@ -711,7 +711,7 @@ class _OntologyIndividual(_OntologyEntity):
 
         # Get the named individual, making sure that it is actually defined.
         indv = self.ontology.getExistingIndividual(indv_id)
-        if indv == None:
+        if indv is None:
             raise RuntimeError(
                 'Unable to create a new object property assertion (fact) for '
                 'the individual <{0}>.  The named individual "{1}" could not '
@@ -749,7 +749,7 @@ class _OntologyIndividual(_OntologyEntity):
         """
         # Get the data property, making sure that it is actually defined.
         dataprop = self.ontology.getExistingDataProperty(dataprop_id)
-        if dataprop == None:
+        if dataprop is None:
             raise RuntimeError(
                 'Unable to create a new data property assertion (fact) for '
                 'the individual <{0}>.  The data property "{1}" could not be '

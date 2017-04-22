@@ -84,7 +84,7 @@ class TestReleaseBuildTarget(unittest.TestCase):
             merge_imports=False, reason=False, no_def_expand=False,
             release_date=''
         )
-        self.rbt = ReleaseBuildTarget(args, self.oc)
+        self.rbt = ReleaseBuildTarget(args, False, self.oc)
 
     def test_generateReleaseDirPath(self):
         # Check the default, automatically generated date string.

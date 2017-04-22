@@ -264,7 +264,7 @@ class Test_Ontology(unittest.TestCase):
         self.assertEqual(expected, imports_IRI_strs)
 
     def test_addImport(self):
-        importIRI = IRI.create('http://test.import/iri/ont.owl')
+        importIRI = IRI.create('file:/local/path/ont.owl')
 
         # Verify that the import is not yet included in the ontology.
         self.assertFalse(

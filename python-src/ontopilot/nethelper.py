@@ -40,6 +40,82 @@ class NotFoundError(RuntimeError):
     pass
 
 
+def httpHEAD(sourceIRI):
+    """
+    Makes an HTTP HEAD request to sourceIRI and returns the response.  Works
+    for either HTTP or HTTPS IRIs.  The response is returned as a standard
+    Python HTTPResponse object.
+
+    sourceIRI: A fully expanded IRI as an OWL API IRI object or a string.
+    """
+    # The maximum number of times to retry a connection attempt.
+    MAX_RETRIES = 6
+
+    source_iri = str(sourceIRI)
+    parts = urlparse.urlsplit(source_iri)
+
+    # Reconstruct the portion of the IRI that comes after the scheme and
+    # host string.
+    location_part = urlparse.urlunsplit(('', '') + parts[2:5])
+
+    retrycnt = 0
+    response = None
+    success = False
+    # The Jython SSL library will occasionally produce "_socket.SSLError:
+    # [Errno 1] Illegal state exception" exceptions when multiple
+    # connection attempts are made without any wait time in between.  Thus,
+    # we need to allow for this by wrapping all of the network logic in a
+    # loop and waiting a short time on failure before retrying.
+    while (retrycnt < MAX_RETRIES) and not(success):
+        try:
+            # Initialize the connection.  Note that this will correctly
+            # handle non-standard TCP port numbers specified as part of the
+            # URL string (e.g., "http://example.com:8080"), because they
+            # will be included as part of the "netloc" attribute by
+            # urlsplit() and then extracted by the httplib methods.
+            if parts.scheme.lower() == 'http':
+                conn = httplib.HTTPConnection(parts.netloc)
+            elif parts.scheme.lower() == 'https':
+                conn = httplib.HTTPSConnection(parts.netloc)
+            else:
+                raise ConnectionFailError(
+                    'The IRI <{0}> is not an HTTP or HTTPS IRI.'.format(
+                        source_iri
+                    )
+                )
+
+            conn.request('HEAD', location_part)
+            response = conn.getresponse()
+            conn.close()
+            success = True
+
+            status = int(response.status)
+            if status == 404:
+                raise NotFoundError(
+                    'The resource at <{0}> could not be found.  Please '
+                    'make sure that the IRI is correct.'.format(source_iri)
+                )
+
+        except SSLError as err:
+            time.sleep(0.1)
+            retrycnt += 1
+            if retrycnt == MAX_RETRIES:
+                raise ConnectionFailError(
+                    'Unable to access the resource at <{0}> due to '
+                    'repeated SSL connection failures.  Please make sure '
+                    'that the IRI is correct and that an Internet '
+                    'connection is available, if needed.'.format(source_iri)
+                )
+        except (
+            socket.error, socket.herror, socket.gaierror, socket.timeout
+        ) as err:
+            raise ConnectionFailError(
+                'Unable to access the resource at <{0}> due to a TCP '
+                'connection error: {1}.'.format(source_iri, str(err))
+            )
+
+    return response
+
 def checkForRedirect(sourceIRI):
     """
     Given a source IRI, checks if the IRI is a redirect to an alternative
@@ -48,78 +124,26 @@ def checkForRedirect(sourceIRI):
     a redirect, returns a string containing the IRI of the final document
     location.  Otherwise, returns an empty string.
 
-    sourceIRI: A fully expanded IRI as an OWL API IRI object.
+    sourceIRI: A fully expanded IRI as an OWL API IRI object or a string.
     """
-    # The maximum number of times to retry a connection attempt.
-    MAX_RETRIES = 6
-
     redirected = False
     status = 300
     curr_iri = str(sourceIRI)
 
     while (status < 400) and (status >= 300):
         parts = urlparse.urlsplit(curr_iri)
+        if parts.scheme.lower() in ('http', 'https'):
+            response = httpHEAD(curr_iri)
+        else:
+            status = 200
+            break
 
-        # Reconstruct the portion of the IRI that comes after the scheme and
-        # host string.
-        location_part = urlparse.urlunsplit(('', '') + parts[2:5])
-
-        retrycnt = 0
-        success = False
-        # The Jython SSL library will occasionally produce "_socket.SSLError:
-        # [Errno 1] Illegal state exception" exceptions when multiple
-        # connection attempts are made without any wait time in between.  Thus,
-        # we need to allow for this by wrapping all of the network logic in a
-        # loop and waiting a short time on failure before retrying.
-        while (retrycnt < MAX_RETRIES) and not(success):
-            try:
-                # Initialize the connection.  Note that this will correctly
-                # handle non-standard TCP port numbers specified as part of the
-                # URL string (e.g., "http://example.com:8080"), because they
-                # will be included as part of the "netloc" attribute by
-                # urlsplit() and then extracted by the httplib methods.
-                if parts.scheme.lower() == 'http':
-                    conn = httplib.HTTPConnection(parts.netloc)
-                elif parts.scheme.lower() == 'https':
-                    conn = httplib.HTTPSConnection(parts.netloc)
-                else:
-                    status = 200
-                    break
-
-                conn.request('HEAD', location_part)
-                response = conn.getresponse()
-                conn.close()
-                success = True
-
-                status = int(response.status)
-                if (status < 400) and (status >= 300):
-                    redirected = True
-                    curr_iri = urlparse.urljoin(
-                        curr_iri, response.getheader('location')
-                    )
-                elif status == 404:
-                    raise NotFoundError(
-                        'The resource at <{0}> could not be found.  Please '
-                        'make sure that the IRI is correct.'.format(curr_iri)
-                    )
-
-            except SSLError:
-                time.sleep(0.1)
-                retrycnt += 1
-                if retrycnt == MAX_RETRIES:
-                    raise ConnectionFailError(
-                        'Unable to access the resource at <{0}> due to '
-                        'repeated SSL connection failures.  Please make sure '
-                        'that the IRI is correct and that an Internet '
-                        'connection is available, if needed.'.format(curr_iri)
-                    )
-            except (
-                socket.error, socket.herror, socket.gaierror, socket.timeout
-            ) as err:
-                raise ConnectionFailError(
-                    'Unable to access the resource at <{0}> due to a TCP '
-                    'connection error: {1}.'.format(curr_iri, str(err))
-                )
+        status = int(response.status)
+        if (status < 400) and (status >= 300):
+            redirected = True
+            curr_iri = urlparse.urljoin(
+                curr_iri, response.getheader('location')
+            )
 
     if redirected:
         return curr_iri

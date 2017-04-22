@@ -28,7 +28,8 @@ from observable import Observable
 import nethelper
 
 # Java imports.
-from java.io import File, FileOutputStream
+from java.io import File, FileOutputStream, InputStream
+from java.lang import System as JavaSystem
 from java.util import HashSet
 from org.semanticweb.owlapi.apibinding import OWLManager
 from org.semanticweb.owlapi.model import IRI, OWLOntologyID
@@ -57,23 +58,37 @@ class Ontology(Observable):
         'http://www.geneontology.org/formats/oboInOwl#is_inferred'
     )
 
-    def __init__(self, ontology_source):
+    def __init__(self, ontology_source=None):
         """
         Initialize this Ontology instance.  The argument "ontology_source"
         should either be a path to an OWL ontology file on the local file
-        system or an instance of an OWL API OWLOntology object.
+        system, an instance of an OWL API OWLOntology object, or a Java
+        InputStream.  If ontology_source is not provided (i.e., is None), an
+        "empty" ontology will be created.
         """
-        if isinstance(ontology_source, basestring): 
+        if isinstance(ontology_source, InputStream):
+            # Load the ontology from the InputStream.
+            self.ontman = OWLManager.createOWLOntologyManager()
+            self.ontology = self.ontman.loadOntologyFromOntologyDocument(
+                ontology_source
+            )
+        elif isinstance(ontology_source, basestring): 
             # Load the ontology from the source file.
             self.ontman = OWLManager.createOWLOntologyManager()
-            ontfile = File(ontology_source)
-            self.ontology = self.ontman.loadOntologyFromOntologyDocument(ontfile)
+            self.ontology = self.ontman.loadOntologyFromOntologyDocument(
+                File(ontology_source)
+            )
         elif isinstance(ontology_source, OWLOntology):
             self.ontology = ontology_source
             self.ontman = self.ontology.getOWLOntologyManager()
+        elif ontology_source is None:
+            self.ontman = OWLManager.createOWLOntologyManager()
+            self.ontology = self.ontman.createOntology()
         else:
-            raise RuntimeError('Unrecognized type for initializing an Ontology object: '
-                + str(ontology_source))
+            raise RuntimeError(
+                'Unrecognized type for initializing an Ontology object: '
+                + str(ontology_source)
+            )
 
         # Create an OWL data factory, which is required for creating new OWL
         # entities and looking up existing entities.
@@ -258,12 +273,12 @@ class Ontology(Observable):
         propIRI = self.resolveIdentifier(prop_id)
 
         prop = self.getExistingObjectProperty(propIRI)
-        if prop == None:
+        if prop is None:
             prop = self.getExistingAnnotationProperty(propIRI)
-        if prop == None:
+        if prop is None:
             prop = self.getExistingDataProperty(propIRI)
 
-        # If no matching data property was found, prop == None.
+        # If no matching data property was found, prop is None.
         return prop
 
     def getExistingIndividual(self, indv_id):
@@ -310,12 +325,12 @@ class Ontology(Observable):
         eIRI = self.resolveIdentifier(ent_id)
 
         entity = self.getExistingClass(eIRI)
-        if entity == None:
+        if entity is None:
             entity = self.getExistingProperty(eIRI)
-        if entity == None:
+        if entity is None:
             entity = self.getExistingIndividual(eIRI)
 
-        # If no matching individual was found, entity == None.
+        # If no matching individual was found, entity is None.
         return entity
 
     def createNewClass(self, class_id):
@@ -721,12 +736,27 @@ class Ontology(Observable):
             AddOntologyAnnotation(self.getOWLOntology(), s_annot)
         )
 
+    def _writeToStream(self, ostream):
+        """
+        An internal method that writes the ontology to the specified output
+        stream.
+        """
+        oformat = RDFXMLDocumentFormat()
+        self.ontman.saveOntology(self.ontology, oformat, ostream)
+
+    def printOntology(self):
+        """
+        Prints the ontology to standard output.
+        """
+        self._writeToStream(JavaSystem.out)
+
     def saveOntology(self, filepath):
         """
         Saves the ontology to a file.
         """
-        oformat = RDFXMLDocumentFormat()
         foutputstream = FileOutputStream(File(filepath))
-        self.ontman.saveOntology(self.ontology, oformat, foutputstream)
-        foutputstream.close()
+        try:
+            self._writeToStream(foutputstream)
+        finally:
+            foutputstream.close()
 
