@@ -56,7 +56,9 @@ class Test_nethelper(unittest.TestCase):
         with self.assertRaisesRegexp(NotFoundError, 'could not be found'):
             nethelper.httpHEAD('http://httpbin.org/status/404')
 
-        # Check a non-resolving URI.
+        # Check a non-resolving URI.  Note that this might not fail with ISPs
+        # that resolve invalid domain names to a "helpful" information page
+        # hosted by the ISP.
         with self.assertRaisesRegexp(
             ConnectionFailError, 'TCP connection error: .* getaddrinfo failed.'
         ):
