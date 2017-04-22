@@ -40,7 +40,7 @@ class TestOntoBuildTarget(unittest.TestCase):
         self.oc.set('Imports', 'imports_src', 'imports_src/')
 
         args = ArgsType()
-        self.obt = UpdateBaseImportsBuildTarget(args, self.oc)
+        self.obt = UpdateBaseImportsBuildTarget(args, False, self.oc)
 
         self.td_path = os.path.abspath('test_data/')
 
