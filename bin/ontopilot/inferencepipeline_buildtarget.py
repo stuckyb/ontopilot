@@ -32,15 +32,20 @@ class InferencePipelineBuildTarget(BuildTargetWithConfig):
     are added to the ontology/data set, and the results are written to an
     output file or stdout.
     """
-    def __init__(self, args, cfgfile_required=False):
+    def __init__(self, args, cfgfile_required=False, config=None):
         """
         args: A "struct" of configuration options (typically, parsed
         command-line arguments).  The only required member is 'config_file'
-        (string).
+        (string), and this is only required if cgfile_required is True.
 
-        config (optional): An OntoConfig instance.
+        args: A "struct" of configuration options (typically, parsed
+            command-line arguments).  The only required member is
+            'config_file', which should provide the path to a configuration
+            file (although this is only used if the config argument is None).
+        cfgfile_required (optional): Whether a config file is required.
+        config (optional): An OntoConfig object.
         """
-        BuildTargetWithConfig.__init__(self, args, cfgfile_required)
+        BuildTargetWithConfig.__init__(self, args, cfgfile_required, config)
 
         # This build target does not have any dependencies, since all input is
         # external and does not depend on other build tasks.
