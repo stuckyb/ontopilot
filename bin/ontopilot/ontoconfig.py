@@ -55,29 +55,37 @@ class OntoConfig(RawConfigParser):
     methods, but configuration values can also be accessed generically using
     the usual ConfigParser methods (e.g., get(), getint(), etc.).
     """
-    def __init__(self, filename):
+    def __init__(self, filename=None):
         """
-        Reads the configuration information and checks that the configuration
-        file contains all required information.
+        Reads a configuration file and checks that the file contains all
+        required information.  If filename is None, an OntoConfig object will
+        be created that returns only default values.
         """
         # Call the superclass constructor.
         RawConfigParser.__init__(self)
 
-        # Call the superclass read() method.
-        filesread = RawConfigParser.read(self, filename)
+        if filename is not None:
+            # Call the superclass read() method.
+            filesread = RawConfigParser.read(self, filename)
 
-        if len(filesread) == 0:
-            raise IOError(
-                'The configuration file, ' + filename
-                + ', could not be opened.'
+            if len(filesread) == 0:
+                raise IOError(
+                    'The configuration file, ' + filename
+                    + ', could not be opened.'
+                )
+
+            self.confdir = os.path.dirname(
+                os.path.abspath(
+                    os.path.realpath(os.path.expanduser(filename)))
+            )
+        else:
+            # Use the current working directory as the configuration directory.
+            self.confdir = os.path.dirname(
+                os.path.abspath(
+                    os.path.realpath(os.path.expanduser(os.getcwd())))
             )
 
         self.conffile = filename
-        self.confdir = os.path.dirname(
-            os.path.abspath(os.path.realpath(os.path.expanduser((filename))))
-        )
-
-        self.checkConfig()
 
     def getCustom(self, section, option, default=''):
         """
@@ -103,28 +111,12 @@ class OntoConfig(RawConfigParser):
         return self.confdir
 
     def getConfigFilePath(self):
-        return os.path.abspath(os.path.realpath(os.path.expanduser(
-            self.conffile
-        )))
-
-    def checkConfig(self):
-        """
-        Performs some basic checks to make sure the configuration file is
-        valid.  If any problems are found, a ConfigError exception is thrown.
-        """
-        if not(self.has_section('Ontology')):
-            raise ConfigError(
-                'The "Ontology" section was not found in the build '
-                'configuration file.  This section is required and must '
-                'contain the variable "ontology_file".  To correct this '
-                'error, add the line "[Ontology]" to your configuration '
-                'file.  See the example configuration file for more '
-                'information.'
-            )
-
-        # The only setting that is always required is the path to the compiled
-        # ontology file.
-        self.getOntologyFilePath()
+        if self.conffile is not None:
+            return os.path.abspath(os.path.realpath(os.path.expanduser(
+                self.conffile
+            )))
+        else:
+            return None
 
     def _getAbsPath(self, pathstr):
         """
@@ -331,15 +323,16 @@ class OntoConfig(RawConfigParser):
 
     def getOntologyFilePath(self):
         """
-        Returns the full path to the base compiled ontology filename.
+        Returns the full path to the base compiled ontology filename.  If an
+        ontology build is requested, this setting must be provided.
         """
         ontfname = self.getCustom('Ontology', 'ontology_file', '')
 
         if ontfname == '':
             raise ConfigError(
                 'An ontology file name was not provided.  Please set the '
-                'value of the "ontology_file" setting in the build '
-                'configuration file.'
+                'value of the "ontology_file" setting in the "[Ontology]" '
+                'section of the project configuration file.'
             )
 
         ontbasepath = self._getAbsPath(ontfname)
