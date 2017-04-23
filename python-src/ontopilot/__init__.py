@@ -35,6 +35,7 @@
 # Python imports.
 import os, glob, sys
 import logging
+import time
 
 # Java imports.
 from java.lang import System as JavaSystem
@@ -107,7 +108,9 @@ jlibpaths = glob.glob(jlibdir)
 for jlibpath in jlibpaths:
     sys.path.append(jlibpath)
 
-# Import Java logging components.
+# Import Java logging components.  We first need to register the log4j JAR file
+# using add_package() so we can do a package-level import.
+sys.add_package('org.apache.log4j')
 from org.apache import log4j
 
 # Configure log4j and set the root logging level to WARN.  Without these lines,
