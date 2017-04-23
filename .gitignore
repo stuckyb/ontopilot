@@ -4,6 +4,9 @@
 # The build directory.
 build/
 
+# The dist directory.
+dist/
+
 # Protege XML catalog files.
 catalog-*.xml
 

@@ -1,0 +1,58 @@
+<!--
+-->
+<project name="ontopilot" default="all">
+
+	<property name="dist" value="${basedir}/dist" />
+	<property name="build" value="${basedir}/build" />
+	<property name="java-lib" value="${basedir}/java-lib" />
+	<property name="python-lib" value="${basedir}/python-lib" />
+	<property name="java-src" value="${basedir}/java-src" />
+	<property name="python-src" value="${basedir}/python-src"/>
+	<property name="jython-jar" value="${basedir}/java-lib/jython-full.jar"/>
+	<property name="resources" value="${basedir}/template_files"/>
+
+	<target name="init" description="Initialisation">
+		<mkdir dir="${dist}"/>
+		<mkdir dir="${build}"/>
+	</target>
+
+	<target name="clean" description="cleanup all of the temporary files and directories">
+		  <delete dir="${dist}"/>
+		  <delete dir="${build}"/>
+	</target>
+
+	<target name="build" description="build the jython launcher">
+		<unzip src="${jython-jar}" dest="${build}"/>
+		<javac srcdir="${java-src}" destdir="${build}" includeantruntime="false"/>
+	</target>
+	
+	<target name="assemble" description="assemble the jython standalone JAR">
+		  <!-- Setup the Python Libs -->
+		  <copy todir="${build}/Lib">
+			<fileset dir="${python-lib}">
+			  <include name="**/*.py"/>
+			</fileset>
+		  </copy>
+		  <!-- Setup the Python sources -->
+		  <copy todir="${build}/Lib">
+			<fileset dir="${python-src}">
+			  <include name="**/*.py"/>
+			</fileset>
+		  </copy>
+		  <!-- Copy template files and test_files -->
+		  <copy todir="${build}/template_files">
+			<fileset dir="${resources}">
+			  <include name="**/*.*"/>
+			</fileset>
+		  </copy>
+		  <!-- package the new JAR -->	  
+		  <jar destfile="${dist}/${ant.project.name}.jar" basedir="${build}">
+			<zipgroupfileset dir="${java-lib}" includes="*.jar"  excludes="${jython-jar}"/>
+			<manifest>
+			  <attribute name="Main-Class" value="Main"/>
+			</manifest>
+		  </jar>
+	</target>
+	
+	<target name="all" depends="init, build, assemble" description="Runs the two targets"/>
+</project>
