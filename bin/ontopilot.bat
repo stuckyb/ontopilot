@@ -6,7 +6,7 @@ rem The location of the main OntoPilot program, relative to this launch script.
 set ONTOPILOTPATH=..\python-src\ontopilot_main.py
 
 rem The location of the Jython run-time JAR, relative to this launch script.
-set JYTHONPATH=..\java-lib\jython-full.jar
+set JYTHONPATH=..\java-lib\jython-standalone-2.7.0.jar
 
 rem The location of the Java run-time binary.  If no location is set, we assume
 rem that "java" is in the user's PATH somewhere.

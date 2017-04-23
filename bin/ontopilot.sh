@@ -4,7 +4,7 @@
 ONTOPILOTPATH="../python-src/ontopilot_main.py"
 
 # The location of the Jython run-time JAR, relative to this launch script.
-JYTHONPATH="../java-lib/jython-full.jar"
+JYTHONPATH="../java-lib/jython-standalone-2.7.0.jar"
 
 # The location of the Java run-time binary.  If no location is set, we assume
 # that "java" is in the user's PATH somewhere.
