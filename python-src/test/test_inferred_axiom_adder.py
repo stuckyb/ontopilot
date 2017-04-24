@@ -204,6 +204,80 @@ class Test_InferredAxiomAdder(unittest.TestCase):
         self.assertTrue(axiom.getSubject().equals(indv_49))
         self.assertTrue(axiom.getObject().equals(indv_48))
 
+    def test_loadExcludedTypes(self):
+        exp_iris = {
+            'http://purl.obolibrary.org/obo/OBTO_0011',
+            'http://purl.obolibrary.org/obo/OBITO_0001',
+            'http://www.w3.org/2002/07/owl#Thing',
+            'http://purl.obolibrary.org/obo/OBTO_0012'
+        }
+
+        exctypes = self.iaa._getExcludedTypesFromFile(
+            'test_data/excluded_types.csv'
+        )
+        exctype_iris = set(
+            [classobj.getIRI().toString() for classobj in exctypes]
+        )
+
+        self.assertEqual(exp_iris, exctype_iris)
+
+    def test_excludeTypes(self):
+        """
+        Tests the functionality of specifying classes to exclude from inferred
+        class/type assertions.  The tests in this method confirm that 1)
+        inferred axioms about excluded classes are deleted; 2) explicit axioms
+        about excluded classes are *not* deleted; 3) inferred axioms about
+        non-excluded classes are not deleted; and 4) explicit axioms about
+        non-excluded classes are not deleted.
+        """
+        # Create a new class that is a subclass of OBTO:0010 and individual of
+        # the new class.  This is to test that inferred type assertions that
+        # should *not* be excluded are preserved.
+        newclass = self.ont.createNewClass('OBTO:0013')
+        newclass.addSuperclass('OBTO:0010')
+        newindv = self.ont.createNewIndividual('OBTO:8002')
+        newindv.addType('OBTO:0013')
+
+        self.iaa.loadExcludedTypes('test_data/excluded_types.csv')
+
+        # Run the reasoner.
+        inftypes = ['subclasses', 'types', 'disjoint classes']
+        self.iaa.addInferredAxioms(inftypes)
+        #self.ont.saveOntology('test_inferred-2.owl')
+
+        # Individual OBTO:8000 should only have OBTO:0011 as its type.
+        # (OBTO:0011 is excluded in the CSV file, but in this case the type
+        # assertion is not inferred so it should remain.)
+        indv = self.ont.getExistingIndividual('OBTO:8000').getOWLAPIObj()
+        axioms = self.owlont.getClassAssertionAxioms(indv)
+        self.assertEqual(1, axioms.size())
+        typeclass = axioms.iterator().next().getClassExpression().asOWLClass()
+        self.assertTrue(typeclass.getIRI().equals(
+            IRI.create('http://purl.obolibrary.org/obo/OBTO_0011')
+        ))
+
+        # Individual OBTO:8001 should only have OBTO:0010 as its type.
+        indv = self.ont.getExistingIndividual('OBTO:8001').getOWLAPIObj()
+        axioms = self.owlont.getClassAssertionAxioms(indv)
+        self.assertEqual(1, axioms.size())
+        typeclass = axioms.iterator().next().getClassExpression().asOWLClass()
+        self.assertTrue(typeclass.getIRI().equals(
+            IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
+        ))
+
+        # Individual OBTO:8002 should have OBTO:0013 (explicit) and OBTO:0010
+        # (inferred) as its types.
+        expectedIRIs = {
+            IRI.create('http://purl.obolibrary.org/obo/OBTO_0010'),
+            IRI.create('http://purl.obolibrary.org/obo/OBTO_0013')
+        }
+        axioms = self.owlont.getClassAssertionAxioms(newindv.getOWLAPIObj())
+        self.assertEqual(2, axioms.size())
+        typeIRIs = set(
+            [ax.getClassExpression().asOWLClass().getIRI() for ax in axioms]
+        )
+        self.assertEqual(expectedIRIs, typeIRIs)
+
     def test_addInferredAxioms(self):
         """
         This does not attempt to exhaustively test every available type of
@@ -232,7 +306,8 @@ class Test_InferredAxiomAdder(unittest.TestCase):
         superclass = axioms.iterator().next().getSuperClass().asOWLClass()
         self.assertTrue(superclass.getIRI().equals(grandparentIRI))
 
-        # Individual individual_002 should only have OBTO_0010 as its type.
+        # Individual 'test individual 2' should only have OBTO_0010 as its
+        # type.
         axioms = self.owlont.getClassAssertionAxioms(individual)
         self.assertEqual(1, axioms.size())
         typeclass = axioms.iterator().next().getClassExpression().asOWLClass()
@@ -262,8 +337,8 @@ class Test_InferredAxiomAdder(unittest.TestCase):
         superclass = axioms.iterator().next().getSuperClass().asOWLClass()
         self.assertTrue(superclass.getIRI().equals(parentIRI))
 
-        # Individual individual_002 should now have OBTO_0010, OBTO_0012, and
-        # OBITO_0001 as its types.
+        # Individual 'test individual 2' should now have OBTO_0010, OBTO_0012,
+        # and OBITO_0001 as its types.
         axioms = self.owlont.getClassAssertionAxioms(individual)
         self.assertEqual(3, axioms.size())
         expected_typeiri_strs = {

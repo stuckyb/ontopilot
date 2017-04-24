@@ -134,7 +134,7 @@ class TestIDResolver(unittest.TestCase):
 
         # Also test a relative IRI.
         expIRI = IRI.create(
-            'https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology.owl#blah'
+            'https://github.com/stuckyb/ontopilot/raw/master/python-src/test/test_data/ontology.owl#blah'
         )
         self.assertTrue(
             expIRI.equals(self.ir.expandIRI('blah'))

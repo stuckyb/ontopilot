@@ -564,7 +564,7 @@ class Test_OntologyIndividual(_TestOntologyEntity, unittest.TestCase):
 
     def test_addObjectPropertyFact(self):
         objprop = self.test_ont.getExistingObjectProperty('OBTO:0001')
-        indv = self.test_ont.getExistingIndividual('individual_001')
+        indv = self.test_ont.getExistingIndividual("'test individual 1'")
 
         # Verify that there are not yet any object property facts for this
         # individual.
@@ -572,7 +572,7 @@ class Test_OntologyIndividual(_TestOntologyEntity, unittest.TestCase):
         self.assertTrue(axioms.isEmpty())
 
         self.t_ent.addObjectPropertyFact(
-            'OBTO:0001', 'individual_001', is_negative=False
+            'OBTO:0001', "'test individual 1'", is_negative=False
         )
 
         # Check that the correct object property assertion now exists.
@@ -591,11 +591,11 @@ class Test_OntologyIndividual(_TestOntologyEntity, unittest.TestCase):
         self.assertTrue(axioms.isEmpty())
 
         self.t_ent.addObjectPropertyFact(
-            'OBTO:0001', 'individual_002', is_negative=True
+            'OBTO:0001', "'test individual 2'", is_negative=True
         )
 
         # Check that the correct negative object property assertion now exists.
-        indv = self.test_ont.getExistingIndividual('individual_002')
+        indv = self.test_ont.getExistingIndividual("'test individual 2'")
         axioms = self.owlont.getNegativeObjectPropertyAssertionAxioms(
             self.t_owlapiobj
         )

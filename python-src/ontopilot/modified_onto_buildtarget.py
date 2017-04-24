@@ -155,6 +155,8 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
             annotate_inferred = self.config.getAnnotateInferred()
             preprocess_inverses = self.config.getPreprocessInverses()
             iaa = InferredAxiomAdder(mainont, self.config.getReasonerStr())
+            if self.config.getExcludedTypesFile() != '':
+                iaa.loadExcludedTypes(self.config.getExcludedTypesFile())
             iaa.addInferredAxioms(
                 inf_types, annotate_inferred, preprocess_inverses
             )
