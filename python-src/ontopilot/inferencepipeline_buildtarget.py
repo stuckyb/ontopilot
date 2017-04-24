@@ -87,10 +87,13 @@ class InferencePipelineBuildTarget(BuildTargetWithConfig):
         logger.info('Running reasoner and adding inferred axioms...')
         inf_types = self.config.getInferenceTypeStrs()
         annotate_inferred = self.config.getAnnotateInferred()
+        preprocess_inverses = self.config.getPreprocessInverses()
         iaa = InferredAxiomAdder(sourceont, self.config.getReasonerStr())
         if self.config.getExcludedTypesFile() != '':
             iaa.loadExcludedTypes(self.config.getExcludedTypesFile())
-        iaa.addInferredAxioms(inf_types, annotate_inferred)
+        iaa.addInferredAxioms(
+            inf_types, annotate_inferred, preprocess_inverses
+        )
 
         # Write the ontology to the output file or stdout.
         if self.outpath != '':
