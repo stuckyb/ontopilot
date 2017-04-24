@@ -401,7 +401,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
             (
                 str(new_oaent.getIRI()),
                 'http://purl.obolibrary.org/obo/OBTO_0001',
-                'https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology.owl#individual_001'
+                'http://purl.obolibrary.org/obo/OBTO_8000'
             )
         }
 
@@ -423,7 +423,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
             (
                 str(new_oaent.getIRI()),
                 'http://purl.obolibrary.org/obo/OBTO_0001',
-                'https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology.owl#individual_002'
+                'http://purl.obolibrary.org/obo/OBTO_8001'
             )
         }
 
