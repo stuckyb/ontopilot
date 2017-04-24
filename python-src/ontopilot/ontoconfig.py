@@ -527,3 +527,14 @@ class OntoConfig(RawConfigParser):
 
         return annotate_inferred.lower() in TRUE_STRS
 
+    def getExcludedTypesFile(self):
+        """
+        Returns the path to a file containing excluded types information.  If
+        this setting is not defined, returns an empty string.
+        """
+        etfpath = self.getCustom('Reasoning', 'excluded_types_file', '')
+        if etfpath != '':
+            etfpath = self._getAbsPath(etfpath)
+
+        return etfpath
+

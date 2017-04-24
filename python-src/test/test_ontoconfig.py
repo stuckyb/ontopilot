@@ -521,3 +521,20 @@ class TestOntoConfig(unittest.TestCase):
         self.oc.set('Reasoning', 'annotate_inferred', 'yes')
         self.assertTrue(self.oc.getAnnotateInferred())
 
+    def test_getExcludedTypesFile(self):
+        # Test the default case.
+        self.assertEqual('', self.oc.getExcludedTypesFile())
+
+        # Test a custom relative file path.
+        relpath = 'rel/path/excluded.csv'
+        self.oc.set('Reasoning', 'excluded_types_file', relpath)
+        self.assertEqual(
+            self.td_path + '/' + relpath,
+            self.oc.getExcludedTypesFile()
+        )
+
+        # Test a custom absolute file path.
+        abspath = '/an/absolute/path/excluded.csv'
+        self.oc.set('Reasoning', 'excluded_types_file', abspath)
+        self.assertEqual(abspath, self.oc.getExcludedTypesFile())
+
