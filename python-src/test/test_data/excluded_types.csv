@@ -1,3 +1,4 @@
-ID,Exclude superclasses
-OBTO:0011,Y
-OBTO:0012,N
+ID,Exclude class,Exclude superclasses
+OBTO:0010,N,Y
+OBTO:0011,Y,N
+OBTO:0012,Y,N

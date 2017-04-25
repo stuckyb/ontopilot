@@ -398,7 +398,9 @@ class InferredAxiomAdder:
                         )
     
                     owlclass = ontclass.getOWLAPIObj()
-                    exctypes.add(owlclass)
+
+                    if row['Exclude class'].lower() in TRUE_STRS:
+                        exctypes.add(owlclass)
 
                     if row['Exclude superclasses'].lower() in TRUE_STRS:
                         supersset = self.reasoner.getSuperClasses(

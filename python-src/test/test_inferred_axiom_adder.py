@@ -230,9 +230,9 @@ class Test_InferredAxiomAdder(unittest.TestCase):
         non-excluded classes are not deleted; and 4) explicit axioms about
         non-excluded classes are not deleted.
         """
-        # Create a new class that is a subclass of OBTO:0010 and individual of
-        # the new class.  This is to test that inferred type assertions that
-        # should *not* be excluded are preserved.
+        # Create a new class that is a subclass of OBTO:0010 and create an
+        # individual of the new class.  This is to test that inferred type
+        # assertions that should *not* be excluded are preserved.
         newclass = self.ont.createNewClass('OBTO:0013')
         newclass.addSuperclass('OBTO:0010')
         newindv = self.ont.createNewIndividual('OBTO:8002')
