@@ -114,6 +114,8 @@ def httpHEAD(sourceIRI):
                 'connection error: {1}.'.format(source_iri, str(err))
             )
 
+    # Printing (response.getheader('Content-Length') here for the example in 
+    # ontopilot_main.py should return a number)
     return response
 
 def checkForRedirect(sourceIRI):
@@ -150,3 +152,21 @@ def checkForRedirect(sourceIRI):
     else:
         return ''
 
+def checkForContentLength(sourceIRI):
+    """
+    Given a source IRI, checks if the IRI contains a content length header.
+    Returns the content length if it exists, otherwise None.
+
+    sourceIRI: A fully expanded IRI as an OWL API IRI object or a string.
+    """
+    # Retrieve the final path of the sourceIRI
+    redirected = checkForRedirect(sourceIRI)
+    curr_iri = str(sourceIRI)
+
+    parts = urlparse.urlsplit(curr_iri)
+    if parts.scheme.lower() in ('http', 'https'):
+        response = httpHEAD(curr_iri)
+
+        return response.getheader('Content-Length') # Is currently returning 'None' even though it exists
+    else:
+        return 'None'
