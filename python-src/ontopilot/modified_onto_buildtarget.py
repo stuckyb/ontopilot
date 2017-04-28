@@ -27,7 +27,7 @@ from inferred_axiom_adder import InferredAxiomAdder
 
 class ModifiedOntoBuildTarget(BuildTargetWithConfig):
     """
-    Manages the process of building an "modified" ontology from the standard
+    Manages the process of building a "modified" ontology from the standard
     compiled ontology.  In this case, "modified" means either with imports
     merged into the main ontology, with inferred axioms added, or both.
     """
@@ -153,8 +153,13 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
             logger.info('Running reasoner and adding inferred axioms...')
             inf_types = self.config.getInferenceTypeStrs()
             annotate_inferred = self.config.getAnnotateInferred()
+            preprocess_inverses = self.config.getPreprocessInverses()
             iaa = InferredAxiomAdder(mainont, self.config.getReasonerStr())
-            iaa.addInferredAxioms(inf_types, annotate_inferred)
+            if self.config.getExcludedTypesFile() != '':
+                iaa.loadExcludedTypes(self.config.getExcludedTypesFile())
+            iaa.addInferredAxioms(
+                inf_types, annotate_inferred, preprocess_inverses
+            )
 
         fileoutpath = self.getOutputFilePath()
 

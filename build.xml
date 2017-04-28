@@ -8,7 +8,7 @@
 	<property name="python-lib" value="${basedir}/python-lib" />
 	<property name="java-src" value="${basedir}/java-src" />
 	<property name="python-src" value="${basedir}/python-src"/>
-	<property name="jython-jar" value="${basedir}/java-lib/jython-full.jar"/>
+	<property name="jython-jar" value="${basedir}/java-lib/jython-standalone-2.7.0.jar"/>
 	<property name="resources" value="${basedir}/template_files"/>
 
 	<target name="init" description="Initialisation">

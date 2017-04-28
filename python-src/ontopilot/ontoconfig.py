@@ -527,3 +527,26 @@ class OntoConfig(RawConfigParser):
 
         return annotate_inferred.lower() in TRUE_STRS
 
+    def getPreprocessInverses(self):
+        """
+        Returns True if inverse object property assertions and inverse negative
+        object property assertions should be added to the ontology prior
+        generating inferred axioms with a reasoner; returns False otherwise.
+        """
+        preprocess_inverses = self.getCustom(
+            'Reasoning', 'preprocess_inverses', 'False'
+        )
+
+        return preprocess_inverses.lower() in TRUE_STRS
+
+    def getExcludedTypesFile(self):
+        """
+        Returns the path to a file containing excluded types information.  If
+        this setting is not defined, returns an empty string.
+        """
+        etfpath = self.getCustom('Reasoning', 'excluded_types_file', '')
+        if etfpath != '':
+            etfpath = self._getAbsPath(etfpath)
+
+        return etfpath
+

@@ -25,6 +25,7 @@ import unittest
 # Java imports.
 from java.lang import UnsupportedOperationException
 from org.semanticweb.owlapi.model import IRI
+from org.semanticweb.owlapi.model import AxiomType
 
 
 class NoOpReasoner:
@@ -95,6 +96,188 @@ class Test_InferredAxiomAdder(unittest.TestCase):
         gens_list = self.iaa._getGeneratorsList(inftypes)
         self.assertEqual(3, len(set(gens_list)))
 
+    def test_addInversePropAssertions(self):
+        # Create a pair of inverse object properties.
+        ent = self.ont.createNewObjectProperty('OBTO:0002')
+        prop_2 = ent.getOWLAPIObj()
+        ent2 = self.ont.createNewObjectProperty('OBTO:0003')
+        prop_3 = ent2.getOWLAPIObj()
+        ent.addInverse('OBTO:0003')
+
+        # Create a symmetric object property.
+        ent = self.ont.createNewObjectProperty('OBTO:0004')
+        prop_4 = ent.getOWLAPIObj()
+        ent.makeSymmetric()
+
+        # Create a pair of individuals related by the inverse properties as
+        # OBTO:0001.
+        ent = self.ont.createNewIndividual('OBTO:0042')
+        indv_42 = ent.getOWLAPIObj()
+        ent2 = self.ont.createNewIndividual('OBTO:0043')
+        indv_43 = ent2.getOWLAPIObj()
+        ent.addObjectPropertyFact('OBTO:0002', 'OBTO:0043')
+
+        # Create a pair of individuals related by the inverse properties as
+        # OBTO:0002.
+        ent = self.ont.createNewIndividual('OBTO:0044')
+        indv_44 = ent.getOWLAPIObj()
+        ent2 = self.ont.createNewIndividual('OBTO:0045')
+        indv_45 = ent2.getOWLAPIObj()
+        ent.addObjectPropertyFact('OBTO:0003', 'OBTO:0045')
+
+        # Create a pair of individuals related by the symmetric property.
+        ent = self.ont.createNewIndividual('OBTO:0046')
+        indv_46 = ent.getOWLAPIObj()
+        ent2 = self.ont.createNewIndividual('OBTO:0047')
+        indv_47 = ent2.getOWLAPIObj()
+        ent.addObjectPropertyFact('OBTO:0004', 'OBTO:0047')
+
+        # Create a pair of individuals related by the inverse properties as
+        # OBTO:0001 in a negative object property assertion.
+        ent = self.ont.createNewIndividual('OBTO:0048')
+        indv_48 = ent.getOWLAPIObj()
+        ent2 = self.ont.createNewIndividual('OBTO:0049')
+        indv_49 = ent2.getOWLAPIObj()
+        ent.addObjectPropertyFact('OBTO:0002', 'OBTO:0049', is_negative=True)
+
+        # Get the total number of initial object property assertion axioms.
+        axioms = self.owlont.getAxioms(AxiomType.OBJECT_PROPERTY_ASSERTION)
+        init_axiom_cnt = axioms.size()
+
+        # Get the total number of initial negative object property assertion
+        # axioms.
+        axioms = self.owlont.getAxioms(
+            AxiomType.NEGATIVE_OBJECT_PROPERTY_ASSERTION
+        )
+        init_neg_axiom_cnt = axioms.size()
+
+        # Check the starting state of the ontology by confirming that the
+        # inverse property assertions are absent.
+        axioms = self.owlont.getObjectPropertyAssertionAxioms(indv_43)
+        self.assertEqual(0, axioms.size())
+        axioms = self.owlont.getObjectPropertyAssertionAxioms(indv_45)
+        self.assertEqual(0, axioms.size())
+        axioms = self.owlont.getObjectPropertyAssertionAxioms(indv_47)
+        self.assertEqual(0, axioms.size())
+
+        # Generate the inverse object property assertions.
+        self.iaa._addInversePropAssertions()
+
+        # Verify that the correct number of new axioms have been created.
+        axioms = self.owlont.getAxioms(AxiomType.OBJECT_PROPERTY_ASSERTION)
+        new_axiom_cnt = axioms.size()
+        self.assertEqual(3, new_axiom_cnt - init_axiom_cnt)
+
+        axioms = self.owlont.getAxioms(
+            AxiomType.NEGATIVE_OBJECT_PROPERTY_ASSERTION
+        )
+        new_neg_axiom_cnt = axioms.size()
+        self.assertEqual(1, new_neg_axiom_cnt - init_neg_axiom_cnt)
+
+        # Verify that the inverse property assertions were created.
+        axioms = self.owlont.getObjectPropertyAssertionAxioms(indv_43)
+        self.assertEqual(1, axioms.size())
+        axiom = axioms.iterator().next()
+        self.assertTrue(axiom.getProperty().equals(prop_3))
+        self.assertTrue(axiom.getSubject().equals(indv_43))
+        self.assertTrue(axiom.getObject().equals(indv_42))
+
+        axioms = self.owlont.getObjectPropertyAssertionAxioms(indv_45)
+        self.assertEqual(1, axioms.size())
+        axiom = axioms.iterator().next()
+        self.assertTrue(axiom.getProperty().equals(prop_2))
+        self.assertTrue(axiom.getSubject().equals(indv_45))
+        self.assertTrue(axiom.getObject().equals(indv_44))
+
+        axioms = self.owlont.getObjectPropertyAssertionAxioms(indv_47)
+        self.assertEqual(1, axioms.size())
+        axiom = axioms.iterator().next()
+        self.assertTrue(axiom.getProperty().equals(prop_4))
+        self.assertTrue(axiom.getSubject().equals(indv_47))
+        self.assertTrue(axiom.getObject().equals(indv_46))
+
+        # Verify that the inverse negative property assertion was created.
+        axioms = self.owlont.getNegativeObjectPropertyAssertionAxioms(indv_49)
+        self.assertEqual(1, axioms.size())
+        axiom = axioms.iterator().next()
+        self.assertTrue(axiom.getProperty().equals(prop_3))
+        self.assertTrue(axiom.getSubject().equals(indv_49))
+        self.assertTrue(axiom.getObject().equals(indv_48))
+
+    def test_loadExcludedTypes(self):
+        exp_iris = {
+            'http://purl.obolibrary.org/obo/OBTO_0011',
+            'http://purl.obolibrary.org/obo/OBITO_0001',
+            'http://www.w3.org/2002/07/owl#Thing',
+            'http://purl.obolibrary.org/obo/OBTO_0012'
+        }
+
+        exctypes = self.iaa._getExcludedTypesFromFile(
+            'test_data/excluded_types.csv'
+        )
+        exctype_iris = set(
+            [classobj.getIRI().toString() for classobj in exctypes]
+        )
+
+        self.assertEqual(exp_iris, exctype_iris)
+
+    def test_excludeTypes(self):
+        """
+        Tests the functionality of specifying classes to exclude from inferred
+        class/type assertions.  The tests in this method confirm that 1)
+        inferred axioms about excluded classes are deleted; 2) explicit axioms
+        about excluded classes are *not* deleted; 3) inferred axioms about
+        non-excluded classes are not deleted; and 4) explicit axioms about
+        non-excluded classes are not deleted.
+        """
+        # Create a new class that is a subclass of OBTO:0010 and create an
+        # individual of the new class.  This is to test that inferred type
+        # assertions that should *not* be excluded are preserved.
+        newclass = self.ont.createNewClass('OBTO:0013')
+        newclass.addSuperclass('OBTO:0010')
+        newindv = self.ont.createNewIndividual('OBTO:8002')
+        newindv.addType('OBTO:0013')
+
+        self.iaa.loadExcludedTypes('test_data/excluded_types.csv')
+
+        # Run the reasoner.
+        inftypes = ['subclasses', 'types', 'disjoint classes']
+        self.iaa.addInferredAxioms(inftypes)
+        #self.ont.saveOntology('test_inferred-2.owl')
+
+        # Individual OBTO:8000 should only have OBTO:0011 as its type.
+        # (OBTO:0011 is excluded in the CSV file, but in this case the type
+        # assertion is not inferred so it should remain.)
+        indv = self.ont.getExistingIndividual('OBTO:8000').getOWLAPIObj()
+        axioms = self.owlont.getClassAssertionAxioms(indv)
+        self.assertEqual(1, axioms.size())
+        typeclass = axioms.iterator().next().getClassExpression().asOWLClass()
+        self.assertTrue(typeclass.getIRI().equals(
+            IRI.create('http://purl.obolibrary.org/obo/OBTO_0011')
+        ))
+
+        # Individual OBTO:8001 should only have OBTO:0010 as its type.
+        indv = self.ont.getExistingIndividual('OBTO:8001').getOWLAPIObj()
+        axioms = self.owlont.getClassAssertionAxioms(indv)
+        self.assertEqual(1, axioms.size())
+        typeclass = axioms.iterator().next().getClassExpression().asOWLClass()
+        self.assertTrue(typeclass.getIRI().equals(
+            IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
+        ))
+
+        # Individual OBTO:8002 should have OBTO:0013 (explicit) and OBTO:0010
+        # (inferred) as its types.
+        expectedIRIs = {
+            IRI.create('http://purl.obolibrary.org/obo/OBTO_0010'),
+            IRI.create('http://purl.obolibrary.org/obo/OBTO_0013')
+        }
+        axioms = self.owlont.getClassAssertionAxioms(newindv.getOWLAPIObj())
+        self.assertEqual(2, axioms.size())
+        typeIRIs = set(
+            [ax.getClassExpression().asOWLClass().getIRI() for ax in axioms]
+        )
+        self.assertEqual(expectedIRIs, typeIRIs)
+
     def test_addInferredAxioms(self):
         """
         This does not attempt to exhaustively test every available type of
@@ -123,7 +306,8 @@ class Test_InferredAxiomAdder(unittest.TestCase):
         superclass = axioms.iterator().next().getSuperClass().asOWLClass()
         self.assertTrue(superclass.getIRI().equals(grandparentIRI))
 
-        # Individual individual_002 should only have OBTO_0010 as its type.
+        # Individual 'test individual 2' should only have OBTO_0010 as its
+        # type.
         axioms = self.owlont.getClassAssertionAxioms(individual)
         self.assertEqual(1, axioms.size())
         typeclass = axioms.iterator().next().getClassExpression().asOWLClass()
@@ -153,8 +337,8 @@ class Test_InferredAxiomAdder(unittest.TestCase):
         superclass = axioms.iterator().next().getSuperClass().asOWLClass()
         self.assertTrue(superclass.getIRI().equals(parentIRI))
 
-        # Individual individual_002 should now have OBTO_0010, OBTO_0012, and
-        # OBITO_0001 as its types.
+        # Individual 'test individual 2' should now have OBTO_0010, OBTO_0012,
+        # and OBITO_0001 as its types.
         axioms = self.owlont.getClassAssertionAxioms(individual)
         self.assertEqual(3, axioms.size())
         expected_typeiri_strs = {

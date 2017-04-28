@@ -65,13 +65,11 @@ class TestLabelMap(unittest.TestCase):
                 'label': 'test class 3'
             },
             {
-                'iri': 'https://github.com/stuckyb/ontopilot/raw/master/'
-                    'test/test_data/ontology.owl#individual_001',
+                'iri': 'http://purl.obolibrary.org/obo/OBTO_8000',
                 'label': 'test individual 1'
             },
             {
-                'iri': 'https://github.com/stuckyb/ontopilot/raw/master/'
-                    'test/test_data/ontology.owl#individual_002',
+                'iri': 'http://purl.obolibrary.org/obo/OBTO_8001',
                 'label': 'test individual 2'
             }
         ]

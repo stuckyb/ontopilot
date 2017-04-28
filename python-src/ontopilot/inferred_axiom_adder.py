@@ -18,9 +18,13 @@
 #
 
 # Python imports.
+import os.path
 import ontopilot
 from ontopilot import logger
 from basictimer import BasicTimer
+from tablereaderfactory import TableReaderFactory
+from tablereader import TableRowError
+from ontopilot import TRUE_STRS
 
 # Java imports.
 from java.util import HashSet
@@ -36,6 +40,8 @@ from org.semanticweb.owlapi.util import InferredDisjointClassesAxiomGenerator
 from org.semanticweb.owlapi.util import InferredOntologyGenerator
 from org.semanticweb.owlapi.util import InferredInverseObjectPropertiesAxiomGenerator
 from org.semanticweb.owlapi.util import InferredPropertyAssertionGenerator
+from org.semanticweb.owlapi.model import AxiomType
+from org.semanticweb.owlapi.model.parameters import Imports
 
 
 # Strings for identifying supported types of inferences for generating inferred
@@ -45,6 +51,21 @@ INFERENCE_TYPES = (
     'equivalent classes', 'disjoint classes', 'inverse object properties',
     'property values'
 )
+
+
+class ExcludedTypeSpecError(TableRowError):
+    """
+    An exception class for errors encountered in excluded types files.
+    """
+    def __init__(self, error_msg, tablerow):
+        self.tablerow = tablerow
+
+        new_msg = (
+            'Error encountered in excluded type assertion specification in '
+            + self._generateContextStr(tablerow) + ':\n' + error_msg
+        )
+
+        RuntimeError.__init__(self, new_msg)
 
 
 class InferredAxiomAdder:
@@ -62,6 +83,16 @@ class InferredAxiomAdder:
         'http://www.geneontology.org/formats/oboInOwl#is_inferred'
     )
 
+    # Required fields (i.e., keys) for excluded types files.
+    ETF_REQUIRED_COLS = ('ID', 'Exclude superclasses')
+
+    # Excluded types file fields for which no warnings are issued if the field
+    # is missing.
+    ETF_OPTIONAL_COLS = ('Ignore',)
+
+    # Default values for table columns in excluded types files.
+    ETF_DEFAULT_COL_VALS = {}
+
     def __init__(self, ontology, reasoner_str):
         """
         sourceont: The ontology on which to run the reasoner and for which to
@@ -70,6 +101,10 @@ class InferredAxiomAdder:
         """
         self.ont = ontology
         self.setReasoner(reasoner_str)
+
+        # A set of OWL API ontology class objects that correspond with types
+        # that should be excluded from inferred type/class assertions.
+        self.excluded_types = set()
 
     def setReasoner(self, reasoner_str):
         """
@@ -108,9 +143,8 @@ class InferredAxiomAdder:
                     generators.append(InferredSubClassAxiomGenerator())
                 except UnsupportedOperationException as err:
                     ontopilot.logging.warning(
-                        'The reasoner "{0}" does not support subclass inferences.'.format(
-                            reasoner_name
-                        )
+                        'The reasoner "{0}" does not support subclass '
+                        'inferences.'.format(reasoner_name)
                     )
 
             elif inference_type == 'equivalent classes':
@@ -121,9 +155,8 @@ class InferredAxiomAdder:
                     generators.append(InferredEquivalentClassAxiomGenerator())
                 except UnsupportedOperationException as err:
                     ontopilot.logging.warning(
-                        'The reasoner "{0}" does not support class equivalency inferences.'.format(
-                            reasoner_name
-                        )
+                        'The reasoner "{0}" does not support class equivalency '
+                        'inferences.'.format(reasoner_name)
                     )
 
             elif inference_type == 'disjoint classes':
@@ -134,9 +167,8 @@ class InferredAxiomAdder:
                     generators.append(InferredDisjointClassesAxiomGenerator())
                 except UnsupportedOperationException as err:
                     ontopilot.logging.warning(
-                        'The reasoner "{0}" does not support class disjointness inferences.'.format(
-                            reasoner_name
-                        )
+                        'The reasoner "{0}" does not support class '
+                        'disjointness inferences.'.format(reasoner_name)
                     )
 
             elif inference_type == 'subdata properties':
@@ -147,9 +179,8 @@ class InferredAxiomAdder:
                     generators.append(InferredSubDataPropertyAxiomGenerator())
                 except UnsupportedOperationException as err:
                     ontopilot.logging.warning(
-                        'The reasoner "{0}" does not support data property hierarchy inferences.'.format(
-                            reasoner_name
-                        )
+                        'The reasoner "{0}" does not support data property '
+                        'hierarchy inferences.'.format(reasoner_name)
                     )
 
             elif inference_type == 'subobject properties':
@@ -160,9 +191,8 @@ class InferredAxiomAdder:
                     generators.append(InferredSubObjectPropertyAxiomGenerator())
                 except UnsupportedOperationException as err:
                     ontopilot.logging.warning(
-                        'The reasoner "{0}" does not support object property hierarchy inferences.'.format(
-                            reasoner_name
-                        )
+                        'The reasoner "{0}" does not support object property '
+                        'hierarchy inferences.'.format(reasoner_name)
                     )
 
             elif inference_type == 'inverse object properties':
@@ -173,9 +203,8 @@ class InferredAxiomAdder:
                     generators.append(InferredInverseObjectPropertiesAxiomGenerator())
                 except UnsupportedOperationException as err:
                     ontopilot.logging.warning(
-                        'The reasoner "{0}" does not support inverse object property inferences.'.format(
-                            reasoner_name
-                        )
+                        'The reasoner "{0}" does not support inverse object '
+                        'property inferences.'.format(reasoner_name)
                     )
 
             elif inference_type == 'types':
@@ -186,9 +215,8 @@ class InferredAxiomAdder:
                     generators.append(InferredClassAssertionAxiomGenerator())
                 except UnsupportedOperationException as err:
                     ontopilot.logging.warning(
-                        'The reasoner "{0}" does not support class assertion inferences.'.format(
-                            reasoner_name
-                        )
+                        'The reasoner "{0}" does not support class assertion '
+                        'inferences.'.format(reasoner_name)
                     )
 
             elif inference_type == 'property values':
@@ -202,9 +230,8 @@ class InferredAxiomAdder:
                     generators.append(InferredPropertyAssertionGenerator())
                 except UnsupportedOperationException as err:
                     ontopilot.logging.warning(
-                        'The reasoner "{0}" does not support property assertion inferences.'.format(
-                            reasoner_name
-                        )
+                        'The reasoner "{0}" does not support property '
+                        'assertion inferences.'.format(reasoner_name)
                     )
 
             else:
@@ -214,18 +241,19 @@ class InferredAxiomAdder:
 
         return generators
 
-    def _getRedundantSubclassOfAxioms(self):
+    def _getRedundantSubclassOfAxioms(self, owlont):
         """
-        Returns a set of all "subclass of" axioms in this ontology that are
+        Returns a set of all "subclass of" axioms in an ontology that are
         redundant.  In this context, "redundant" means that a class is asserted
         to have two or more different superclasses that are part of the same
         class hierarchy.  Only the superclass nearest to the subclass is
         retained; all other axioms are considered to be redundant.  This
         situation can easily arise after inferred "subclass of" axioms are
         added to an ontology.
+
+        owlont: An OWL API ontology object.
         """
         redundants = set()
-        owlont = self.ont.getOWLOntology()
 
         for classobj in owlont.getClassesInSignature():
             # Get the set of direct superclasses for this class.
@@ -243,19 +271,217 @@ class InferredAxiomAdder:
 
         return redundants
 
-    def addInferredAxioms(self, inference_types, annotate=False):
+    def _addInversePropAssertions(self):
+        """
+        Finds inverse property pairs in the ontology (including symmetric
+        properties) and all property assertions and negative property
+        assertions using those properties, then materializes the inverse
+        property assertions.  This is all done without using a reasoner.
+        """
+        owlont = self.ont.getOWLOntology()
+
+        # Use a pair of dictionaries to create a bi-directional lookup table
+        # for inverse property pairs.
+        inverses_1 = {}
+        inverses_2 = {}
+
+        # Use a set to store symmetric properties.
+        symmetrics = set()
+
+        # Retrieve all inverse object property axioms and symmetric property
+        # axioms from this ontology and its imports closure.
+        inv_axioms = set()
+        symm_axioms = set()
+        for ont in owlont.getImportsClosure():
+            inv_axioms.update(
+                ont.getAxioms(AxiomType.INVERSE_OBJECT_PROPERTIES)
+            )
+            symm_axioms.update(
+                ont.getAxioms(AxiomType.SYMMETRIC_OBJECT_PROPERTY)
+            )
+
+        for axiom in inv_axioms:
+            pexp1 = axiom.getFirstProperty()
+            pexp2 = axiom.getSecondProperty()
+
+            inverses_1[pexp1] = pexp2
+            inverses_2[pexp2] = pexp1
+
+        for axiom in symm_axioms:
+            symmetrics.add(axiom.getProperty())
+
+        # Retrieve all object property assertions and negative object property
+        # assertions from this ontology and its imports closure.
+        pa_axioms = set()
+        npa_axioms = set()
+        for ont in owlont.getImportsClosure():
+            pa_axioms.update(
+                ont.getAxioms(AxiomType.OBJECT_PROPERTY_ASSERTION)
+            )
+            npa_axioms.update(
+                ont.getAxioms(AxiomType.NEGATIVE_OBJECT_PROPERTY_ASSERTION)
+            )
+
+        # Materialize all inverse object property assertions.
+        new_axioms = set()
+        for axiom in pa_axioms:
+            pexp = axiom.getProperty()
+            inv_pexp = None
+
+            if pexp in inverses_1:
+                inv_pexp = inverses_1[pexp]
+            elif pexp in inverses_2:
+                inv_pexp = inverses_2[pexp]
+            elif pexp in symmetrics:
+                inv_pexp = pexp
+
+            if inv_pexp != None:
+                new_axioms.add(
+                    self.ont.df.getOWLObjectPropertyAssertionAxiom(
+                        inv_pexp, axiom.getObject(), axiom.getSubject()
+                    )
+                )
+
+        self.ont.ontman.addAxioms(owlont, new_axioms)
+
+        # Do the same thing for all negative object property assertions.
+        new_axioms.clear()
+        for axiom in npa_axioms:
+            pexp = axiom.getProperty()
+            inv_pexp = None
+
+            if pexp in inverses_1:
+                inv_pexp = inverses_1[pexp]
+            elif pexp in inverses_2:
+                inv_pexp = inverses_2[pexp]
+            elif pexp in symmetrics:
+                inv_pexp = pexp
+
+            if inv_pexp != None:
+                new_axioms.add(
+                    self.ont.df.getOWLNegativeObjectPropertyAssertionAxiom(
+                        inv_pexp, axiom.getObject(), axiom.getSubject()
+                    )
+                )
+
+        self.ont.ontman.addAxioms(owlont, new_axioms)
+
+    def _getExcludedTypesFromFile(self, etfpath):
+        """
+        Parses a tabular data file containing information about the classes to
+        exclude from inferred type/class assertions and returns a set of all
+        classes (represented as OWL API class objects) referenced in the file.
+
+        etfpath: The path of a tabular data file.
+        """
+        exctypes = set()
+
+        with TableReaderFactory(etfpath) as reader:
+            # Read the terms to import from each table in the input file, add
+            # each term to the signature set for module extraction, and add the
+            # descendants of each term, if desired.
+            for table in reader:
+                table.setRequiredColumns(self.ETF_REQUIRED_COLS)
+                table.setOptionalColumns(self.ETF_OPTIONAL_COLS)
+                table.setDefaultValues(self.ETF_DEFAULT_COL_VALS)
+
+                for row in table:
+                    if row['Ignore'].lower() in TRUE_STRS:
+                        continue
+
+                    ontclass = self.ont.getExistingClass(row['ID'])
+                    if ontclass is None:
+                        raise ExcludedTypeSpecError(
+                            'Could not find the class "{0}" in the main '
+                            'ontology or its imports '
+                            'closure.'.format(row['ID']), row
+                        )
+    
+                    owlclass = ontclass.getOWLAPIObj()
+
+                    if row['Exclude class'].lower() in TRUE_STRS:
+                        exctypes.add(owlclass)
+
+                    if row['Exclude superclasses'].lower() in TRUE_STRS:
+                        supersset = self.reasoner.getSuperClasses(
+                            owlclass, False
+                        ).getFlattened()
+
+                        for superclass in supersset:
+                            exctypes.add(superclass)
+
+        return exctypes
+
+    def loadExcludedTypes(self, etfpath):
+        """
+        Parses a tabular data file containing information about the classes to
+        exclude from inferred type/class assertions.  All classes referenced in
+        the input file will be excluded from the inferred type assertions
+        generated after the file is loaded.
+
+        etfpath: The path of a tabular data file.
+        """
+        # Verify that the excluded types file exists.
+        if not(os.path.isfile(etfpath)):
+            raise RuntimeError('Could not find the excluded types file "'
+                    + termsfile_path + '".')
+
+        self.excluded_types.clear()
+        self.excluded_types.update(self._getExcludedTypesFromFile(etfpath))
+
+    def _getExcludedTypeAssertions(self, owlont):
+        """
+        Returns the set of type assertion axioms in owlont that reference types
+        in self.excluded_types.
+
+        owlont: An OWL API ontology object.
+        """
+        excluded_axioms = set()
+
+        axioms = owlont.getAxioms(AxiomType.CLASS_ASSERTION, Imports.INCLUDED)
+        for axiom in axioms:
+            cexp = axiom.getClassExpression()
+            if not(cexp.isAnonymous()):
+                if cexp.asOWLClass() in self.excluded_types:
+                    excluded_axioms.add(axiom)
+
+        return excluded_axioms
+
+    def addInferredAxioms(self, inference_types, annotate=False, add_inverses=False):
         """
         Runs a reasoner on this ontology and adds the inferred axioms.
 
         inference_types: A list of strings specifying the kinds of inferred
             axioms to generate.  Valid values are detailed in the sample
             configuration file.
-        annotate: If true, annotate inferred axioms to mark them as inferred.
+        annotate: If True, annotate inferred axioms to mark them as inferred.
+        add_inverses: If True, inverse property assertions will be explicitly
+            added to the ontology *prior* to running the reasoner.  This is
+            useful for cases in which a reasoner that does not support inverses
+            must be used (e.g., for runtime considerations) on an ontology with
+            inverse property axioms.
         """
         timer = BasicTimer()
 
-        # First, make sure that the ontology is consistent; otherwise, all
-        # inference attempts will fail.
+        owlont = self.ont.getOWLOntology()
+        ontman = self.ont.ontman
+        df = self.ont.df
+        oldaxioms = owlont.getAxioms(ImportsEnum.INCLUDED)
+
+        if add_inverses:
+            logger.info(
+                'Generating inverse property assertions...'
+            )
+            timer.start()
+            self._addInversePropAssertions()
+            logger.info(
+                'Inverse property assertions generated in {0} s.'.format(
+                    timer.stop()
+                )
+            )
+
+        # Make sure that the ontology is consistent; otherwise, all inference
+        # attempts will fail.
         logger.info(
             'Checking whether the ontology is logically consistent...'
         )
@@ -287,11 +513,6 @@ class InferredAxiomAdder:
         )
         timer.start()
 
-        owlont = self.ont.getOWLOntology()
-        ontman = self.ont.ontman
-        df = self.ont.df
-        oldaxioms = owlont.getAxioms(ImportsEnum.INCLUDED)
-
         generators = self._getGeneratorsList(inference_types)
         iog = InferredOntologyGenerator(self.reasoner, generators)
 
@@ -301,7 +522,8 @@ class InferredAxiomAdder:
         logger.info('Inferred axioms generated in {0} s.'.format(timer.stop()))
 
         logger.info(
-            'Cleaning up redundant and trivial axioms and merging with main ontology...'
+            'Cleaning up redundant, trivial, and excluded axioms and merging '
+            'with the main ontology...'
         )
         timer.start()
 
@@ -327,6 +549,12 @@ class InferredAxiomAdder:
                     break
         ontman.removeAxioms(inferredont, delaxioms)
 
+        # Find and remove excluded class/type assertions.  This is only
+        # necessary if we added inferred class assertions.
+        if 'types' in inference_types:
+            excluded = self._getExcludedTypeAssertions(inferredont)
+            ontman.removeAxioms(inferredont, excluded)
+
         if annotate:
             # Annotate all of the inferred axioms.
             annotprop = df.getOWLAnnotationProperty(self.INFERRED_ANNOT_IRI)
@@ -343,7 +571,7 @@ class InferredAxiomAdder:
         # Find and remove redundant "subclass of" axioms.  This is only
         # necessary if we inferred the class hierarchy.
         if 'subclasses' in inference_types:
-            redundants = self._getRedundantSubclassOfAxioms()
+            redundants = self._getRedundantSubclassOfAxioms(owlont)
             ontman.removeAxioms(owlont, redundants)
 
         logger.info(
