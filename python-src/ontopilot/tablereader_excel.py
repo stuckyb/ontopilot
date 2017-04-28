@@ -65,7 +65,12 @@ class _ExcelTable(BaseTable):
             row = self.sheet.getRow(0)
             if row != None:
                 for colnum in range(row.getLastCellNum()):
-                    cellval = self._cellStrValue(row.getCell(colnum))
+                    cell = row.getCell(colnum)
+                    if cell is not None:
+                        cellval = self._cellStrValue(cell)
+                    else:
+                        cellval = ''
+
                     if cellval == '':
                         break
                     self.colnames.append(cellval)
@@ -94,6 +99,12 @@ class _ExcelTable(BaseTable):
         """
         Returns the value of an Excel spreadsheet cell as a string.
         """
+        # Apache POI's getCell() method can return None (null) if a cell is not
+        # defined, which basically means it has no value or style information.
+        # In that case, return an empty string.
+        if cell is None:
+            return ''
+
         ctype = cell.getCellTypeEnum()
 
         if ctype in self.SUPPORTED_CELL_TYPES:
