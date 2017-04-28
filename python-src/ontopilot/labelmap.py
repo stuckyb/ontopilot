@@ -143,14 +143,19 @@ class LabelMap:
                 )
             else:
                 owlont = self.ontology.getOWLOntology()
+                if owlont.getOntologyID().getOntologyIRI().isPresent():
+                    ont_iri = owlont.getOntologyID().getOntologyIRI().get().toString()
+                else:
+                    ont_iri = 'anonymous'
                 raise AmbiguousLabelError(
-                    'Attempted to use an ambiguous label: The label "' + label
-                    + '" is used for multiple terms in the ontology <'
-                    + str(owlont.getOntologyID().getOntologyIRI().get())
-                    + '>, including its imports closure.  The label "' + label
-                    + '" is associated with the following IRIs: ' + '<'
-                    + '>, <'.join([str(labelIRI) for labelIRI in self.ambiglabels[label]])
-                    + '>.'
+                    'Attempted to use an ambiguous label: The label "{0}" is '
+                    'used for multiple terms in the ontology <{1}>, including '
+                    'its imports closure.  The label "{0}" is associated with '
+                    'the following IRIs: {2}.'.format(
+                        label, ont_iri, '<'
+                        + '>, <'.join([str(labelIRI) for labelIRI in self.ambiglabels[label]])
+                        + '>'
+                    )
                 )
 
     def _addAmbiguousLabel(self, label, termIRI):
