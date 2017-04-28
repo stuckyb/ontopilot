@@ -71,7 +71,7 @@ class ProjectCreator:
             with file(srcpath) as filein, file(destpath, 'w') as fileout:
                 for line in filein:
                     for replacement in replacements:
-                        if replacement[0].search(line) != None:
+                        if replacement[0].search(line) is not None:
                             line = replacement[0].sub(replacement[1], line)
 
                     fileout.write(line)

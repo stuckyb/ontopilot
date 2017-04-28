@@ -225,7 +225,7 @@ class OWLOntologyBuilder:
         # Get the IRI objects of parent properties and add them as parents.
         for parentID in self.dsparser.parseString(propdesc['Parent']):
             parentIRI = self.ontology.resolveIdentifier(parentID)
-            if parentIRI != None:
+            if parentIRI is not None:
                 propobj.addSuperproperty(parentIRI)
 
         # Add any domain axioms (specified as class expressions in Manchester
@@ -244,7 +244,7 @@ class OWLOntologyBuilder:
         propIDs = self.dsparser.parseString(propdesc['Disjoint with'])
         for propID in propIDs:
             disjIRI = self.ontology.resolveIdentifier(propID)
-            if disjIRI != None:
+            if disjIRI is not None:
                 propobj.addDisjointWith(disjIRI)
 
         # Add the characteristics, if provided.  The only supported
@@ -292,7 +292,7 @@ class OWLOntologyBuilder:
         # Get the IRI objects of parent properties and add them as parents.
         for parentID in self.dsparser.parseString(propdesc['Parent']):
             parentIRI = self.ontology.resolveIdentifier(parentID)
-            if parentIRI != None:
+            if parentIRI is not None:
                 propobj.addSuperproperty(parentIRI)
 
         # Add any domain axioms (specified as class expressions in Manchester
@@ -311,14 +311,14 @@ class OWLOntologyBuilder:
         propIDs = self.dsparser.parseString(propdesc['Inverse'])
         for propID in propIDs:
             inverseIRI = self.ontology.resolveIdentifier(propID)
-            if inverseIRI != None:
+            if inverseIRI is not None:
                 propobj.addInverse(inverseIRI)
 
         # Add any disjointness axioms.
         propIDs = self.dsparser.parseString(propdesc['Disjoint with'])
         for propID in propIDs:
             disjIRI = self.ontology.resolveIdentifier(propID)
-            if disjIRI != None:
+            if disjIRI is not None:
                 propobj.addDisjointWith(disjIRI)
 
         # Add the characteristics, if provided.
@@ -387,7 +387,7 @@ class OWLOntologyBuilder:
         # Get the IRI objects of parent properties and add them as parents.
         for parentID in self.dsparser.parseString(propdesc['Parent']):
             parentIRI = self.ontology.resolveIdentifier(parentID)
-            if parentIRI != None:
+            if parentIRI is not None:
                 propobj.addSuperproperty(parentIRI)
 
     def addIndividual(self, indvdesc):
@@ -542,8 +542,8 @@ class OWLOntologyBuilder:
         newdef = ''
         for defpart in defparts:
             res = labelre.match(defpart)
-            if res != None:
-                id_only = res.group('idonly') != None
+            if res is not None:
+                id_only = res.group('idonly') is not None
 
                 # Handle cases where the label text is not wrapped in single
                 # quotes.  IDResolver expects label strings to be quoted, so
@@ -551,7 +551,7 @@ class OWLOntologyBuilder:
                 # parse out the label components (prefix, if present, and
                 # actual label text) and then reassemble the label, making sure
                 # the label text is enclosed in single quotes.
-                if res.group('prefix') != None:
+                if res.group('prefix') is not None:
                     label = res.group('prefix')
                 else:
                     label = ''

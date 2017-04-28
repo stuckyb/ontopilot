@@ -272,7 +272,7 @@ class ModuleExtractor:
         elif ontid.getOntologyIRI().isPresent():
             sourceIRI = ontid.getOntologyIRI().get()
 
-        if sourceIRI != None:
+        if sourceIRI is not None:
             modont.setOntologySource(sourceIRI)
 
         return modont
@@ -332,7 +332,7 @@ class ModuleExtractor:
                         # Built-in annotation properties, such as rdfs:label,
                         # will not "exist" because they have no declaration
                         # axioms, so we need to check for this.
-                        if annot_ent != None:
+                        if annot_ent is not None:
                             signature.add(annot_ent.getOWLAPIObj())
 
     def _getPropertyCharacteristicsAxioms(self, entity):

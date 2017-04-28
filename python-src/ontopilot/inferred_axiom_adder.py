@@ -335,7 +335,7 @@ class InferredAxiomAdder:
             elif pexp in symmetrics:
                 inv_pexp = pexp
 
-            if inv_pexp != None:
+            if inv_pexp is not None:
                 new_axioms.add(
                     self.ont.df.getOWLObjectPropertyAssertionAxiom(
                         inv_pexp, axiom.getObject(), axiom.getSubject()
@@ -357,7 +357,7 @@ class InferredAxiomAdder:
             elif pexp in symmetrics:
                 inv_pexp = pexp
 
-            if inv_pexp != None:
+            if inv_pexp is not None:
                 new_axioms.add(
                     self.ont.df.getOWLNegativeObjectPropertyAssertionAxiom(
                         inv_pexp, axiom.getObject(), axiom.getSubject()

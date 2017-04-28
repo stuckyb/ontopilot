@@ -63,7 +63,7 @@ class _ExcelTable(BaseTable):
         self.colnames = []
         if self.numrows > 0:
             row = self.sheet.getRow(0)
-            if row != None:
+            if row is not None:
                 for colnum in range(row.getLastCellNum()):
                     cell = row.getCell(colnum)
                     if cell is not None:
@@ -130,7 +130,7 @@ class _ExcelTable(BaseTable):
         nextrow = None
         while (self.rowcnt < self.numrows) and emptyrow:
             nextrow = self.sheet.getRow(self.rowcnt)
-            if nextrow != None:
+            if nextrow is not None:
                 for colnum in range(self.numcols):
                     if self._cellStrValue(nextrow.getCell(colnum)) != '':
                         emptyrow = False

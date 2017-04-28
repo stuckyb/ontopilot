@@ -74,7 +74,7 @@ class ReasonerManager:
                 logger.info('Creating JFact reasoner...')
                 rfact = JFactFactory()
 
-            if rfact != None:
+            if rfact is not None:
                 self.reasoners[reasoner_name] = rfact.createNonBufferingReasoner(owlont)
             else:
                 raise RuntimeError(

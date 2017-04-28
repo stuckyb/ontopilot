@@ -59,7 +59,7 @@ def isOboID(termIDstr):
     """
     res = oboid_re.match(termIDstr)
 
-    return res != None
+    return res is not None
 
 def termIRIToOboID(termIRI):
     """
