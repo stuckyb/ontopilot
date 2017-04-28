@@ -34,6 +34,7 @@ from ontopilot import TRUE_STRS
 from ontology import Ontology
 from ontopilot.module_extractor import ModuleExtractor
 from ontopilot.module_extractor import methods as me_methods, rel_axiom_types
+import nethelper
 
 # Java imports.
 from java.util import HashSet
@@ -259,7 +260,12 @@ class ImportModuleBuilder:
         ontfile = os.path.join(self.ontcachedir, ontfile)
 
         # Verify that the source ontology file exists; if not, download it.
-        if not(os.path.isfile(ontfile)):
+        # Also download it if there is a new version (as dictacted by a change
+        # in Content-Length from a HTTP request).
+        content_length = nethelper.checkForContent(ontologyIRI)
+
+        if not(os.path.isfile(ontfile)) or (
+            content_length != 'None' and content_length != os.path.getsize(ontfile)):
             opener = URLOpenerWithErrorHandling()
             try:
                 self.sourceOntologyIRI = ontologyIRI

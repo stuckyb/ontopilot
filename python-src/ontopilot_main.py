@@ -29,7 +29,6 @@ from ontopilot import BuildTargetManager
 
 # Java imports.
 
-
 # Define the build targets.
 buildtm = BuildTargetManager()
 buildtm.addBuildTarget(InitTarget, task='initialize')
