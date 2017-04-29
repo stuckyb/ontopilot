@@ -15,6 +15,8 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
+import unicodedata
 from ontology import Ontology
 
 # Java imports.
@@ -107,9 +109,13 @@ class _RelatedAxiomTypes:
         which should contain a comma-separated list of axiom type string
         values.  Matching is not case sensitive.
         """
-        ax_types = set()
-
+        # First normalize the axiom types string using unicode compatibility
+        # equivalents.  This ensures that "space-like" characters (e.g.,
+        # no-break space) are converted to the ordinary space character.
+        ax_types_str = unicodedata.normalize('NFKC', ax_types_str)
         type_strs = ax_types_str.split(',')
+
+        ax_types = set()
 
         for type_str in type_strs:
             type_str = type_str.strip()

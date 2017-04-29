@@ -22,6 +22,7 @@
 # Python imports.
 from __future__ import unicode_literals
 import re
+import unicodedata
 from obohelper import termIRIToOboID, OBOIdentiferError
 from ontology import Ontology
 from ontology_entities import (
@@ -332,6 +333,11 @@ class OWLOntologyBuilder:
         Sets the characteristics of an object property according to a string
         containing a comma-separated list of property characteristics.
         """
+        # First normalize the string using unicode compatibility equivalents.
+        # This ensures that "space-like" characters (e.g., no-break space) are
+        # converted to the ordinary space character.
+        char_str = unicodedata.normalize('NFKC', char_str)
+
         for char_str in chars_str.split(','):
             char_str = char_str.strip().lower()
 
