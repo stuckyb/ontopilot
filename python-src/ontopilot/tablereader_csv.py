@@ -31,7 +31,7 @@ class UnicodeCSVReader(csv.DictReader):
     def __init__(self, csvfile, dialect='excel', encoding='utf-8', **fmtparams):
         """
         This initializer has the same signature as that of the standard
-        csv.reader() method, except that an addiitonal argument is added to
+        csv.reader() method, except that an additional argument is added to
         specify the source encoding.
         """
         self.encoding = encoding
