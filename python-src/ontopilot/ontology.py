@@ -41,6 +41,7 @@ from org.semanticweb.owlapi.formats import RDFXMLDocumentFormat
 from uk.ac.manchester.cs.owlapi.modularity import SyntacticLocalityModuleExtractor
 from uk.ac.manchester.cs.owlapi.modularity import ModuleType
 from com.google.common.base import Optional
+from org.semanticweb.owlapi.model import OWLOntologyAlreadyExistsException
 from org.semanticweb.owlapi.io import OWLOntologyCreationIOException
 from org.semanticweb.owlapi.model import OWLOntologyFactoryNotFoundException
 from org.semanticweb.owlapi.model.parameters import Imports as ImportsEnum
@@ -652,15 +653,17 @@ class Ontology(Observable):
         ontology is declared as an import in the target ontology (i.e., this
         ontology), the import declaration will be deleted.
 
-        source_iri: The IRI of the source ontology.  Can be either an IRI
-            object or a string containing a relative IRI, prefix IRI, or full
-            IRI.
+        source_iri: The document IRI of the source ontology.  Can be either an
+            IRI object or a string containing a relative IRI, prefix IRI, or
+            full IRI.
         """
         sourceIRI = self.idr.expandIRI(source_iri)
         owlont = self.getOWLOntology()
 
         try:
-            importont = self.ontman.loadOntology(sourceIRI)
+            importont = self.ontman.loadOntologyFromOntologyDocument(sourceIRI)
+        except OWLOntologyAlreadyExistsException as err:
+            importont = self.ontman.getOntology(err.getOntologyID())
         except (
             OWLOntologyFactoryNotFoundException,
             OWLOntologyCreationIOException
