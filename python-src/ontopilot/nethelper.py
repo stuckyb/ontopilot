@@ -18,6 +18,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import urlparse, httplib
 from ssl import SSLError
 import time
@@ -51,7 +52,7 @@ def httpHEAD(sourceIRI):
     # The maximum number of times to retry a connection attempt.
     MAX_RETRIES = 6
 
-    source_iri = str(sourceIRI)
+    source_iri = unicode(sourceIRI)
     parts = urlparse.urlsplit(source_iri)
 
     # Reconstruct the portion of the IRI that comes after the scheme and
@@ -111,7 +112,7 @@ def httpHEAD(sourceIRI):
         ) as err:
             raise ConnectionFailError(
                 'Unable to access the resource at <{0}> due to a TCP '
-                'connection error: {1}.'.format(source_iri, str(err))
+                'connection error: {1}.'.format(source_iri, unicode(err))
             )
 
     return response
@@ -128,7 +129,7 @@ def checkForRedirect(sourceIRI):
     """
     redirected = False
     status = 300
-    curr_iri = str(sourceIRI)
+    curr_iri = unicode(sourceIRI)
 
     while (status < 400) and (status >= 300):
         parts = urlparse.urlsplit(curr_iri)

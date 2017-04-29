@@ -15,6 +15,7 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 from ConfigParser import RawConfigParser
 import os.path
 import glob

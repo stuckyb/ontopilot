@@ -15,6 +15,7 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 from ontopilot import logger
 
 # Java imports.

@@ -20,6 +20,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import os
 from urllib import FancyURLopener
 from urllib2 import HTTPError
@@ -266,7 +267,7 @@ class ImportModuleBuilder:
                 opener.retrieve(ontologyIRI, ontfile, self._updateDownloadProgress)
             except (IOError, HTTPError) as err:
                 raise RuntimeError('Unable to download the external ontology at "'
-                        + ontologyIRI + '": ' + str(err))
+                        + ontologyIRI + '": ' + unicode(err))
 
         ontopilot.logger.info('Loading source ontology from file ' + ontfile + '.')
         sourceont = Ontology(ontfile)
@@ -303,7 +304,7 @@ class ImportModuleBuilder:
                             mod_ext.addEntity(idstr, method, rel_types)
 
                     except RuntimeError as err:
-                        raise ImportModSpecError(str(err), row)
+                        raise ImportModSpecError(unicode(err), row)
 
         if mod_ext.getSignatureSize() == 0:
             ontopilot.logger.warning(

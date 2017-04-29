@@ -15,6 +15,7 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 from labelmap import LabelMap, InvalidLabelError, AmbiguousLabelError
 from obohelper import isOboID, oboIDToIRI, getIRIForOboPrefix
 from rfc3987 import rfc3987

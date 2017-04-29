@@ -33,6 +33,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import os, glob, sys
 import logging
 import time

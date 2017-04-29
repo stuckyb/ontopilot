@@ -19,6 +19,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import sys, os, shutil
 from zipfile import ZipFile
 import tempfile

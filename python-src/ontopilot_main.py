@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Python imports.
+from __future__ import unicode_literals
 import sys
 import logging
 from argparse import ArgumentParser
@@ -119,6 +120,6 @@ try:
         print '\n', target.getBuildNotRequiredMsg(), '\n'
         sys.exit(0)
 except (ConfigError, RuntimeError) as err:
-    print '\n', err, '\n'
+    print '\n', unicode(err), '\n'
     sys.exit(1)
 

@@ -27,6 +27,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import logging
 
 # Java imports.
@@ -116,20 +117,21 @@ class LabelMap:
                 )
 
             labelIRI = self.lmap[label]
-            if str(labelIRI).startswith(IRI_root):
+            if unicode(labelIRI).startswith(IRI_root):
                 return labelIRI
             else:
                 raise InvalidLabelError(
-                    'The provided IRI root, <' + IRI_root
-                    + '>, does not match the IRI associated with the label "'
-                    + label + '" (<' + str(labelIRI) + '>.'
+                    'The provided IRI root, <{0}>, does not match the IRI '
+                    'associated with the label "{1}" (<{2}>).'.format(
+                        IRI_root, label, labelIRI
+                    )
                 )
         else:
             # Check if IRI_root can disambiguate the label reference.
             lastmatch = None
             matchcnt = 0
             for labelIRI in self.ambiglabels[label]:
-                if str(labelIRI).startswith(IRI_root):
+                if unicode(labelIRI).startswith(IRI_root):
                     lastmatch = labelIRI
                     matchcnt += 1
 
@@ -153,7 +155,9 @@ class LabelMap:
                     'its imports closure.  The label "{0}" is associated with '
                     'the following IRIs: {2}.'.format(
                         label, ont_iri, '<'
-                        + '>, <'.join([str(labelIRI) for labelIRI in self.ambiglabels[label]])
+                        + '>, <'.join(
+                            [unicode(labelIRI) for labelIRI in self.ambiglabels[label]]
+                        )
                         + '>'
                     )
                 )
@@ -182,7 +186,7 @@ class LabelMap:
                 self._addAmbiguousLabel(label, termIRI)
                 ontiri_opt = self.ontology.getOWLOntology().getOntologyID().getOntologyIRI()
                 if ontiri_opt.isPresent():
-                    ontidstr = str(ontiri_opt.get())
+                    ontidstr = unicode(ontiri_opt.get())
                 else:
                     ontidstr = 'anonymous'
 
@@ -193,7 +197,7 @@ class LabelMap:
                     '<{2}>.'.format(
                         label, ontidstr,
                         '>, <'.join(
-                            [str(labelIRI) for labelIRI in self.ambiglabels[label]]
+                            [unicode(labelIRI) for labelIRI in self.ambiglabels[label]]
                         )
                     )
                 )

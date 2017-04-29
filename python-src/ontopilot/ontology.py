@@ -19,6 +19,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 from idresolver import IDResolver
 from ontology_entities import _OntologyClass, _OntologyDataProperty
 from ontology_entities import _OntologyObjectProperty, _OntologyAnnotationProperty
@@ -87,7 +88,7 @@ class Ontology(Observable):
         else:
             raise RuntimeError(
                 'Unrecognized type for initializing an Ontology object: '
-                + str(ontology_source)
+                '{0}.'.format(ontology_source)
             )
 
         # Create an OWL data factory, which is required for creating new OWL

@@ -15,6 +15,7 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 import csv
 from tablereader import TableRow, BaseTable, BaseTableReader
 
@@ -110,10 +111,9 @@ class _CSVTable(BaseTable):
 
         if len(rowdata) != len(self.colnames):
             raise RuntimeError(
-                'The number of column names in the header of the CSV file "'
-                + self.getFileName()
-                + '" does not match the number of fields in row '
-                + str(self.rowcnt) + '.'
+                'The number of column names in the header of the CSV file '
+                '"{0}" does not match the number of fields in row '
+                '{1}.'.format(self.getFileName(), self.rowcnt)
             )
 
         trow = TableRow(
@@ -143,8 +143,12 @@ class CSVTableReader(BaseTableReader):
 
     def getTableByIndex(self, index):
         if index != 0:
-            raise KeyError('Invalid table index ' + str(index)
-                    + ' for the file "' + self.filename + '".')
+            raise KeyError(
+                '{0} is an invalid table index for the file "{1}".  The only '
+                'valid table index for CSV files is 0.'.format(
+                    index, self.filename
+                )
+            )
 
         self.filein.seek(0)
         self.csvr = UnicodeCSVReader(self.filein)
@@ -154,8 +158,11 @@ class CSVTableReader(BaseTableReader):
 
     def getTableByName(self, tablename):
         if tablename != self.tablename:
-            raise KeyError('Invalid table name "' + str(tablename)
-                    + '" for the file "' + self.filename + '".')
+            raise KeyError(
+                '"{0}" is an invalid table name for the file "{1}".'.format(
+                    tablename, self.filename
+                )
+            )
 
         return self.getTableByIndex(0)
 

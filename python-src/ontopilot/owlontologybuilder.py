@@ -20,6 +20,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import re
 from obohelper import termIRIToOboID, OBOIdentiferError
 from ontology import Ontology
@@ -107,7 +108,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newclass.addLabel(labeltext)
         except RuntimeError as err:
-            raise EntityDescriptionError(str(err), classdesc)
+            raise EntityDescriptionError(unicode(err), classdesc)
 
         # Cache the remainder of the class description.
         self.entity_trows.append((newclass, classdesc))
@@ -208,7 +209,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newprop.addLabel(labeltext)
         except RuntimeError as err:
-            raise EntityDescriptionError(str(err), propdesc)
+            raise EntityDescriptionError(unicode(err), propdesc)
         
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
@@ -275,7 +276,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newprop.addLabel(labeltext)
         except RuntimeError as err:
-            raise EntityDescriptionError(str(err), propdesc)
+            raise EntityDescriptionError(unicode(err), propdesc)
         
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
@@ -370,7 +371,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newprop.addLabel(labeltext)
         except RuntimeError as err:
-            raise EntityDescriptionError(str(err), propdesc)
+            raise EntityDescriptionError(unicode(err), propdesc)
         
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
@@ -405,7 +406,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newindv.addLabel(labeltext)
         except RuntimeError as err:
-            raise EntityDescriptionError(str(err), indvdesc)
+            raise EntityDescriptionError(unicode(err), indvdesc)
         
         # Cache the remainder of the individual description.
         self.entity_trows.append((newindv, indvdesc))
@@ -495,10 +496,12 @@ class OWLOntologyBuilder:
                 elif typeconst == INDIVIDUAL_ENTITY:
                     self._addIndividualAxioms(entity, desc, expanddefs)
                 else:
-                    raise RuntimeError('Unsupported ontology entity type: '
-                            + str(typeconst) + '.')
+                    raise RuntimeError(
+                        'Unsupported ontology entity type: '
+                        '{0}.'.format(typeconst)
+                    )
             except RuntimeError as err:
-                raise EntityDescriptionError(str(err), desc)
+                raise EntityDescriptionError(unicode(err), desc)
 
             # Putting the pop() operation at the end of the loop ensures that a
             # description is only removed from the list/stack if it was
@@ -578,7 +581,7 @@ class OWLOntologyBuilder:
                     labelID = self.prefix_df.getPrefixIRI(labelIRI)
 
                 if labelID is None:
-                    labelID = str(labelIRI)
+                    labelID = unicode(labelIRI)
 
                 if not(id_only):
                     newdef += label + ' '

@@ -19,6 +19,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import os
 import glob
 from ontopilot import logger

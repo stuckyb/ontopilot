@@ -14,6 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+# Python imports.
+from __future__ import unicode_literals
+
+
 class DelimStrParser:
     r"""
     Parses strings that optionally contain delimiter-separated string values.

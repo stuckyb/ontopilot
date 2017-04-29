@@ -25,6 +25,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import abc
 import os
 from ontoconfig import OntoConfig

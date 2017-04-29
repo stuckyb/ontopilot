@@ -15,6 +15,7 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 from tablereader import TableRow, BaseTable, BaseTableReader
 
 # Java imports.
@@ -110,13 +111,19 @@ class _ExcelTable(BaseTable):
         if ctype in self.SUPPORTED_CELL_TYPES:
             return self.df.formatCellValue(cell, self.fe)
         elif ctype == CellType.ERROR:
-            raise RuntimeError('Error detected in row ' + str(self.rowcnt)
-                    + ' of the input Excel spreadsheet "' + self.name
-                    + '" in the file "' + self.filename + '".')
+            raise RuntimeError(
+                'Error detected in row {0} of the input Excel spreadsheet '
+                '"{1}" in the file "{2}".'.format(
+                    self.rowcnt, self.name, self.filename
+                )
+            )
         else:
-            raise RuntimeError('Unrecognized cell data type in row '
-                    + str(self.rowcnt) + ' of the input Excel spreadsheet "'
-                    + self.name + '" in the file "' + self.filename + '".')
+            raise RuntimeError(
+                'Unrecognized cell data type in row {0} of the input Excel '
+                'spreadsheet "{1}" in the file "{2}".'.format(
+                    self.rowcnt, self.name, self.filename
+                )
+            )
 
     def next(self):
         """
@@ -168,18 +175,20 @@ class ExcelTableReader(BaseTableReader):
 
     def getTableByIndex(self, index):
         if (index < 0) or (index >= self.numtables):
-            raise KeyError('Invalid table index:' + str(index)
-                    + '.  No matching sheet could be found in the file "'
-                    + self.filename + '".')
+            raise KeyError(
+                'Invalid table index: {0}.  No matching sheet could be found '
+                'in the file "{1}".'.format(index, self.filename)
+            )
 
         return _ExcelTable(self.wbook.getSheetAt(index), self)
 
     def getTableByName(self, tablename):
         sheet = self.wbook.getSheet(tablename)
         if sheet is None:
-            raise KeyError('Invalid table name: "' + str(tablename)
-                    + '".  No matching sheet could be found in the file "'
-                    + self.filename + '".')
+            raise KeyError(
+                'Invalid table name: "{0}".  No matching sheet could be found '
+                'in the file "{1}".'.format(tablename, self.filename)
+            )
 
         table = _ExcelTable(sheet, self)
 

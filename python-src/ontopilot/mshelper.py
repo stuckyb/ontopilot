@@ -40,6 +40,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 
 # Java imports.
 from java.util import HashSet

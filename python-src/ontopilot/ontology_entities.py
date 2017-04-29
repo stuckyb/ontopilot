@@ -21,6 +21,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 from obohelper import oboIDToIRI
 from mshelper import ManchesterSyntaxParserHelper
 
@@ -182,10 +183,13 @@ class _OntologyEntity:
             cexps = parser.parseClassExpression(manchester_exp);
         except ParserException as err:
             print err
-            raise RuntimeError('Error parsing "' + err.getCurrentToken()
-                    + '" at line ' + str(err.getLineNumber()) + ', column '
-                    + str(err.getColumnNumber())
-                    + ' of the class expression (Manchester Syntax expected).')
+            raise RuntimeError(
+                'Error parsing "{0}" at line {1}, column {2} of the class '
+                'expression (Manchester Syntax expected).'.format(
+                    err.getCurrentToken(), err.getLineNumber(),
+                    err.getColumnNumber()
+                )
+            )
 
         return cexps
 
@@ -300,8 +304,10 @@ class _OntologyDataProperty(_OntologyEntity):
         # actually defined.
         parentprop = self.ontology.getExistingDataProperty(parent_id)
         if parentprop is None:
-            raise RuntimeError('The designated superproperty, ' + str(parent_id)
-                    + ', could not be found in the source ontology.')
+            raise RuntimeError(
+                'The designated superproperty, {0}, could not be found in the '
+                'source ontology.'.format(parent_id)
+            )
         parentprop = parentprop.getOWLAPIObj()
 
         # Add the subproperty axiom to the ontology.
@@ -337,10 +343,13 @@ class _OntologyDataProperty(_OntologyEntity):
                 datarange = parser.parseDataRange(datarange_exp);
             except ParserException as err:
                 print err
-                raise RuntimeError('Error parsing "' + err.getCurrentToken()
-                        + '" at line ' + str(err.getLineNumber()) + ', column '
-                        + str(err.getColumnNumber())
-                        + ' of the data property range (Manchester Syntax expected).')
+                raise RuntimeError(
+                    'Error parsing "{0}" at line {1}, column {2} of the data '
+                    'property range (Manchester Syntax expected).'.format(
+                        err.getCurrentToken(), err.getLineNumber(),
+                        err.getColumnNumber()
+                    )
+                )
 
             # Add the range axiom.
             raxiom = self.df.getOWLDataPropertyRangeAxiom(self.entityobj, datarange)
@@ -440,8 +449,10 @@ class _OntologyObjectProperty(_OntologyEntity):
         # actually defined.
         parentprop = self.ontology.getExistingObjectProperty(parent_id)
         if parentprop is None:
-            raise RuntimeError('The designated superproperty, ' + str(parent_id)
-                    + ', could not be found in the source ontology.')
+            raise RuntimeError(
+                'The designated superproperty, {0}, could not be found in the '
+                'source ontology.'.format(parent_id)
+            )
         parentprop = parentprop.getOWLAPIObj()
 
         # Add the subproperty axiom to the ontology.
@@ -634,8 +645,10 @@ class _OntologyAnnotationProperty(_OntologyEntity):
         # actually defined.
         parentprop = self.ontology.getExistingAnnotationProperty(parent_id)
         if parentprop is None:
-            raise RuntimeError('The designated superproperty, ' + str(parent_id)
-                    + ', could not be found in the source ontology.')
+            raise RuntimeError(
+                'The designated superproperty, {0}, could not be found in the '
+                'source ontology.'.format(parent_id)
+            )
         parentprop = parentprop.getOWLAPIObj()
 
         # Add the subproperty axiom to the ontology.

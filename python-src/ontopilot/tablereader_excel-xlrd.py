@@ -24,6 +24,7 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 from tablereader import TableRow, BaseTable, BaseTableReader
 import xlrd
 
@@ -83,19 +84,22 @@ class _ExcelTable(BaseTable):
         Returns the value of an Excel spreadsheet cell as a string.
         """
         if cell.ctype == xlrd.XL_CELL_NUMBER:
-            return str(cell.value)
+            return unicode(cell.value)
         elif cell.ctype == xlrd.XL_CELL_DATE:
-            return str(cell.value)
+            return unicode(cell.value)
         elif cell.ctype == xlrd.XL_CELL_BOOLEAN:
             if cell.value == 1:
                 return 'TRUE'
             else:
                 return 'FALSE'
         elif cell.ctype == xlrd.XL_CELL_ERROR:
-            raise RuntimeError('Error detected in row ' + str(self.rowcnt)
-                    + ' in the input Excel spreadsheet "' + self.name
-                    + '" in the file "' + self.filename + '": '
-                    + self.error_text_from_code(cell.value) + '.')
+            raise RuntimeError(
+                'Error detected in row {0} of the input Excel spreadsheet '
+                '"{1}" in the file "{2}": {3}.'.format(
+                    self.rowcnt, self.name, self.filename,
+                    self.error_text_from_code(cell.value)
+                )
+            )
         else:
             return cell.value
 
@@ -146,18 +150,20 @@ class ExcelTableReader(BaseTableReader):
 
     def getTableByIndex(self, index):
         if (index < 0) or (index >= self.numtables):
-            raise KeyError('Invalid table index:' + str(index)
-                    + '.  No matching sheet could be found in the file "'
-                    + self.filename + '".')
+            raise KeyError(
+                'Invalid table index: {0}.  No matching sheet could be found '
+                'in the file "{1}".'.format(index, self.filename)
+            )
 
         return _ExcelTable(self.wbook.sheet_by_index(index), self.filename)
 
     def getTableByName(self, tablename):
         sheet = self.wbook.sheet_by_name(tablename)
         if sheet is None:
-            raise KeyError('Invalid table name: "' + str(tablename)
-                    + '".  No matching sheet could be found in the file "'
-                    + self.filename + '".')
+            raise KeyError(
+                'Invalid table name: "{0}".  No matching sheet could be found '
+                'in the file "{1}".'.format(tablename, self.filename)
+            )
 
         table = _ExcelTable(sheet, self.filename)
 

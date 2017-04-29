@@ -18,6 +18,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import os, shutil
 import re
 from ontopilot import logger
