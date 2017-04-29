@@ -21,6 +21,34 @@ from tablereader import TableRow, BaseTable, BaseTableReader
 # Java imports.
 
 
+class UnicodeCSVReader(csv.DictReader):
+    """
+    Wraps the built-in CSV reader object to support various unicode encodings
+    of input CSV files.  All data are parsed into Python unicode strings.  By
+    default, data are assumed to be encoded using UTF-8, but alternative
+    encodings can also be specified.
+    """
+    def __init__(self, csvfile, dialect='excel', encoding='utf-8', **fmtparams):
+        """
+        This initializer has the same signature as that of the standard
+        csv.reader() method, except that an addiitonal argument is added to
+        specify the source encoding.
+        """
+        self.encoding = encoding
+
+        # Get the built-in reader object.
+        self.reader = csv.reader(csvfile, dialect, **fmtparams)
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        row = self.reader.next()
+        u_row = [unicode(cellstr, self.encoding) for cellstr in row]
+
+        return u_row
+
+
 class _CSVTable(BaseTable):
     """
     Represents a single table in a CSV file.  _CSVTable assumes that the first
@@ -119,7 +147,7 @@ class CSVTableReader(BaseTableReader):
                     + ' for the file "' + self.filename + '".')
 
         self.filein.seek(0)
-        self.csvr = csv.reader(self.filein)
+        self.csvr = UnicodeCSVReader(self.filein)
 
         # Get the single table from the input source.
         return _CSVTable(self.csvr, self.tablename, self)

@@ -290,7 +290,11 @@ class TestCSVTableReader(_TestTableReader, unittest.TestCase):
         # ignored.
         'table': (
             {'COL1': 'data 1', 'COLUMN 2':'extra whitespace!', 'COL3':'data2'},
-            {'col1': 'the', 'column 2':'last', 'col3':'row'}
+            {
+                # The 1st cell of row 2 is a unicode lower-case Greek alpha.
+                'col1': unicode('\xce\xb1', 'utf-8'),
+                'column 2':'unicode', 'col3':'row'
+            }
         )
     }
 
