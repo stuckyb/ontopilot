@@ -361,7 +361,11 @@ class TestODFTableReader(_TestTableReader, unittest.TestCase):
         # empty row should be ignored.
         'sheet 1': (
             {'COL1': 'data 1', 'COLUMN 2':'extra whitespace!', 'COL3':'data2'},
-            {'col1': 'the', 'column 2':'last', 'col3':'row'}
+            {
+                # The 1st cell of row 2 is a unicode lower-case Greek alpha.
+                'col1': unicode('\xce\xb1', 'utf-8'),
+                'column 2':'unicode', 'col3':'row'
+            }
         ),
         # The second sheet in the test file includes date and time types.
         'Sheet2': (

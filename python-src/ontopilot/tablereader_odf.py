@@ -148,7 +148,9 @@ class _ODFTable(BaseTable):
             # Uncomment the following line to print the ODF value type for each
             # data cell.
             # print self.sheet.getImmutableCellAt(colnum, self.rowcnt - 1).getValueType()
-            trow[self.colnames[colnum]] = self.sheet.getImmutableCellAt(colnum, self.rowcnt - 1).getTextValue()
+            trow[self.colnames[colnum]] = self.sheet.getImmutableCellAt(
+                colnum, self.rowcnt - 1
+            ).getTextValue()
 
         return trow
 
