@@ -245,6 +245,20 @@ class Test_OntologyDataProperty(_TestOntologyEntity, unittest.TestCase):
 
         self.assertTrue(found_prop)
 
+    def test_addSubproperty(self):
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0022')
+        newprop = self.test_ont.createNewDataProperty(newpropIRI)
+
+        self.t_ent.addSubproperty('http://purl.obolibrary.org/obo/OBTO_0022')
+
+        # Check that the property has the correct subproperty.
+        found_prop = False
+        for axiom in self.owlont.getDataSubPropertyAxiomsForSuperProperty(self.t_owlapiobj):
+            if axiom.getSubProperty().getIRI().equals(newpropIRI):
+                found_prop = True
+
+        self.assertTrue(found_prop)
+
     def test_addDomain(self):
         classIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0010')
 
@@ -341,6 +355,20 @@ class Test_OntologyObjectProperty(_TestOntologyEntity, unittest.TestCase):
         found_prop = False
         for axiom in self.owlont.getObjectSubPropertyAxiomsForSubProperty(self.t_owlapiobj):
             if axiom.getSuperProperty().getIRI().equals(newpropIRI):
+                found_prop = True
+
+        self.assertTrue(found_prop)
+
+    def test_addSubproperty(self):
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0003')
+        newprop = self.test_ont.createNewObjectProperty(newpropIRI)
+
+        self.t_ent.addSubproperty('http://purl.obolibrary.org/obo/OBTO_0003')
+
+        # Check that the property has the correct subproperty.
+        found_prop = False
+        for axiom in self.owlont.getObjectSubPropertyAxiomsForSuperProperty(self.t_owlapiobj):
+            if axiom.getSubProperty().getIRI().equals(newpropIRI):
                 found_prop = True
 
         self.assertTrue(found_prop)
@@ -518,6 +546,21 @@ class Test_OntologyAnnotationProperty(_TestOntologyEntity, unittest.TestCase):
         found_prop = False
         for axiom in self.owlont.getSubAnnotationPropertyOfAxioms(self.t_owlapiobj):
             if axiom.getSuperProperty().getIRI().equals(newpropIRI):
+                found_prop = True
+
+        self.assertTrue(found_prop)
+
+    def test_addSubproperty(self):
+        newpropIRI = IRI.create('http://purl.obolibrary.org/obo/OBTO_0032')
+        newprop = self.test_ont.createNewAnnotationProperty(newpropIRI)
+
+        self.t_ent.addSubproperty('http://purl.obolibrary.org/obo/OBTO_0032')
+
+        # Check that the property has the correct subproperty.
+        found_prop = False
+        subprop = self.test_ont.getExistingAnnotationProperty(newpropIRI).getOWLAPIObj()
+        for axiom in self.owlont.getSubAnnotationPropertyOfAxioms(subprop):
+            if axiom.getSuperProperty().getIRI().equals(self.t_entIRI):
                 found_prop = True
 
         self.assertTrue(found_prop)

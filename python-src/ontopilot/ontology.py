@@ -45,6 +45,7 @@ from org.semanticweb.owlapi.model import OWLOntologyAlreadyExistsException
 from org.semanticweb.owlapi.io import OWLOntologyCreationIOException
 from org.semanticweb.owlapi.model import OWLOntologyFactoryNotFoundException
 from org.semanticweb.owlapi.model.parameters import Imports as ImportsEnum
+from org.semanticweb.owlapi.rdf.rdfxml.renderer import XMLWriterPreferences
 
 
 class Ontology(Observable):
@@ -746,6 +747,14 @@ class Ontology(Observable):
         stream.
         """
         oformat = RDFXMLDocumentFormat()
+
+        iformat = self.ontman.getOntologyFormat(self.ontology)
+        if (
+            iformat.isPrefixOWLOntologyFormat() and
+            oformat.isPrefixOWLOntologyFormat()
+        ):
+            oformat.copyPrefixesFrom(iformat.asPrefixOWLOntologyFormat())
+
         self.ontman.saveOntology(self.ontology, oformat, ostream)
 
     def printOntology(self):

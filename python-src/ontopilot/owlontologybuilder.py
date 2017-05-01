@@ -225,11 +225,22 @@ class OWLOntologyBuilder:
         self._addGenericAxioms(propobj, propdesc, expanddef)
 
         # Get the IRI objects of parent properties and add them as parents.
-        for parentID in self.dsparser.parseString(propdesc['Parent']):
+        parentIDs = (
+            self.dsparser.parseString(propdesc['Parent'])
+            + self.dsparser.parseString(propdesc['Subproperty of'])
+        )
+        for parentID in parentIDs:
             parentIRI = self.ontology.resolveIdentifier(parentID)
             if parentIRI is not None:
                 propobj.addSuperproperty(parentIRI)
 
+        # Add subproperties specified in the 'Superproperty of' field.
+        childIDs = (
+            self.dsparser.parseString(propdesc['Superproperty of'])
+        )
+        for childID in childIDs:
+            propobj.addSubproperty(childID)
+ 
         # Add any domain axioms (specified as class expressions in Manchester
         # Syntax).
         ms_exps = self.dsparser.parseString(propdesc['Domain'])
@@ -292,11 +303,22 @@ class OWLOntologyBuilder:
         self._addGenericAxioms(propobj, propdesc, expanddef)
 
         # Get the IRI objects of parent properties and add them as parents.
-        for parentID in self.dsparser.parseString(propdesc['Parent']):
+        parentIDs = (
+            self.dsparser.parseString(propdesc['Parent'])
+            + self.dsparser.parseString(propdesc['Subproperty of'])
+        )
+        for parentID in parentIDs:
             parentIRI = self.ontology.resolveIdentifier(parentID)
             if parentIRI is not None:
                 propobj.addSuperproperty(parentIRI)
 
+        # Add subproperties specified in the 'Superproperty of' field.
+        childIDs = (
+            self.dsparser.parseString(propdesc['Superproperty of'])
+        )
+        for childID in childIDs:
+            propobj.addSubproperty(childID)
+ 
         # Add any domain axioms (specified as class expressions in Manchester
         # Syntax).
         ms_exps = self.dsparser.parseString(propdesc['Domain'])
@@ -336,7 +358,7 @@ class OWLOntologyBuilder:
         # First normalize the string using unicode compatibility equivalents.
         # This ensures that "space-like" characters (e.g., no-break space) are
         # converted to the ordinary space character.
-        char_str = unicodedata.normalize('NFKC', char_str)
+        char_str = unicodedata.normalize('NFKC', chars_str)
 
         for char_str in chars_str.split(','):
             char_str = char_str.strip().lower()
@@ -392,11 +414,22 @@ class OWLOntologyBuilder:
         self._addGenericAxioms(propobj, propdesc, expanddef)
 
         # Get the IRI objects of parent properties and add them as parents.
-        for parentID in self.dsparser.parseString(propdesc['Parent']):
+        parentIDs = (
+            self.dsparser.parseString(propdesc['Parent'])
+            + self.dsparser.parseString(propdesc['Subproperty of'])
+        )
+        for parentID in parentIDs:
             parentIRI = self.ontology.resolveIdentifier(parentID)
             if parentIRI is not None:
                 propobj.addSuperproperty(parentIRI)
 
+        # Add subproperties specified in the 'Superproperty of' field.
+        childIDs = (
+            self.dsparser.parseString(propdesc['Superproperty of'])
+        )
+        for childID in childIDs:
+            propobj.addSubproperty(childID)
+ 
     def addIndividual(self, indvdesc):
         """
         Adds a new named individual to the ontology, based on a description

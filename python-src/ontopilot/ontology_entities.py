@@ -314,6 +314,31 @@ class _OntologyDataProperty(_OntologyEntity):
         newaxiom = self.df.getOWLSubDataPropertyOfAxiom(self.entityobj, parentprop)
         self.ontology.addEntityAxiom(newaxiom)
 
+    def addSubproperty(self, child_id):
+        """
+        Adds a child property for this property.
+
+        chile_id: The identifier of the child property.  Can be either an OWL
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
+        """
+        # Get the OWL property object of the child, making sure that it is
+        # actually defined.
+        childprop = self.ontology.getExistingDataProperty(child_id)
+        if childprop is None:
+            raise RuntimeError(
+                'The designated subproperty, {0}, could not be found in the '
+                'source ontology.'.format(child_id)
+            )
+        childprop = childprop.getOWLAPIObj()
+
+        # Add the subproperty axiom to the ontology.
+        newaxiom = self.df.getOWLSubDataPropertyOfAxiom(childprop, self.entityobj)
+        self.ontology.addEntityAxiom(newaxiom)
+
     def addDomain(self, manchester_exp):
         """
         Adds a class expression as a domain for this data property.  The class
@@ -457,6 +482,31 @@ class _OntologyObjectProperty(_OntologyEntity):
 
         # Add the subproperty axiom to the ontology.
         newaxiom = self.df.getOWLSubObjectPropertyOfAxiom(self.entityobj, parentprop)
+        self.ontology.addEntityAxiom(newaxiom)
+
+    def addSubproperty(self, child_id):
+        """
+        Adds a child property for this property.
+
+        chile_id: The identifier of the child property.  Can be either an OWL
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
+        """
+        # Get the OWL property object of the child, making sure that it is
+        # actually defined.
+        childprop = self.ontology.getExistingObjectProperty(child_id)
+        if childprop is None:
+            raise RuntimeError(
+                'The designated subproperty, {0}, could not be found in the '
+                'source ontology.'.format(child_id)
+            )
+        childprop = childprop.getOWLAPIObj()
+
+        # Add the subproperty axiom to the ontology.
+        newaxiom = self.df.getOWLSubObjectPropertyOfAxiom(childprop, self.entityobj)
         self.ontology.addEntityAxiom(newaxiom)
 
     def addDomain(self, manchester_exp):
@@ -653,6 +703,31 @@ class _OntologyAnnotationProperty(_OntologyEntity):
 
         # Add the subproperty axiom to the ontology.
         newaxiom = self.df.getOWLSubAnnotationPropertyOfAxiom(self.entityobj, parentprop)
+        self.ontology.addEntityAxiom(newaxiom)
+
+    def addSubproperty(self, child_id):
+        """
+        Adds a child property for this property.
+
+        chile_id: The identifier of the child property.  Can be either an OWL
+            API IRI object or a string containing: a label (with or without a
+            prefix), a prefix IRI (i.e., a curie, such as "owl:Thing"), a full
+            IRI, or an OBO ID (e.g., a string of the form "PO:0000003").
+            Labels should be enclosed in single quotes (e.g., 'label txt' or
+            prefix:'label txt').
+        """
+        # Get the OWL property object of the child, making sure that it is
+        # actually defined.
+        childprop = self.ontology.getExistingAnnotationProperty(child_id)
+        if childprop is None:
+            raise RuntimeError(
+                'The designated subproperty, {0}, could not be found in the '
+                'source ontology.'.format(child_id)
+            )
+        childprop = childprop.getOWLAPIObj()
+
+        # Add the subproperty axiom to the ontology.
+        newaxiom = self.df.getOWLSubAnnotationPropertyOfAxiom(childprop, self.entityobj)
         self.ontology.addEntityAxiom(newaxiom)
 
 
