@@ -39,7 +39,7 @@ REQUIRED_COLS = ('Type', 'ID')
 OPTIONAL_COLS = (
     'Comments', 'Parent', 'Subclass of', 'Superclass of', 'Equivalent to',
     'Disjoint with', 'Inverse', 'Characteristics', 'Relations', 'Data facts',
-    'Annotations', 'Ignore'
+    'Annotations', 'Ignore', 'Subproperty of', 'Superproperty of'
 )
         
 class OntoBuildTarget(BuildTargetWithConfig):

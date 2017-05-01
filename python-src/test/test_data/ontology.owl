@@ -119,12 +119,14 @@
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
 
-    <!-- individual_001 -->
+    <!-- test individual 1 -->
 
     <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/OBTO_8000">
         <rdf:type rdf:resource="http://purl.obolibrary.org/obo/OBTO_0011"/>
         <rdfs:label xml:lang="en">test individual 1</rdfs:label>
     </owl:NamedIndividual>
+
+    <!-- test individual 2 -->
 
     <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/OBTO_8001">
         <rdf:type rdf:resource="http://purl.obolibrary.org/obo/OBTO_0010"/>
