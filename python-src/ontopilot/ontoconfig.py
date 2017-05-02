@@ -531,7 +531,7 @@ class OntoConfig(RawConfigParser):
     def getPreprocessInverses(self):
         """
         Returns True if inverse object property assertions and inverse negative
-        object property assertions should be added to the ontology prior
+        object property assertions should be added to the ontology prior to
         generating inferred axioms with a reasoner; returns False otherwise.
         """
         preprocess_inverses = self.getCustom(
@@ -550,4 +550,17 @@ class OntoConfig(RawConfigParser):
             etfpath = self._getAbsPath(etfpath)
 
         return etfpath
+
+    def getAnnotateMerged(self):
+        """
+        Returns True if entities that are merged into the main ontology from an
+        external ontology should be annotated with the 'imported from'
+        (IAO:0000412) annotation property to indicate their origin; returns
+        False otherwise.  The default is True.
+        """
+        annotate_merged = self.getCustom(
+            'Imports', 'annotate_merged', 'True'
+        )
+
+        return annotate_merged.lower() in TRUE_STRS
 

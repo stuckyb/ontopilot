@@ -529,6 +529,7 @@ class TestOntoConfig(unittest.TestCase):
 
         self.oc.set('Reasoning', 'preprocess_inverses', 'true')
         self.assertTrue(self.oc.getPreprocessInverses())
+
     def test_getExcludedTypesFile(self):
         # Test the default case.
         self.assertEqual('', self.oc.getExcludedTypesFile())
@@ -545,4 +546,13 @@ class TestOntoConfig(unittest.TestCase):
         abspath = '/an/absolute/path/excluded.csv'
         self.oc.set('Reasoning', 'excluded_types_file', abspath)
         self.assertEqual(abspath, self.oc.getExcludedTypesFile())
+
+    def test_getAnnotateMerged(self):
+        self.assertTrue(self.oc.getAnnotateMerged())
+
+        self.oc.set('Imports', 'annotate_merged', 'false')
+        self.assertFalse(self.oc.getAnnotateMerged())
+
+        self.oc.set('Imports', 'annotate_merged', 'true')
+        self.assertTrue(self.oc.getAnnotateMerged())
 
