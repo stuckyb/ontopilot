@@ -18,7 +18,9 @@
 
 import sys
 import os.path
+import glob
 import unittest
+from argparse import ArgumentParser
 
 
 # Make sure we can find the ontopilot modules.
@@ -30,30 +32,47 @@ ontopilot_dir = os.path.normpath(
 )
 sys.path.append(ontopilot_dir)
 
+# Discover all of the test module names.
+testmod_fnames = glob.glob('test_*.py')
+test_modules = [os.path.splitext(fname)[0] for fname in testmod_fnames]
+
+# Define the command-line arguments.  The interface is simple -- there is a
+# single positional argument that is the name of a single test module to run.
+# This argument can be repeated to specify a set of test modules to run.  If no
+# module names are provided, all test modules will be run.
+argp = ArgumentParser(description="Runs OntoPilot's tests.")
+argp.add_argument(
+    'module_name', type=str, nargs='*', help='A test module to run.  Must be '
+    'one of ({0}).'.format('"' + '", "'.join(sorted(test_modules)) + '"')
+)
+
+args = argp.parse_args()
+
+for module_name in args.module_name:
+    if module_name not in test_modules:
+        print ('\nERROR: The name "{0}" is not a valid test module name.  Valid '
+        'module names are:\n{1}.\n'.format(
+            module_name, '"' + '"\n"'.join(sorted(test_modules)) + '"'
+        ))
+        sys.exit(1)
+
 # Implements a very simple test runner for all test modules.  This could
 # probably be done even more easily using a package such as nose, but the
 # advantage here is that only unittest methods are needed, so the test suites
 # are very easy to run on any platform without needing to install additional
 # packages.
 
-test_modules = [
-    'test_labelmap', 'test_tablereader', 'test_mshelper',
-    'test_owlontologybuilder', 'test_ontology', 'test_delimstr_parser',
-    'test_ontology_entities', 'test_ontoconfig', 'test_onto_buildtarget',
-    'test_importmodulebuilder', 'test_imports_buildtarget',
-    'test_reasoner_manager', 'test_inferred_axiom_adder', 'test_buildtarget',
-    'test_modified_onto_buildtarget', 'test_buildtarget_manager',
-    'test_obohelper', 'test_idresolver', 'test_observable',
-    'test_update_base_imports_buildtarget', 'test_release_buildtarget',
-    'test_basictimer', 'test_module_extractor', 'test_nethelper'
-]
-
 successful = True
 total = failed = 0
 
 runner = unittest.TextTestRunner(verbosity=2)
 
-for test_module in test_modules:
+if len(args.module_name) > 0:
+    mods_to_run = args.module_name
+else:
+    mods_to_run = test_modules
+
+for test_module in mods_to_run:
     suite = unittest.defaultTestLoader.loadTestsFromName(test_module)
     res = runner.run(suite)
 
