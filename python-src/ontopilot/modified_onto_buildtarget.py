@@ -148,7 +148,9 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
                 'Merging all imported ontologies into the main ontology...'
             )
             for importIRI in mainont.getImports():
-                mainont.mergeOntology(importIRI)
+                mainont.mergeOntology(
+                    importIRI, self.config.getAnnotateMerged()
+                )
 
         if self.prereason:
             logger.info('Running reasoner and adding inferred axioms...')

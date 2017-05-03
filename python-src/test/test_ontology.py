@@ -297,6 +297,38 @@ class Test_Ontology(unittest.TestCase):
         ):
             self.ont.updateImportIRI('http://iri.with.no/import', old_iri)
 
+    def test_getImportedFromAnnotations(self):
+        axioms = self.owlont.getAxioms(ImportsEnum.EXCLUDED)
+
+        if_axioms = self.ont._getImportedFromAnnotations(axioms, self.owlont)
+
+        # Define the IRIs of the entities that should be annotated.
+        baseIRI = 'http://purl.obolibrary.org/obo/OBTO_'
+        idnums = (
+            '0001', '0020', '0030', '0010', '0011', '0012', '8000', '8001'
+        )
+        ent_IRIs = set([baseIRI + idnum for idnum in idnums])
+
+        self.assertEqual(len(ent_IRIs), len(if_axioms))
+
+        ontIRI = self.owlont.getOntologyID().getOntologyIRI().get()
+
+        res_IRIs = set()
+        for if_axiom in if_axioms:
+            # Check the annotation property and value of each axiom.
+            self.assertTrue(
+                Ontology.IMPORTED_FROM_IRI.equals(
+                    if_axiom.getProperty().getIRI()
+                )
+            )
+
+            self.assertTrue(ontIRI.equals(if_axiom.getValue().asIRI().get()))
+
+            res_IRIs.add(if_axiom.getSubject().toString())
+        
+        # Check all of the annotation subjects.
+        self.assertEqual(ent_IRIs, res_IRIs)
+
     def test_mergeOntology(self):
         mergeiri_str = 'https://github.com/stuckyb/ontopilot/raw/master/python-src/test/test_data/ontology-import.owl'
         mergeIRI = IRI.create(mergeiri_str)

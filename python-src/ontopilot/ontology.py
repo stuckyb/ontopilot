@@ -54,11 +54,16 @@ class Ontology(Observable):
     Conceptually, instances of this class represent a single OWL ontology.
     """
     # The IRI for the "dc:source" annotation property.
-    SOURCE_PROP_IRI = IRI.create('http://purl.org/dc/elements/1.1/source')
+    SOURCE_ANNOT_IRI = IRI.create('http://purl.org/dc/elements/1.1/source')
 
-    # The IRI for inferred axiom annotation.
+    # The IRI for inferred axiom annotations.
     INFERRED_ANNOT_IRI = IRI.create(
         'http://www.geneontology.org/formats/oboInOwl#is_inferred'
+    )
+
+    # The IRI for the 'imported from' annotation property.
+    IMPORTED_FROM_IRI = IRI.create(
+        'http://purl.obolibrary.org/obo/IAO_0000412'
     )
 
     def __init__(self, ontology_source=None):
@@ -647,7 +652,59 @@ class Ontology(Observable):
             AddImport(owlont, importdec)
         )
 
-    def mergeOntology(self, source_iri):
+    def _getImportedFromAnnotations(self, axiomset, sourceont):
+        """
+        For a given set of OWL API axioms, returns a set of annotation axioms
+        that apply the 'imported from' annotation property (IAO:0000412), with
+        the source ontology IRI as the annotation value, to all entities
+        declared in the set of axioms.
+
+        axiomset: A set of OWL API axioms.
+        sourceont: An OWL API ontology object.
+        """
+        sourceIRI = None
+
+        # By default, use the source ontology IRI as the value for the
+        # 'imported from' annotations.
+        if sourceont.getOntologyID().getOntologyIRI().isPresent():
+            sourceIRI = sourceont.getOntologyID().getOntologyIRI().get()
+
+        # Check if the source ontology has a "dc:source" annotation.  If so,
+        # use that for the value of the 'imported from' annotations.
+        for ont_annot in sourceont.getAnnotations():
+            if ont_annot.getProperty().getIRI().equals(self.SOURCE_ANNOT_IRI):
+                if ont_annot.getValue().asIRI().isPresent():
+                    sourceIRI = ont_annot.getValue().asIRI().get()
+
+        # If we don't have a source IRI, there is no point in generating
+        # 'imported from' annotations, so return an empty axiom set.
+        if sourceIRI is None:
+            return set()
+
+        # Make sure that the 'imported from' annotation property is in the
+        # ontology; if not, add it.
+        annotprop = self.getExistingAnnotationProperty(self.IMPORTED_FROM_IRI)
+        if annotprop is None:
+            annotprop = self.createNewAnnotationProperty(self.IMPORTED_FROM_IRI)
+            annotprop.addLabel('imported from')
+
+        annotprop_oao = annotprop.getOWLAPIObj()
+
+        annot_axioms = set()
+
+        for axiom in AxiomType.getAxiomsOfTypes(
+            axiomset, AxiomType.DECLARATION
+        ):
+            annot = self.df.getOWLAnnotation(annotprop_oao, sourceIRI)
+            newaxiom = self.df.getOWLAnnotationAssertionAxiom(
+                axiom.getEntity().getIRI(), annot
+            )
+
+            annot_axioms.add(newaxiom)
+
+        return annot_axioms
+
+    def mergeOntology(self, source_iri, annotate_merged=True):
         """
         Merges the axioms from an external ontology into this ontology.  Also
         manages collisions with import declarations, so that if the merged
@@ -657,6 +714,8 @@ class Ontology(Observable):
         source_iri: The document IRI of the source ontology.  Can be either an
             IRI object or a string containing a relative IRI, prefix IRI, or
             full IRI.
+        annotate_merged: If True, merged entities will be annotated with the
+            'imported from' annotation property (IAO:0000412).
         """
         sourceIRI = self.idr.expandIRI(source_iri)
         owlont = self.getOWLOntology()
@@ -678,6 +737,12 @@ class Ontology(Observable):
         # Add the axioms from the external ontology to this ontology.
         axiomset = importont.getAxioms(ImportsEnum.EXCLUDED)
         self.ontman.addAxioms(owlont, axiomset)
+
+        # If requested, add 'imported from' annotations for all entities in the
+        # imported axioms.
+        if (annotate_merged):
+            if_axioms = self._getImportedFromAnnotations(axiomset, importont)
+            self.ontman.addAxioms(owlont, if_axioms)
 
         # See if the merged ontology was already in the imports declarations
         # for the target ontology; if so, remove it.  Do this by gathering
@@ -735,7 +800,7 @@ class Ontology(Observable):
         """
         sourceIRI = self.idr.expandIRI(source_iri)
 
-        sourceprop = self.df.getOWLAnnotationProperty(self.SOURCE_PROP_IRI)
+        sourceprop = self.df.getOWLAnnotationProperty(self.SOURCE_ANNOT_IRI)
         s_annot = self.df.getOWLAnnotation(sourceprop, sourceIRI)
         self.ontman.applyChange(
             AddOntologyAnnotation(self.getOWLOntology(), s_annot)
