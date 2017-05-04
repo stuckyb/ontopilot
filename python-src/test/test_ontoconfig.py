@@ -556,3 +556,22 @@ class TestOntoConfig(unittest.TestCase):
         self.oc.set('Imports', 'annotate_merged', 'true')
         self.assertTrue(self.oc.getAnnotateMerged())
 
+    def test_getOutputFormat(self):
+        # Check the default value.
+        self.assertEqual('RDF/XML', self.oc.getOutputFormat())
+
+        # Verify that output format strings are not case sensitive.  If
+        # matching were case sensitive, than at least one of the following
+        # would throw an exception.
+        self.oc.set('Build', 'output_format', 'TURTLE')
+        self.assertEqual('TURTLE', self.oc.getOutputFormat())
+        self.oc.set('Build', 'output_format', 'turtle')
+        self.assertEqual('turtle', self.oc.getOutputFormat())
+
+        # Verify that invalid strings are properly handled.
+        self.oc.set('Build', 'output_format', 'invalid')
+        with self.assertRaisesRegexp(
+            ConfigError, 'Invalid value for the "output_format" setting'
+        ):
+            self.oc.getOutputFormat()
+

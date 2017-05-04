@@ -22,6 +22,7 @@ import glob
 import urllib, urlparse
 from rfc3987 import rfc3987
 from ontopilot import logger, TRUE_STRS
+from ontology import OUTPUT_FORMATS
 from inferred_axiom_adder import INFERENCE_TYPES
 
 # Java imports.
@@ -563,4 +564,22 @@ class OntoConfig(RawConfigParser):
         )
 
         return annotate_merged.lower() in TRUE_STRS
+
+    def getOutputFormat(self):
+        """
+        Returns the string identifying the output format to use.  If this
+        option is not configured, use "RDF/XML" as the default.
+        """
+        oformat = self.getCustom('Build', 'output_format', 'RDF/XML')
+
+        if not(oformat.lower() in [ofstr.lower() for ofstr in OUTPUT_FORMATS]):
+            raise ConfigError(
+                'Invalid value for the "output_format" setting in the build '
+                'configuration file: "{0}".  Supported values are: '
+                '{1}.'.format(
+                    oformat, '"' + '", "'.join(OUTPUT_FORMATS) + '"'
+                )
+            )
+
+        return oformat
 
