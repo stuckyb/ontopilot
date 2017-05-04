@@ -176,7 +176,7 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
 
         # Write the ontology to the output file.
         logger.info('Writing compiled ontology to ' + fileoutpath + '...')
-        mainont.saveOntology(fileoutpath)
+        mainont.saveOntology(fileoutpath, self.config.getOutputFormat())
 
         if self.mergeimports and self.prereason:
             msgtxt = 'Merged and reasoned '

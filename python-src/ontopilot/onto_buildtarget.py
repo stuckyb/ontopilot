@@ -295,7 +295,9 @@ class OntoBuildTarget(BuildTargetWithConfig):
 
         # Write the ontology to the output file.
         logger.info('Writing compiled ontology to ' + fileoutpath + '...')
-        ontbuilder.getOntology().saveOntology(fileoutpath)
+        ontbuilder.getOntology().saveOntology(
+            fileoutpath, self.config.getOutputFormat()
+        )
 
         logger.info(
             'Main ontology build completed in {0} s.\n'.format(timer.stop())

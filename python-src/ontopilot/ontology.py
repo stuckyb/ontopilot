@@ -37,7 +37,10 @@ from org.semanticweb.owlapi.model import IRI, OWLOntologyID
 from org.semanticweb.owlapi.model import AddAxiom, AddImport, RemoveImport
 from org.semanticweb.owlapi.model import SetOntologyID, AxiomType, OWLOntology
 from org.semanticweb.owlapi.model import AddOntologyAnnotation
-from org.semanticweb.owlapi.formats import RDFXMLDocumentFormat
+from org.semanticweb.owlapi.formats import (
+    RDFXMLDocumentFormat, TurtleDocumentFormat, OWLXMLDocumentFormat,
+    ManchesterSyntaxDocumentFormat
+)
 from uk.ac.manchester.cs.owlapi.modularity import SyntacticLocalityModuleExtractor
 from uk.ac.manchester.cs.owlapi.modularity import ModuleType
 from com.google.common.base import Optional
@@ -46,6 +49,10 @@ from org.semanticweb.owlapi.io import OWLOntologyCreationIOException
 from org.semanticweb.owlapi.model import OWLOntologyFactoryNotFoundException
 from org.semanticweb.owlapi.model.parameters import Imports as ImportsEnum
 from org.semanticweb.owlapi.rdf.rdfxml.renderer import XMLWriterPreferences
+
+
+# Define constants for the supported output formats.
+OUTPUT_FORMATS = ('RDF/XML', 'Turtle', 'OWL/XML', 'Manchester')
 
 
 class Ontology(Observable):
@@ -806,12 +813,27 @@ class Ontology(Observable):
             AddOntologyAnnotation(self.getOWLOntology(), s_annot)
         )
 
-    def _writeToStream(self, ostream):
+    def _writeToStream(self, ostream, format_str):
         """
         An internal method that writes the ontology to the specified output
         stream.
         """
-        oformat = RDFXMLDocumentFormat()
+        lcformat_str = format_str.lower()
+        if lcformat_str == 'rdf/xml':
+            oformat = RDFXMLDocumentFormat()
+        elif lcformat_str == 'turtle':
+            oformat = TurtleDocumentFormat()
+        elif lcformat_str == 'owl/xml':
+            oformat = OWLXMLDocumentFormat()
+        elif lcformat_str == 'manchester':
+            oformat = ManchesterSyntaxDocumentFormat()
+        else:
+            raise RuntimeError(
+                'Invalid ontology format string: "{0}".  Supported values '
+                'are: {1}.'.format(
+                    format_str, '"' + '", "'.join(OUTPUT_FORMATS) + '"'
+                )
+            )
 
         iformat = self.ontman.getOntologyFormat(self.ontology)
         if (
@@ -822,19 +844,19 @@ class Ontology(Observable):
 
         self.ontman.saveOntology(self.ontology, oformat, ostream)
 
-    def printOntology(self):
+    def printOntology(self, format_str='RDF/XML'):
         """
         Prints the ontology to standard output.
         """
-        self._writeToStream(JavaSystem.out)
+        self._writeToStream(JavaSystem.out, format_str)
 
-    def saveOntology(self, filepath):
+    def saveOntology(self, filepath, format_str='RDF/XML'):
         """
         Saves the ontology to a file.
         """
         foutputstream = FileOutputStream(File(filepath))
         try:
-            self._writeToStream(foutputstream)
+            self._writeToStream(foutputstream, format_str)
         finally:
             foutputstream.close()
 
