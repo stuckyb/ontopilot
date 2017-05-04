@@ -23,6 +23,7 @@ from __future__ import unicode_literals
 import os
 import glob
 from ontopilot import logger
+from basictimer import BasicTimer
 from tablereaderfactory import TableReaderFactory
 from owlontologybuilder import OWLOntologyBuilder, EntityDescriptionError
 from ontopilot import TRUE_STRS
@@ -183,6 +184,9 @@ class OntoBuildTarget(BuildTargetWithConfig):
         """
         Runs the build process and produces a compiled OWL ontology file.
         """
+        timer = BasicTimer()
+        timer.start()
+
         # Get the imports modules IRIs from the imports build target.
         importsIRIs = [info.iristr for info in self.ibt.getImportsInfo()]
 
@@ -257,4 +261,8 @@ class OntoBuildTarget(BuildTargetWithConfig):
         # Write the ontology to the output file.
         logger.info('Writing compiled ontology to ' + fileoutpath + '...')
         ontbuilder.getOntology().saveOntology(fileoutpath)
+
+        logger.info(
+            'Main ontology build completed in {0} s.\n'.format(timer.stop())
+        )
 
