@@ -18,6 +18,7 @@
 from __future__ import unicode_literals
 import os
 from ontopilot import logger
+from basictimer import BasicTimer
 from ontology import Ontology
 from buildtarget import BuildTargetWithConfig
 from onto_buildtarget import OntoBuildTarget
@@ -137,6 +138,9 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
         Runs the build process and produces a new, modified version of the main
         OWL ontology file.
         """
+        timer = BasicTimer()
+        timer.start()
+
         self._retrieveAndCheckFilePaths()
 
         mainont = Ontology(self.obt.getOutputFilePath())
@@ -148,7 +152,9 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
                 'Merging all imported ontologies into the main ontology...'
             )
             for importIRI in mainont.getImports():
-                mainont.mergeOntology(importIRI)
+                mainont.mergeOntology(
+                    importIRI, self.config.getAnnotateMerged()
+                )
 
         if self.prereason:
             logger.info('Running reasoner and adding inferred axioms...')
@@ -170,5 +176,18 @@ class ModifiedOntoBuildTarget(BuildTargetWithConfig):
 
         # Write the ontology to the output file.
         logger.info('Writing compiled ontology to ' + fileoutpath + '...')
-        mainont.saveOntology(fileoutpath)
+        mainont.saveOntology(fileoutpath, self.config.getOutputFormat())
+
+        if self.mergeimports and self.prereason:
+            msgtxt = 'Merged and reasoned '
+        elif self.mergeimports:
+            msgtxt = 'Merged '
+        else:
+            msgtxt = 'Reasoned '
+
+        logger.info(
+            (msgtxt + 'ontology build completed in {0} s.\n').format(
+                timer.stop()
+            )
+        )
 

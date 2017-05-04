@@ -256,5 +256,5 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
                 if ont.hasImport(ifinfo.oldIRI):
                     ont.updateImportIRI(ifinfo.oldIRI, ifinfo.versionIRI)
 
-            ont.saveOntology(fileinfo.destpath)
+            ont.saveOntology(fileinfo.destpath, self.config.getOutputFormat())
 

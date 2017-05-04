@@ -22,6 +22,7 @@ import glob
 import urllib, urlparse
 from rfc3987 import rfc3987
 from ontopilot import logger, TRUE_STRS
+from ontology import OUTPUT_FORMATS
 from inferred_axiom_adder import INFERENCE_TYPES
 
 # Java imports.
@@ -531,7 +532,7 @@ class OntoConfig(RawConfigParser):
     def getPreprocessInverses(self):
         """
         Returns True if inverse object property assertions and inverse negative
-        object property assertions should be added to the ontology prior
+        object property assertions should be added to the ontology prior to
         generating inferred axioms with a reasoner; returns False otherwise.
         """
         preprocess_inverses = self.getCustom(
@@ -550,4 +551,35 @@ class OntoConfig(RawConfigParser):
             etfpath = self._getAbsPath(etfpath)
 
         return etfpath
+
+    def getAnnotateMerged(self):
+        """
+        Returns True if entities that are merged into the main ontology from an
+        external ontology should be annotated with the 'imported from'
+        (IAO:0000412) annotation property to indicate their origin; returns
+        False otherwise.  The default is True.
+        """
+        annotate_merged = self.getCustom(
+            'Imports', 'annotate_merged', 'True'
+        )
+
+        return annotate_merged.lower() in TRUE_STRS
+
+    def getOutputFormat(self):
+        """
+        Returns the string identifying the output format to use.  If this
+        option is not configured, use "RDF/XML" as the default.
+        """
+        oformat = self.getCustom('Build', 'output_format', 'RDF/XML')
+
+        if not(oformat.lower() in [ofstr.lower() for ofstr in OUTPUT_FORMATS]):
+            raise ConfigError(
+                'Invalid value for the "output_format" setting in the build '
+                'configuration file: "{0}".  Supported values are: '
+                '{1}.'.format(
+                    oformat, '"' + '", "'.join(OUTPUT_FORMATS) + '"'
+                )
+            )
+
+        return oformat
 

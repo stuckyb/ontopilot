@@ -97,9 +97,10 @@ class InferencePipelineBuildTarget(BuildTargetWithConfig):
         )
 
         # Write the ontology to the output file or stdout.
+        format_str = self.config.getOutputFormat()
         if self.outpath != '':
             logger.info('Writing compiled ontology to ' + self.outpath + '...')
-            sourceont.saveOntology(self.outpath)
+            sourceont.saveOntology(self.outpath, format_str)
         else:
-            sourceont.printOntology()
+            sourceont.printOntology(format_str)
 
