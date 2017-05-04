@@ -199,8 +199,8 @@ class OntoBuildTarget(BuildTargetWithConfig):
             if mtime < os.path.getmtime(self.config.getBaseOntologyPath()):
                 return True
 
-            # Check the modification time of each terms file.
-            for sourcefile in self.config.getEntitySourceFilePaths():
+            # Check the modification time of each source entities file.
+            for sourcefile in self._getExpandedSourceFilesList():
                 if mtime < os.path.getmtime(sourcefile):
                     return True
 
