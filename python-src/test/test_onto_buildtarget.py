@@ -45,6 +45,33 @@ class TestOntoBuildTarget(unittest.TestCase):
 
         self.td_path = os.path.abspath('test_data/')
 
+    def test_isGlobPattern(self):
+        testvals = [
+            ('', False),
+            ('a', False),
+            ('ab', False),
+            ('*', True),
+            ('a*', True),
+            ('*a', True),
+            ('a*b', True),
+            ('a?b', True),
+            ('[', False),
+            (']', False),
+            ('[]', False),
+            ('[*]', False),
+            ('a[*]b', False),
+            ('a[*]bc*d', True),
+            ('[?]', False),
+            ('[[]', False),
+            ('[[a]', True),
+            ('[?*]', True),
+            ('a[ab]', True),
+            ('a[ab]b', True)
+        ]
+
+        for testval in testvals:
+            self.assertEqual(testval[1], self.obt._isGlobPattern(testval[0]))
+
     def test_getExpandedSourceFilesList(self):
         # Test a set of terms file paths that includes wildcards and duplicate
         # file paths (including duplicates caused by expansion).
