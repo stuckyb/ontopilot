@@ -70,6 +70,9 @@ def addNewIRIMapping(ontologyIRI, documentIRI):
     ontologyIRI: An OWL API IRI object.
     documentIRI: An OWL API IRI object.
     """
+    if ontologyIRI.equals(documentIRI):
+        return
+
     if ontologyIRI not in _IRImappings:
         _IRImappings[ontologyIRI] = documentIRI
 
