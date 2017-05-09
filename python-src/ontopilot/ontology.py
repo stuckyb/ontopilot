@@ -20,6 +20,7 @@
 
 # Python imports.
 from __future__ import unicode_literals
+import oom_manager
 from idresolver import IDResolver
 from ontology_entities import _OntologyClass, _OntologyDataProperty
 from ontology_entities import _OntologyObjectProperty, _OntologyAnnotationProperty
@@ -41,14 +42,11 @@ from org.semanticweb.owlapi.formats import (
     RDFXMLDocumentFormat, TurtleDocumentFormat, OWLXMLDocumentFormat,
     ManchesterSyntaxDocumentFormat
 )
-from uk.ac.manchester.cs.owlapi.modularity import SyntacticLocalityModuleExtractor
-from uk.ac.manchester.cs.owlapi.modularity import ModuleType
 from com.google.common.base import Optional
 from org.semanticweb.owlapi.model import OWLOntologyAlreadyExistsException
 from org.semanticweb.owlapi.io import OWLOntologyCreationIOException
 from org.semanticweb.owlapi.model import OWLOntologyFactoryNotFoundException
 from org.semanticweb.owlapi.model.parameters import Imports as ImportsEnum
-from org.semanticweb.owlapi.rdf.rdfxml.renderer import XMLWriterPreferences
 
 
 # Define constants for the supported output formats.
@@ -83,13 +81,13 @@ class Ontology(Observable):
         """
         if isinstance(ontology_source, InputStream):
             # Load the ontology from the InputStream.
-            self.ontman = OWLManager.createOWLOntologyManager()
+            self.ontman = oom_manager.getNewOWLOntologyManager()
             self.ontology = self.ontman.loadOntologyFromOntologyDocument(
                 ontology_source
             )
         elif isinstance(ontology_source, basestring): 
             # Load the ontology from the source file.
-            self.ontman = OWLManager.createOWLOntologyManager()
+            self.ontman = oom_manager.getNewOWLOntologyManager()
             self.ontology = self.ontman.loadOntologyFromOntologyDocument(
                 File(ontology_source)
             )
@@ -97,7 +95,7 @@ class Ontology(Observable):
             self.ontology = ontology_source
             self.ontman = self.ontology.getOWLOntologyManager()
         elif ontology_source is None:
-            self.ontman = OWLManager.createOWLOntologyManager()
+            self.ontman = oom_manager.getNewOWLOntologyManager()
             self.ontology = self.ontman.createOntology()
         else:
             raise RuntimeError(
