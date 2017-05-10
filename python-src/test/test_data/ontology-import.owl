@@ -8,7 +8,7 @@
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:obo="http://purl.obolibrary.org/obo/">
-    <owl:Ontology rdf:about="https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology-import.owl">
+     <owl:Ontology rdf:about="https://github.com/stuckyb/ontopilot/raw/master/python-src/test/test_data/ontology-import.owl">
         <rdfs:label xml:lang="en">Simple Imported Test Ontology</rdfs:label>
     </owl:Ontology>
 
