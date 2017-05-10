@@ -572,15 +572,14 @@ class Ontology(Observable):
         if docIRI is None:
             docIRI = sourceIRI
         
-        # Check if the imported ontology is already included in an imports
-        # declaration.  If so, there's nothing to do.
+        # Check if the imported ontology is already included as an import.  If
+        # so, there's nothing to do.
         importdocs = owlont.getDirectImportsDocuments()
         if importdocs.contains(docIRI):
             return
 
         # Check if the import IRI redirects to another URI, in which case get
-        # the true location and check if *it* is already included in an imports
-        # declaration.
+        # the true location and check if *it* is already included as an import.
         redir_iri = nethelper.checkForRedirect(docIRI)
         if redir_iri != '':
             if importdocs.contains(IRI.create(redir_iri)):
@@ -605,7 +604,9 @@ class Ontology(Observable):
                 # makeLoadImportRequest() is called, the already-loaded version
                 # of the ontology is used (that is, it is not parsed again), so
                 # these method calls should not hurt performance.
-                importont = self.ontman.loadOntology(sourceIRI)
+                importont = self.ontman.getOntology(sourceIRI)
+                if importont is None:
+                    importont = self.ontman.loadOntology(sourceIRI)
                 self.ontman.makeLoadImportRequest(importdec)
 
             except (
