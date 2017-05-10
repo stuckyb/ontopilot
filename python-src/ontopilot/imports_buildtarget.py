@@ -21,7 +21,9 @@
 # Python imports.
 from __future__ import unicode_literals
 import os
+import urllib, urlparse
 from ontopilot import logger
+import oom_manager
 from tablereaderfactory import TableReaderFactory
 from tablereader import TableRowError
 from importmodulebuilder import ImportModuleBuilder
@@ -32,6 +34,7 @@ from basic_buildtargets import BuildDirTarget
 from collections import namedtuple
 
 # Java imports.
+from org.semanticweb.owlapi.model import IRI
 
 
 # Define a simple "struct"-like type for storing imports module file name/IRI
@@ -82,7 +85,18 @@ class ImportsBuildTarget(BuildTargetWithConfig):
                         self.config.getImportModSuffix(), self.builddir,
                         self.outputdir
                     )
-        
+
+        # Update the IRI mappings for the import modules so that the local
+        # files are loaded instead of the versions at the remote IRIs.
+        for modinfo in self.getImportsInfo():
+            if modinfo.filename != '':
+                doc_iristr = urlparse.urljoin(
+                    'file://localhost', urllib.pathname2url(modinfo.filename)
+                )
+                oom_manager.addNewIRIMapping(
+                    IRI.create(modinfo.iristr), IRI.create(doc_iristr)
+                )
+
     def _checkFiles(self):
         """
         Verifies that all files and directories needed for the build exist.

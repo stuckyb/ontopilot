@@ -20,6 +20,7 @@
 
 # Python imports.
 from __future__ import unicode_literals
+from ontopilot import logger
 import oom_manager
 from idresolver import IDResolver
 from ontology_entities import _OntologyClass, _OntologyDataProperty
@@ -43,6 +44,7 @@ from org.semanticweb.owlapi.formats import (
     ManchesterSyntaxDocumentFormat
 )
 from com.google.common.base import Optional
+from org.semanticweb.owlapi.model import OWLOntologyDocumentAlreadyExistsException
 from org.semanticweb.owlapi.model import OWLOntologyAlreadyExistsException
 from org.semanticweb.owlapi.io import OWLOntologyCreationIOException
 from org.semanticweb.owlapi.model import OWLOntologyFactoryNotFoundException
@@ -555,25 +557,31 @@ class Ontology(Observable):
         """
         Adds an OWL import statement to this ontology.
 
-        source_iri: The document IRI of the source ontology.  Can be either an
-            IRI object or a string containing a relative IRI, prefix IRI, or
-            full IRI.
+        source_iri: The IRI of the source ontology.  If there is no mapping of
+            the source ontology IRI to a document IRI, then the ontology IRI is
+            assumed to also be the document IRI.  Can be either an IRI object
+            or a string containing a relative IRI, prefix IRI, or full IRI.
         load_import: If True, the new import will be automatically loaded and
             its terms labels will be added to the internal LabelMap.
         """
         sourceIRI = self.idr.expandIRI(source_iri)
         owlont = self.getOWLOntology()
+
+        # First, check if the ontology IRI maps to a different document IRI.
+        docIRI = oom_manager.lookupDocumentIRI(self.ontman, sourceIRI)
+        if docIRI is None:
+            docIRI = sourceIRI
         
         # Check if the imported ontology is already included in an imports
         # declaration.  If so, there's nothing to do.
         importdocs = owlont.getDirectImportsDocuments()
-        if importdocs.contains(sourceIRI):
+        if importdocs.contains(docIRI):
             return
 
         # Check if the import IRI redirects to another URI, in which case get
         # the true location and check if *it* is already included in an imports
         # declaration.
-        redir_iri = nethelper.checkForRedirect(sourceIRI)
+        redir_iri = nethelper.checkForRedirect(docIRI)
         if redir_iri != '':
             if importdocs.contains(IRI.create(redir_iri)):
                 return
@@ -597,7 +605,7 @@ class Ontology(Observable):
                 # makeLoadImportRequest() is called, the already-loaded version
                 # of the ontology is used (that is, it is not parsed again), so
                 # these method calls should not hurt performance.
-                importont = self.ontman.loadOntologyFromOntologyDocument(sourceIRI)
+                importont = self.ontman.loadOntology(sourceIRI)
                 self.ontman.makeLoadImportRequest(importdec)
 
             except (
@@ -716,28 +724,49 @@ class Ontology(Observable):
         ontology is declared as an import in the target ontology (i.e., this
         ontology), the import declaration will be deleted.
 
-        source_iri: The document IRI of the source ontology.  Can be either an
-            IRI object or a string containing a relative IRI, prefix IRI, or
-            full IRI.
+        source_iri: The IRI of the source ontology.  If there is no mapping of
+            the source ontology IRI to a document IRI, then the ontology IRI is
+            assumed to also be the document IRI.  Can be either an IRI object
+            or a string containing a relative IRI, prefix IRI, or full IRI.
         annotate_merged: If True, merged entities will be annotated with the
             'imported from' annotation property (IAO:0000412).
         """
         sourceIRI = self.idr.expandIRI(source_iri)
         owlont = self.getOWLOntology()
 
-        try:
-            importont = self.ontman.loadOntologyFromOntologyDocument(sourceIRI)
-        except OWLOntologyAlreadyExistsException as err:
-            importont = self.ontman.getOntology(err.getOntologyID())
-        except (
-            OWLOntologyFactoryNotFoundException,
-            OWLOntologyCreationIOException
-        ) as err:
-            raise RuntimeError(
-                'The import module ontology at <{0}> could not be loaded.  '
-                'Please make sure that the IRI is correct and that the import '
-                'module ontology is accessible.'.format(source_iri)
-            )
+        importont = self.ontman.getOntology(sourceIRI)
+        if importont is None:
+            try:
+                importont = self.ontman.loadOntology(sourceIRI)
+            except OWLOntologyDocumentAlreadyExistsException as err:
+                logger.warning(
+                    'There was a problem with the IRI of the merged/imported '
+                    'ontology located at <{0}>.  The expected ontology IRI, '
+                    '<{1}>, appears to be incorrect.  Please confirm that the '
+                    'expected ontology IRI matches the merged/imported '
+                    'ontology\'s IRI declaration.'.format(
+                        err.getOntologyDocumentIRI(), sourceIRI
+                    )
+                )
+                try: 
+                    # We know this call will fail because the ontology document
+                    # already exists (per the previous exception), but it
+                    # appears to be the only way to get the actual ID of the
+                    # loaded ontology.
+                    importont = self.ontman.loadOntologyFromOntologyDocument(
+                        err.getOntologyDocumentIRI()
+                    )
+                except OWLOntologyAlreadyExistsException as err:
+                    importont = self.ontman.getOntology(err.getOntologyID())
+            except (
+                OWLOntologyFactoryNotFoundException,
+                OWLOntologyCreationIOException
+            ) as err:
+                raise RuntimeError(
+                    'The import module ontology at <{0}> could not be loaded.  '
+                    'Please make sure that the IRI is correct and that the '
+                    'import module ontology is accessible.'.format(source_iri)
+                )
 
         # Add the axioms from the external ontology to this ontology.
         axiomset = importont.getAxioms(ImportsEnum.EXCLUDED)
