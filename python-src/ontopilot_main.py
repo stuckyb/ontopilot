@@ -116,6 +116,7 @@ try:
     target = buildtm.getBuildTarget(args, targetname_arg='task')
     if target.isBuildRequired() or args.force:
         target.run(args.force)
+        sys.exit(0)
     else:
         print '\n', target.getBuildNotRequiredMsg(), '\n'
         sys.exit(0)

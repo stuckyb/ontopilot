@@ -1,0 +1,2 @@
+ID,Type,Label,Parent,Text definition,Comments,Subclass of,Equivalent to,Disjoint with,Ignore
+TO:0000001,Class,test class,'continuant',A {'continuant'} that is a test class.,This is a test class.,,,,
