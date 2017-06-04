@@ -15,6 +15,7 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 import os
 import datetime
 from ontopilot import logger
@@ -255,5 +256,5 @@ class ReleaseBuildTarget(BuildTargetWithConfig):
                 if ont.hasImport(ifinfo.oldIRI):
                     ont.updateImportIRI(ifinfo.oldIRI, ifinfo.versionIRI)
 
-            ont.saveOntology(fileinfo.destpath)
+            ont.saveOntology(fileinfo.destpath, self.config.getOutputFormat())
 

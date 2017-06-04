@@ -40,6 +40,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 
 # Java imports.
 from java.util import HashSet
@@ -120,7 +121,7 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
             termIRI = self._resolveName(name)
             classobj = self.ontology.getExistingClass(termIRI)
 
-        if classobj != None:
+        if classobj is not None:
             return classobj.getOWLAPIObj()
         else:
             return None
@@ -131,7 +132,7 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
             termIRI = self._resolveName(name)
             propobj = self.ontology.getExistingObjectProperty(termIRI)
 
-        if propobj != None:
+        if propobj is not None:
             return propobj.getOWLAPIObj()
         else:
             return None
@@ -142,7 +143,7 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
             termIRI = self._resolveName(name)
             propobj = self.ontology.getExistingDataProperty(termIRI)
 
-        if propobj != None:
+        if propobj is not None:
             return propobj.getOWLAPIObj()
         else:
             return None
@@ -153,7 +154,7 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
             termIRI = self._resolveName(name)
             propobj = self.ontology.getExistingAnnotationProperty(termIRI)
 
-        if propobj != None:
+        if propobj is not None:
             return propobj.getOWLAPIObj()
         else:
             return None
@@ -167,7 +168,7 @@ class _MoreAdvancedEntityChecker(OWLEntityChecker):
             indvIRI = self._resolveName(name)
             indvobj = self.ontology.getExistingIndividual(indvIRI)
 
-        if indvobj != None:
+        if indvobj is not None:
             return indvobj.getOWLAPIObj()
         else:
             return None

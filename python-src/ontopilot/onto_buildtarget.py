@@ -19,9 +19,11 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import os
 import glob
 from ontopilot import logger
+from basictimer import BasicTimer
 from tablereaderfactory import TableReaderFactory
 from owlontologybuilder import OWLOntologyBuilder, EntityDescriptionError
 from ontopilot import TRUE_STRS
@@ -38,7 +40,7 @@ REQUIRED_COLS = ('Type', 'ID')
 OPTIONAL_COLS = (
     'Comments', 'Parent', 'Subclass of', 'Superclass of', 'Equivalent to',
     'Disjoint with', 'Inverse', 'Characteristics', 'Relations', 'Data facts',
-    'Annotations', 'Ignore'
+    'Annotations', 'Ignore', 'Subproperty of', 'Superproperty of'
 )
         
 class OntoBuildTarget(BuildTargetWithConfig):
@@ -63,6 +65,41 @@ class OntoBuildTarget(BuildTargetWithConfig):
         self.ibt = ImportsBuildTarget(args, False, self.config)
         self.addDependency(self.ibt)
 
+    def _isGlobPattern(self, pstr):
+        """
+        Returns True if pstr contains any shell-style wildcards.  The results
+        are only correct for strings that are syntactically valid, and this
+        method does not attempt to detect syntax problems.
+        """
+        # Check for brackets that contain more than one character.  If the
+        # brackets only contain one character, then they do not really define a
+        # wildcard.
+        in_bracket = False
+        bracket_chr_cnt = 0
+        for char in pstr:
+            if (char == '[') and not(in_bracket):
+                in_bracket = True
+                bracket_char_cnt = 0
+            elif in_bracket:
+                if char == ']':
+                    in_bracket = False
+                    if bracket_chr_cnt > 1:
+                        return True
+                else:
+                    bracket_chr_cnt += 1
+
+        # Check for '*' and '?' wildcards that are not escaped with brackets.
+        for i in range(len(pstr)):
+            if pstr[i] in ('*', '?'):
+                if i == 0:
+                    return True
+                elif i == (len(pstr) - 1):
+                    return True
+                elif not((pstr[i-1] == '[') and (pstr[i+1] == ']')):
+                    return True
+
+        return False
+
     def _getExpandedSourceFilesList(self):
         """
         Prepares the list of terms files by expanding any paths with
@@ -75,7 +112,7 @@ class OntoBuildTarget(BuildTargetWithConfig):
         # paths by building a set of path strings.
         for fpath in self.config.getEntitySourceFilePaths():
             flist = glob.glob(fpath)
-            if len(flist) == 0:
+            if (len(flist) == 0) and not(self._isGlobPattern(fpath)):
                 raise RuntimeError(
                     'The source terms/entities file(s) could not be found: '
                     '{0}.'.format(fpath)
@@ -162,8 +199,8 @@ class OntoBuildTarget(BuildTargetWithConfig):
             if mtime < os.path.getmtime(self.config.getBaseOntologyPath()):
                 return True
 
-            # Check the modification time of each terms file.
-            for sourcefile in self.config.getEntitySourceFilePaths():
+            # Check the modification time of each source entities file.
+            for sourcefile in self._getExpandedSourceFilesList():
                 if mtime < os.path.getmtime(sourcefile):
                     return True
 
@@ -182,6 +219,9 @@ class OntoBuildTarget(BuildTargetWithConfig):
         """
         Runs the build process and produces a compiled OWL ontology file.
         """
+        timer = BasicTimer()
+        timer.start()
+
         # Get the imports modules IRIs from the imports build target.
         importsIRIs = [info.iristr for info in self.ibt.getImportsInfo()]
 
@@ -255,5 +295,11 @@ class OntoBuildTarget(BuildTargetWithConfig):
 
         # Write the ontology to the output file.
         logger.info('Writing compiled ontology to ' + fileoutpath + '...')
-        ontbuilder.getOntology().saveOntology(fileoutpath)
+        ontbuilder.getOntology().saveOntology(
+            fileoutpath, self.config.getOutputFormat()
+        )
+
+        logger.info(
+            'Main ontology build completed in {0} s.\n'.format(timer.stop())
+        )
 

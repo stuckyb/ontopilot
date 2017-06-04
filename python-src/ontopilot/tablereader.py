@@ -15,6 +15,7 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 import abc
 from ontopilot import logger
 
@@ -128,7 +129,7 @@ class TableRow:
             self.getRowNum(), self.getFileName()
         )
 
-        return metadata + str(self.data)
+        return metadata + unicode(self.data)
 
     def __iter__(self):
         """

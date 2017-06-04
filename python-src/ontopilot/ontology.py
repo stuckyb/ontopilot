@@ -19,6 +19,9 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
+from ontopilot import logger
+import oom_manager
 from idresolver import IDResolver
 from ontology_entities import _OntologyClass, _OntologyDataProperty
 from ontology_entities import _OntologyObjectProperty, _OntologyAnnotationProperty
@@ -36,13 +39,20 @@ from org.semanticweb.owlapi.model import IRI, OWLOntologyID
 from org.semanticweb.owlapi.model import AddAxiom, AddImport, RemoveImport
 from org.semanticweb.owlapi.model import SetOntologyID, AxiomType, OWLOntology
 from org.semanticweb.owlapi.model import AddOntologyAnnotation
-from org.semanticweb.owlapi.formats import RDFXMLDocumentFormat
-from uk.ac.manchester.cs.owlapi.modularity import SyntacticLocalityModuleExtractor
-from uk.ac.manchester.cs.owlapi.modularity import ModuleType
+from org.semanticweb.owlapi.formats import (
+    RDFXMLDocumentFormat, TurtleDocumentFormat, OWLXMLDocumentFormat,
+    ManchesterSyntaxDocumentFormat
+)
 from com.google.common.base import Optional
+from org.semanticweb.owlapi.model import OWLOntologyDocumentAlreadyExistsException
+from org.semanticweb.owlapi.model import OWLOntologyAlreadyExistsException
 from org.semanticweb.owlapi.io import OWLOntologyCreationIOException
 from org.semanticweb.owlapi.model import OWLOntologyFactoryNotFoundException
 from org.semanticweb.owlapi.model.parameters import Imports as ImportsEnum
+
+
+# Define constants for the supported output formats.
+OUTPUT_FORMATS = ('RDF/XML', 'Turtle', 'OWL/XML', 'Manchester')
 
 
 class Ontology(Observable):
@@ -51,11 +61,16 @@ class Ontology(Observable):
     Conceptually, instances of this class represent a single OWL ontology.
     """
     # The IRI for the "dc:source" annotation property.
-    SOURCE_PROP_IRI = IRI.create('http://purl.org/dc/elements/1.1/source')
+    SOURCE_ANNOT_IRI = IRI.create('http://purl.org/dc/elements/1.1/source')
 
-    # The IRI for inferred axiom annotation.
+    # The IRI for inferred axiom annotations.
     INFERRED_ANNOT_IRI = IRI.create(
         'http://www.geneontology.org/formats/oboInOwl#is_inferred'
+    )
+
+    # The IRI for the 'imported from' annotation property.
+    IMPORTED_FROM_IRI = IRI.create(
+        'http://purl.obolibrary.org/obo/IAO_0000412'
     )
 
     def __init__(self, ontology_source=None):
@@ -68,13 +83,13 @@ class Ontology(Observable):
         """
         if isinstance(ontology_source, InputStream):
             # Load the ontology from the InputStream.
-            self.ontman = OWLManager.createOWLOntologyManager()
+            self.ontman = oom_manager.getNewOWLOntologyManager()
             self.ontology = self.ontman.loadOntologyFromOntologyDocument(
                 ontology_source
             )
         elif isinstance(ontology_source, basestring): 
             # Load the ontology from the source file.
-            self.ontman = OWLManager.createOWLOntologyManager()
+            self.ontman = oom_manager.getNewOWLOntologyManager()
             self.ontology = self.ontman.loadOntologyFromOntologyDocument(
                 File(ontology_source)
             )
@@ -82,12 +97,12 @@ class Ontology(Observable):
             self.ontology = ontology_source
             self.ontman = self.ontology.getOWLOntologyManager()
         elif ontology_source is None:
-            self.ontman = OWLManager.createOWLOntologyManager()
+            self.ontman = oom_manager.getNewOWLOntologyManager()
             self.ontology = self.ontman.createOntology()
         else:
             raise RuntimeError(
                 'Unrecognized type for initializing an Ontology object: '
-                + str(ontology_source)
+                '{0}.'.format(ontology_source)
             )
 
         # Create an OWL data factory, which is required for creating new OWL
@@ -542,25 +557,30 @@ class Ontology(Observable):
         """
         Adds an OWL import statement to this ontology.
 
-        source_iri: The document IRI of the source ontology.  Can be either an
-            IRI object or a string containing a relative IRI, prefix IRI, or
-            full IRI.
+        source_iri: The IRI of the source ontology.  If there is no mapping of
+            the source ontology IRI to a document IRI, then the ontology IRI is
+            assumed to also be the document IRI.  Can be either an IRI object
+            or a string containing a relative IRI, prefix IRI, or full IRI.
         load_import: If True, the new import will be automatically loaded and
             its terms labels will be added to the internal LabelMap.
         """
         sourceIRI = self.idr.expandIRI(source_iri)
         owlont = self.getOWLOntology()
+
+        # First, check if the ontology IRI maps to a different document IRI.
+        docIRI = oom_manager.lookupDocumentIRI(self.ontman, sourceIRI)
+        if docIRI is None:
+            docIRI = sourceIRI
         
-        # Check if the imported ontology is already included in an imports
-        # declaration.  If so, there's nothing to do.
+        # Check if the imported ontology is already included as an import.  If
+        # so, there's nothing to do.
         importdocs = owlont.getDirectImportsDocuments()
-        if importdocs.contains(sourceIRI):
+        if importdocs.contains(docIRI):
             return
 
         # Check if the import IRI redirects to another URI, in which case get
-        # the true location and check if *it* is already included in an imports
-        # declaration.
-        redir_iri = nethelper.checkForRedirect(sourceIRI)
+        # the true location and check if *it* is already included as an import.
+        redir_iri = nethelper.checkForRedirect(docIRI)
         if redir_iri != '':
             if importdocs.contains(IRI.create(redir_iri)):
                 return
@@ -584,7 +604,9 @@ class Ontology(Observable):
                 # makeLoadImportRequest() is called, the already-loaded version
                 # of the ontology is used (that is, it is not parsed again), so
                 # these method calls should not hurt performance.
-                importont = self.ontman.loadOntologyFromOntologyDocument(sourceIRI)
+                importont = self.ontman.getOntology(sourceIRI)
+                if importont is None:
+                    importont = self.ontman.loadOntology(sourceIRI)
                 self.ontman.makeLoadImportRequest(importdec)
 
             except (
@@ -644,35 +666,118 @@ class Ontology(Observable):
             AddImport(owlont, importdec)
         )
 
-    def mergeOntology(self, source_iri):
+    def _getImportedFromAnnotations(self, axiomset, sourceont):
+        """
+        For a given set of OWL API axioms, returns a set of annotation axioms
+        that apply the 'imported from' annotation property (IAO:0000412), with
+        the source ontology IRI as the annotation value, to all entities
+        declared in the set of axioms.
+
+        axiomset: A set of OWL API axioms.
+        sourceont: An OWL API ontology object.
+        """
+        sourceIRI = None
+
+        # By default, use the source ontology IRI as the value for the
+        # 'imported from' annotations.
+        if sourceont.getOntologyID().getOntologyIRI().isPresent():
+            sourceIRI = sourceont.getOntologyID().getOntologyIRI().get()
+
+        # Check if the source ontology has a "dc:source" annotation.  If so,
+        # use that for the value of the 'imported from' annotations.
+        for ont_annot in sourceont.getAnnotations():
+            if ont_annot.getProperty().getIRI().equals(self.SOURCE_ANNOT_IRI):
+                if ont_annot.getValue().asIRI().isPresent():
+                    sourceIRI = ont_annot.getValue().asIRI().get()
+
+        # If we don't have a source IRI, there is no point in generating
+        # 'imported from' annotations, so return an empty axiom set.
+        if sourceIRI is None:
+            return set()
+
+        # Make sure that the 'imported from' annotation property is in the
+        # ontology; if not, add it.
+        annotprop = self.getExistingAnnotationProperty(self.IMPORTED_FROM_IRI)
+        if annotprop is None:
+            annotprop = self.createNewAnnotationProperty(self.IMPORTED_FROM_IRI)
+            annotprop.addLabel('imported from')
+
+        annotprop_oao = annotprop.getOWLAPIObj()
+
+        annot_axioms = set()
+
+        for axiom in AxiomType.getAxiomsOfTypes(
+            axiomset, AxiomType.DECLARATION
+        ):
+            annot = self.df.getOWLAnnotation(annotprop_oao, sourceIRI)
+            newaxiom = self.df.getOWLAnnotationAssertionAxiom(
+                axiom.getEntity().getIRI(), annot
+            )
+
+            annot_axioms.add(newaxiom)
+
+        return annot_axioms
+
+    def mergeOntology(self, source_iri, annotate_merged=True):
         """
         Merges the axioms from an external ontology into this ontology.  Also
         manages collisions with import declarations, so that if the merged
         ontology is declared as an import in the target ontology (i.e., this
         ontology), the import declaration will be deleted.
 
-        source_iri: The IRI of the source ontology.  Can be either an IRI
-            object or a string containing a relative IRI, prefix IRI, or full
-            IRI.
+        source_iri: The IRI of the source ontology.  If there is no mapping of
+            the source ontology IRI to a document IRI, then the ontology IRI is
+            assumed to also be the document IRI.  Can be either an IRI object
+            or a string containing a relative IRI, prefix IRI, or full IRI.
+        annotate_merged: If True, merged entities will be annotated with the
+            'imported from' annotation property (IAO:0000412).
         """
         sourceIRI = self.idr.expandIRI(source_iri)
         owlont = self.getOWLOntology()
 
-        try:
-            importont = self.ontman.loadOntology(sourceIRI)
-        except (
-            OWLOntologyFactoryNotFoundException,
-            OWLOntologyCreationIOException
-        ) as err:
-            raise RuntimeError(
-                'The import module ontology at <{0}> could not be loaded.  '
-                'Please make sure that the IRI is correct and that the import '
-                'module ontology is accessible.'.format(source_iri)
-            )
+        importont = self.ontman.getOntology(sourceIRI)
+        if importont is None:
+            try:
+                importont = self.ontman.loadOntology(sourceIRI)
+            except OWLOntologyDocumentAlreadyExistsException as err:
+                logger.warning(
+                    'There was a problem with the IRI of the merged/imported '
+                    'ontology located at <{0}>.  The expected ontology IRI, '
+                    '<{1}>, appears to be incorrect.  Please confirm that the '
+                    'expected ontology IRI matches the merged/imported '
+                    'ontology\'s IRI declaration.'.format(
+                        err.getOntologyDocumentIRI(), sourceIRI
+                    )
+                )
+                try: 
+                    # We know this call will fail because the ontology document
+                    # already exists (per the previous exception), but it
+                    # appears to be the only way to get the actual ID of the
+                    # loaded ontology.
+                    importont = self.ontman.loadOntologyFromOntologyDocument(
+                        err.getOntologyDocumentIRI()
+                    )
+                except OWLOntologyAlreadyExistsException as err:
+                    importont = self.ontman.getOntology(err.getOntologyID())
+            except (
+                OWLOntologyFactoryNotFoundException,
+                OWLOntologyCreationIOException
+            ) as err:
+                raise RuntimeError(
+                    'The import module ontology at <{0}> could not be loaded.  '
+                    'Please make sure that the IRI is correct and that the '
+                    'import module ontology is accessible.'.format(source_iri)
+                )
 
         # Add the axioms from the external ontology to this ontology.
         axiomset = importont.getAxioms(ImportsEnum.EXCLUDED)
         self.ontman.addAxioms(owlont, axiomset)
+
+        # If requested, add 'imported from' annotations for all entities in the
+        # imported axioms.
+        if (annotate_merged):
+            if_axioms = self._getImportedFromAnnotations(axiomset, importont)
+            self.ontman.addAxioms(owlont, if_axioms)
 
         # See if the merged ontology was already in the imports declarations
         # for the target ontology; if so, remove it.  Do this by gathering
@@ -730,33 +835,56 @@ class Ontology(Observable):
         """
         sourceIRI = self.idr.expandIRI(source_iri)
 
-        sourceprop = self.df.getOWLAnnotationProperty(self.SOURCE_PROP_IRI)
+        sourceprop = self.df.getOWLAnnotationProperty(self.SOURCE_ANNOT_IRI)
         s_annot = self.df.getOWLAnnotation(sourceprop, sourceIRI)
         self.ontman.applyChange(
             AddOntologyAnnotation(self.getOWLOntology(), s_annot)
         )
 
-    def _writeToStream(self, ostream):
+    def _writeToStream(self, ostream, format_str):
         """
         An internal method that writes the ontology to the specified output
         stream.
         """
-        oformat = RDFXMLDocumentFormat()
+        lcformat_str = format_str.lower()
+        if lcformat_str == 'rdf/xml':
+            oformat = RDFXMLDocumentFormat()
+        elif lcformat_str == 'turtle':
+            oformat = TurtleDocumentFormat()
+        elif lcformat_str == 'owl/xml':
+            oformat = OWLXMLDocumentFormat()
+        elif lcformat_str == 'manchester':
+            oformat = ManchesterSyntaxDocumentFormat()
+        else:
+            raise RuntimeError(
+                'Invalid ontology format string: "{0}".  Supported values '
+                'are: {1}.'.format(
+                    format_str, '"' + '", "'.join(OUTPUT_FORMATS) + '"'
+                )
+            )
+
+        iformat = self.ontman.getOntologyFormat(self.ontology)
+        if (
+            iformat.isPrefixOWLOntologyFormat() and
+            oformat.isPrefixOWLOntologyFormat()
+        ):
+            oformat.copyPrefixesFrom(iformat.asPrefixOWLOntologyFormat())
+
         self.ontman.saveOntology(self.ontology, oformat, ostream)
 
-    def printOntology(self):
+    def printOntology(self, format_str='RDF/XML'):
         """
         Prints the ontology to standard output.
         """
-        self._writeToStream(JavaSystem.out)
+        self._writeToStream(JavaSystem.out, format_str)
 
-    def saveOntology(self, filepath):
+    def saveOntology(self, filepath, format_str='RDF/XML'):
         """
         Saves the ontology to a file.
         """
         foutputstream = FileOutputStream(File(filepath))
         try:
-            self._writeToStream(foutputstream)
+            self._writeToStream(foutputstream, format_str)
         finally:
             foutputstream.close()
 

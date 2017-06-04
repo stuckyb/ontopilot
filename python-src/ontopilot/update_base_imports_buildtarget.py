@@ -20,6 +20,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import os
 from ontopilot import logger
 from ontology import Ontology

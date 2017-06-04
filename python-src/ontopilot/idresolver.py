@@ -15,6 +15,7 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 from labelmap import LabelMap, InvalidLabelError, AmbiguousLabelError
 from obohelper import isOboID, oboIDToIRI, getIRIForOboPrefix
 from rfc3987 import rfc3987
@@ -93,7 +94,7 @@ class IDResolver:
             return True
 
         res = prefix_label_re.match(idstr)
-        if res != None:
+        if res is not None:
             return True
         else:
             return False
@@ -138,7 +139,7 @@ class IDResolver:
             except InvalidLabelError:
                 obo_lookup = None
 
-            if iri_root != None:
+            if iri_root is not None:
                 try:
                     iri_lookup = self.labelmap.lookupIRI(
                         labeltxt[1:-1], iri_root
@@ -146,7 +147,7 @@ class IDResolver:
                 except InvalidLabelError:
                     iri_lookup = None
 
-            if (obo_lookup != None) and (iri_lookup != None):
+            if (obo_lookup is not None) and (iri_lookup is not None):
                 if obo_lookup.equals(iri_lookup):
                     return obo_lookup
                 else:
@@ -159,9 +160,9 @@ class IDResolver:
                         'prefix, and the resulting full IRIs were not the '
                         'same.'.format(labelstr, prefix)
                 )
-            elif obo_lookup != None:
+            elif obo_lookup is not None:
                 return obo_lookup
-            elif iri_lookup != None:
+            elif iri_lookup is not None:
                 return iri_lookup
             else:
                 raise InvalidLabelError(

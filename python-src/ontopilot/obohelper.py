@@ -19,6 +19,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import re
 
 # Java imports.
@@ -59,7 +60,7 @@ def isOboID(termIDstr):
     """
     res = oboid_re.match(termIDstr)
 
-    return res != None
+    return res is not None
 
 def termIRIToOboID(termIRI):
     """

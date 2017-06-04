@@ -15,6 +15,7 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 import os
 from tablereader import TableRow, BaseTable, BaseTableReader
 
@@ -148,7 +149,9 @@ class _ODFTable(BaseTable):
             # Uncomment the following line to print the ODF value type for each
             # data cell.
             # print self.sheet.getImmutableCellAt(colnum, self.rowcnt - 1).getValueType()
-            trow[self.colnames[colnum]] = self.sheet.getImmutableCellAt(colnum, self.rowcnt - 1).getTextValue()
+            trow[self.colnames[colnum]] = self.sheet.getImmutableCellAt(
+                colnum, self.rowcnt - 1
+            ).getTextValue()
 
         return trow
 
@@ -179,18 +182,20 @@ class ODFTableReader(BaseTableReader):
 
     def getTableByIndex(self, index):
         if (index < 0) or (index >= self.numtables):
-            raise KeyError('Invalid table index:' + str(index)
-                    + '.  No matching sheet could be found in the file "'
-                    + self.filename + '".')
+            raise KeyError(
+                'Invalid table index: {0}.  No matching sheet could be found '
+                'in the file "{1}".'.format(index, self.filename)
+            )
 
         return _ODFTable(self.odfs.getSheet(index), self)
 
     def getTableByName(self, tablename):
         sheet = self.odfs.getSheet(tablename)
         if sheet is None:
-            raise KeyError('Invalid table name: "' + str(tablename)
-                    + '".  No matching sheet could be found in the file "'
-                    + self.filename + '".')
+            raise KeyError(
+                'Invalid table name: "{0}".  No matching sheet could be found '
+                'in the file "{1}".'.format(tablename, self.filename)
+            )
 
         table = _ODFTable(sheet, self)
 

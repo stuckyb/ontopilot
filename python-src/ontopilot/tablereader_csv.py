@@ -15,10 +15,39 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 import csv
 from tablereader import TableRow, BaseTable, BaseTableReader
 
 # Java imports.
+
+
+class UnicodeCSVReader(csv.DictReader):
+    """
+    Wraps the built-in CSV reader object to support various unicode encodings
+    of input CSV files.  All data are parsed into Python unicode strings.  By
+    default, data are assumed to be encoded using UTF-8, but alternative
+    encodings can also be specified.
+    """
+    def __init__(self, csvfile, dialect='excel', encoding='utf-8', **fmtparams):
+        """
+        This initializer has the same signature as that of the standard
+        csv.reader() method, except that an additional argument is added to
+        specify the source encoding.
+        """
+        self.encoding = encoding
+
+        # Get the built-in reader object.
+        self.reader = csv.reader(csvfile, dialect, **fmtparams)
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        row = self.reader.next()
+        u_row = [unicode(cellstr, self.encoding) for cellstr in row]
+
+        return u_row
 
 
 class _CSVTable(BaseTable):
@@ -82,10 +111,9 @@ class _CSVTable(BaseTable):
 
         if len(rowdata) != len(self.colnames):
             raise RuntimeError(
-                'The number of column names in the header of the CSV file "'
-                + self.getFileName()
-                + '" does not match the number of fields in row '
-                + str(self.rowcnt) + '.'
+                'The number of column names in the header of the CSV file '
+                '"{0}" does not match the number of fields in row '
+                '{1}.'.format(self.getFileName(), self.rowcnt)
             )
 
         trow = TableRow(
@@ -115,19 +143,26 @@ class CSVTableReader(BaseTableReader):
 
     def getTableByIndex(self, index):
         if index != 0:
-            raise KeyError('Invalid table index ' + str(index)
-                    + ' for the file "' + self.filename + '".')
+            raise KeyError(
+                '{0} is an invalid table index for the file "{1}".  The only '
+                'valid table index for CSV files is 0.'.format(
+                    index, self.filename
+                )
+            )
 
         self.filein.seek(0)
-        self.csvr = csv.reader(self.filein)
+        self.csvr = UnicodeCSVReader(self.filein)
 
         # Get the single table from the input source.
         return _CSVTable(self.csvr, self.tablename, self)
 
     def getTableByName(self, tablename):
         if tablename != self.tablename:
-            raise KeyError('Invalid table name "' + str(tablename)
-                    + '" for the file "' + self.filename + '".')
+            raise KeyError(
+                '"{0}" is an invalid table name for the file "{1}".'.format(
+                    tablename, self.filename
+                )
+            )
 
         return self.getTableByIndex(0)
 

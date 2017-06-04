@@ -93,14 +93,14 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
     def test_addClass(self):
         # Define additional row values.
-        self.tr['Parent'] = NEW_IRI
+        self.tr['Parent'] = 'OBTO:1003'
         self.tr['Subclass of'] = "'test class 1'; OBITO:0001"
         self.tr['Superclass of'] = 'OBTO:0011'
         self.tr['Equivalent to'] = 'OBTO:1001; obo:OBTO_1002'
         self.tr['Disjoint with'] = 'OBTO:1000'
 
         # Create some additional classes for use in axioms.
-        self.test_ont.createNewClass(NEW_IRI)
+        self.test_ont.createNewClass('OBTO:1003')
         self.test_ont.createNewClass('obo:OBTO_1000')
         self.test_ont.createNewClass('obo:OBTO_1001')
         self.test_ont.createNewClass('obo:OBTO_1002')
@@ -121,7 +121,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         # "parent" field.
         expIRIs = {
             'http://purl.obolibrary.org/obo/OBTO_0010',
-            NEW_IRI,
+            'http://purl.obolibrary.org/obo/OBTO_1003',
             'http://purl.obolibrary.org/obo/OBITO_0001'
             }
         actualIRIs = set()
@@ -131,7 +131,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         self.assertEqual(expIRIs, actualIRIs)
 
         # Check the superclass axiom.
-        expIRIs = {'http://purl.obolibrary.org/obo/OBTO_0011', NEW_IRI}
+        expIRIs = {'http://purl.obolibrary.org/obo/OBTO_0011'}
         actualIRIs = set()
         for axiom in self.owlont.getSubClassAxiomsForSuperClass(new_oaent):
             actualIRIs.add(axiom.getSubClass().getIRI().toString())
@@ -166,6 +166,8 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
     def test_addDataProperty(self):
         # Define additional row values.
         self.tr['Parent'] = 'obo:OBTO_2001'
+        self.tr['Subproperty of'] = 'OBTO:1002'
+        self.tr['Superproperty of'] = 'OBTO:1003'
         self.tr['Domain'] = "'test class 1'; OBITO:0001"
         self.tr['Range'] = 'xsd:float'
         self.tr['Disjoint with'] = 'OBTO:1000;OBTO:1001'
@@ -174,6 +176,8 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         # Create some additional properties for use in axioms.
         self.test_ont.createNewDataProperty('obo:OBTO_1000')
         self.test_ont.createNewDataProperty('obo:OBTO_1001')
+        self.test_ont.createNewDataProperty('obo:OBTO_1002')
+        self.test_ont.createNewDataProperty('obo:OBTO_1003')
         self.test_ont.createNewDataProperty('obo:OBTO_2001')
 
         self.oob.addDataProperty(self.tr)
@@ -190,11 +194,22 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the "subproperty of" axioms.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_2001'
+            'http://purl.obolibrary.org/obo/OBTO_2001',
+            'http://purl.obolibrary.org/obo/OBTO_1002'
         }
         actualIRIs = set()
         for axiom in self.owlont.getDataSubPropertyAxiomsForSubProperty(new_oaent):
             actualIRIs.add(axiom.getSuperProperty().getIRI().toString())
+
+        self.assertEqual(expIRIs, actualIRIs)
+
+        # Check the superproperty axioms.
+        expIRIs = {
+            'http://purl.obolibrary.org/obo/OBTO_1003'
+        }
+        actualIRIs = set()
+        for axiom in self.owlont.getDataSubPropertyAxiomsForSuperProperty(new_oaent):
+            actualIRIs.add(axiom.getSubProperty().getIRI().toString())
 
         self.assertEqual(expIRIs, actualIRIs)
 
@@ -240,6 +255,8 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
     def test_addObjectProperty(self):
         # Define additional row values.
         self.tr['Parent'] = 'obo:OBTO_2001'
+        self.tr['Subproperty of'] = 'OBTO:1002'
+        self.tr['Superproperty of'] = 'OBTO:1003'
         self.tr['Domain'] = 'obo:OBTO_3000'
         self.tr['Range'] = "'test class 1'; OBITO:0001"
         self.tr['Inverse'] = 'OBTO:1000'
@@ -249,6 +266,8 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         # Create some additional entities for use in axioms.
         self.test_ont.createNewObjectProperty('obo:OBTO_1000')
         self.test_ont.createNewObjectProperty('obo:OBTO_1001')
+        self.test_ont.createNewObjectProperty('obo:OBTO_1002')
+        self.test_ont.createNewObjectProperty('obo:OBTO_1003')
         self.test_ont.createNewObjectProperty('obo:OBTO_2001')
         self.test_ont.createNewClass('OBTO:3000')
 
@@ -266,11 +285,22 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the "subproperty of" axioms.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_2001'
+            'http://purl.obolibrary.org/obo/OBTO_2001',
+            'http://purl.obolibrary.org/obo/OBTO_1002'
         }
         actualIRIs = set()
         for axiom in self.owlont.getObjectSubPropertyAxiomsForSubProperty(new_oaent):
             actualIRIs.add(axiom.getSuperProperty().getIRI().toString())
+
+        self.assertEqual(expIRIs, actualIRIs)
+
+        # Check the superproperty axioms.
+        expIRIs = {
+            'http://purl.obolibrary.org/obo/OBTO_1003'
+        }
+        actualIRIs = set()
+        for axiom in self.owlont.getObjectSubPropertyAxiomsForSuperProperty(new_oaent):
+            actualIRIs.add(axiom.getSubProperty().getIRI().toString())
 
         self.assertEqual(expIRIs, actualIRIs)
 
@@ -332,9 +362,13 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
     def test_addAnnotationProperty(self):
         # Define additional row values.
         self.tr['Parent'] = 'obo:OBTO_2001'
+        self.tr['Subproperty of'] = 'OBTO:1002'
+        self.tr['Superproperty of'] = 'OBTO:1003'
 
-        # Create an additional property for use in axioms.
+        # Create additional properties for use in axioms.
         self.test_ont.createNewAnnotationProperty('obo:OBTO_2001')
+        self.test_ont.createNewAnnotationProperty('obo:OBTO_1002')
+        self.test_ont.createNewAnnotationProperty('obo:OBTO_1003')
 
         self.oob.addAnnotationProperty(self.tr)
 
@@ -350,10 +384,20 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         # Check the "subproperty of" axioms.
         expIRIs = {
-            'http://purl.obolibrary.org/obo/OBTO_2001'
+            'http://purl.obolibrary.org/obo/OBTO_2001',
+            'http://purl.obolibrary.org/obo/OBTO_1002'
         }
         actualIRIs = set()
         for axiom in self.owlont.getSubAnnotationPropertyOfAxioms(new_oaent):
+            actualIRIs.add(axiom.getSuperProperty().getIRI().toString())
+
+        self.assertEqual(expIRIs, actualIRIs)
+
+        # Check the superproperty axiom.
+        expIRIs = {NEW_IRI}
+        actualIRIs = set()
+        subprop = self.test_ont.getExistingAnnotationProperty('OBTO:1003').getOWLAPIObj()
+        for axiom in self.owlont.getSubAnnotationPropertyOfAxioms(subprop):
             actualIRIs.add(axiom.getSuperProperty().getIRI().toString())
 
         self.assertEqual(expIRIs, actualIRIs)

@@ -15,6 +15,7 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 from tablereader import TableRow, BaseTable, BaseTableReader
 
 # Java imports.
@@ -63,9 +64,14 @@ class _ExcelTable(BaseTable):
         self.colnames = []
         if self.numrows > 0:
             row = self.sheet.getRow(0)
-            if row != None:
+            if row is not None:
                 for colnum in range(row.getLastCellNum()):
-                    cellval = self._cellStrValue(row.getCell(colnum))
+                    cell = row.getCell(colnum)
+                    if cell is not None:
+                        cellval = self._cellStrValue(cell)
+                    else:
+                        cellval = ''
+
                     if cellval == '':
                         break
                     self.colnames.append(cellval)
@@ -94,18 +100,30 @@ class _ExcelTable(BaseTable):
         """
         Returns the value of an Excel spreadsheet cell as a string.
         """
+        # Apache POI's getCell() method can return None (null) if a cell is not
+        # defined, which basically means it has no value or style information.
+        # In that case, return an empty string.
+        if cell is None:
+            return ''
+
         ctype = cell.getCellTypeEnum()
 
         if ctype in self.SUPPORTED_CELL_TYPES:
             return self.df.formatCellValue(cell, self.fe)
         elif ctype == CellType.ERROR:
-            raise RuntimeError('Error detected in row ' + str(self.rowcnt)
-                    + ' of the input Excel spreadsheet "' + self.name
-                    + '" in the file "' + self.filename + '".')
+            raise RuntimeError(
+                'Error detected in row {0} of the input Excel spreadsheet '
+                '"{1}" in the file "{2}".'.format(
+                    self.rowcnt, self.name, self.filename
+                )
+            )
         else:
-            raise RuntimeError('Unrecognized cell data type in row '
-                    + str(self.rowcnt) + ' of the input Excel spreadsheet "'
-                    + self.name + '" in the file "' + self.filename + '".')
+            raise RuntimeError(
+                'Unrecognized cell data type in row {0} of the input Excel '
+                'spreadsheet "{1}" in the file "{2}".'.format(
+                    self.rowcnt, self.name, self.filename
+                )
+            )
 
     def next(self):
         """
@@ -119,7 +137,7 @@ class _ExcelTable(BaseTable):
         nextrow = None
         while (self.rowcnt < self.numrows) and emptyrow:
             nextrow = self.sheet.getRow(self.rowcnt)
-            if nextrow != None:
+            if nextrow is not None:
                 for colnum in range(self.numcols):
                     if self._cellStrValue(nextrow.getCell(colnum)) != '':
                         emptyrow = False
@@ -157,18 +175,20 @@ class ExcelTableReader(BaseTableReader):
 
     def getTableByIndex(self, index):
         if (index < 0) or (index >= self.numtables):
-            raise KeyError('Invalid table index:' + str(index)
-                    + '.  No matching sheet could be found in the file "'
-                    + self.filename + '".')
+            raise KeyError(
+                'Invalid table index: {0}.  No matching sheet could be found '
+                'in the file "{1}".'.format(index, self.filename)
+            )
 
         return _ExcelTable(self.wbook.getSheetAt(index), self)
 
     def getTableByName(self, tablename):
         sheet = self.wbook.getSheet(tablename)
         if sheet is None:
-            raise KeyError('Invalid table name: "' + str(tablename)
-                    + '".  No matching sheet could be found in the file "'
-                    + self.filename + '".')
+            raise KeyError(
+                'Invalid table name: "{0}".  No matching sheet could be found '
+                'in the file "{1}".'.format(tablename, self.filename)
+            )
 
         table = _ExcelTable(sheet, self)
 

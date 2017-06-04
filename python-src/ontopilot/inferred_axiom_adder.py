@@ -18,8 +18,8 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import os.path
-import ontopilot
 from ontopilot import logger
 from basictimer import BasicTimer
 from tablereaderfactory import TableReaderFactory
@@ -142,7 +142,7 @@ class InferredAxiomAdder:
                     self.reasoner.getSuperClasses(testent, True)
                     generators.append(InferredSubClassAxiomGenerator())
                 except UnsupportedOperationException as err:
-                    ontopilot.logging.warning(
+                    logger.warning(
                         'The reasoner "{0}" does not support subclass '
                         'inferences.'.format(reasoner_name)
                     )
@@ -154,7 +154,7 @@ class InferredAxiomAdder:
                     self.reasoner.getEquivalentClasses(testent)
                     generators.append(InferredEquivalentClassAxiomGenerator())
                 except UnsupportedOperationException as err:
-                    ontopilot.logging.warning(
+                    logger.warning(
                         'The reasoner "{0}" does not support class equivalency '
                         'inferences.'.format(reasoner_name)
                     )
@@ -166,7 +166,7 @@ class InferredAxiomAdder:
                     self.reasoner.getDisjointClasses(testent)
                     generators.append(InferredDisjointClassesAxiomGenerator())
                 except UnsupportedOperationException as err:
-                    ontopilot.logging.warning(
+                    logger.warning(
                         'The reasoner "{0}" does not support class '
                         'disjointness inferences.'.format(reasoner_name)
                     )
@@ -178,7 +178,7 @@ class InferredAxiomAdder:
                     self.reasoner.getSuperDataProperties(testent, True)
                     generators.append(InferredSubDataPropertyAxiomGenerator())
                 except UnsupportedOperationException as err:
-                    ontopilot.logging.warning(
+                    logger.warning(
                         'The reasoner "{0}" does not support data property '
                         'hierarchy inferences.'.format(reasoner_name)
                     )
@@ -190,7 +190,7 @@ class InferredAxiomAdder:
                     self.reasoner.getSuperObjectProperties(testent, True)
                     generators.append(InferredSubObjectPropertyAxiomGenerator())
                 except UnsupportedOperationException as err:
-                    ontopilot.logging.warning(
+                    logger.warning(
                         'The reasoner "{0}" does not support object property '
                         'hierarchy inferences.'.format(reasoner_name)
                     )
@@ -202,7 +202,7 @@ class InferredAxiomAdder:
                     self.reasoner.getInverseObjectProperties(testent)
                     generators.append(InferredInverseObjectPropertiesAxiomGenerator())
                 except UnsupportedOperationException as err:
-                    ontopilot.logging.warning(
+                    logger.warning(
                         'The reasoner "{0}" does not support inverse object '
                         'property inferences.'.format(reasoner_name)
                     )
@@ -214,7 +214,7 @@ class InferredAxiomAdder:
                     self.reasoner.getTypes(testent, True)
                     generators.append(InferredClassAssertionAxiomGenerator())
                 except UnsupportedOperationException as err:
-                    ontopilot.logging.warning(
+                    logger.warning(
                         'The reasoner "{0}" does not support class assertion '
                         'inferences.'.format(reasoner_name)
                     )
@@ -229,7 +229,7 @@ class InferredAxiomAdder:
                     self.reasoner.getObjectPropertyValues(testent, oprop)
                     generators.append(InferredPropertyAssertionGenerator())
                 except UnsupportedOperationException as err:
-                    ontopilot.logging.warning(
+                    logger.warning(
                         'The reasoner "{0}" does not support property '
                         'assertion inferences.'.format(reasoner_name)
                     )
@@ -335,7 +335,7 @@ class InferredAxiomAdder:
             elif pexp in symmetrics:
                 inv_pexp = pexp
 
-            if inv_pexp != None:
+            if inv_pexp is not None:
                 new_axioms.add(
                     self.ont.df.getOWLObjectPropertyAssertionAxiom(
                         inv_pexp, axiom.getObject(), axiom.getSubject()
@@ -357,7 +357,7 @@ class InferredAxiomAdder:
             elif pexp in symmetrics:
                 inv_pexp = pexp
 
-            if inv_pexp != None:
+            if inv_pexp is not None:
                 new_axioms.add(
                     self.ont.df.getOWLNegativeObjectPropertyAssertionAxiom(
                         inv_pexp, axiom.getObject(), axiom.getSubject()
@@ -423,8 +423,9 @@ class InferredAxiomAdder:
         """
         # Verify that the excluded types file exists.
         if not(os.path.isfile(etfpath)):
-            raise RuntimeError('Could not find the excluded types file "'
-                    + termsfile_path + '".')
+            raise RuntimeError(
+                'Could not find the excluded types file "' + etfpath + '".'
+            )
 
         self.excluded_types.clear()
         self.excluded_types.update(self._getExcludedTypesFromFile(etfpath))

@@ -15,6 +15,7 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 import os
 from tablereader_csv import CSVTableReader
 from tablereader_odf import ODFTableReader

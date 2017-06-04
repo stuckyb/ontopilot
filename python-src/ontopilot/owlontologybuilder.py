@@ -20,7 +20,9 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import re
+import unicodedata
 from obohelper import termIRIToOboID, OBOIdentiferError
 from ontology import Ontology
 from ontology_entities import (
@@ -107,7 +109,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newclass.addLabel(labeltext)
         except RuntimeError as err:
-            raise EntityDescriptionError(str(err), classdesc)
+            raise EntityDescriptionError(unicode(err), classdesc)
 
         # Cache the remainder of the class description.
         self.entity_trows.append((newclass, classdesc))
@@ -208,7 +210,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newprop.addLabel(labeltext)
         except RuntimeError as err:
-            raise EntityDescriptionError(str(err), propdesc)
+            raise EntityDescriptionError(unicode(err), propdesc)
         
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
@@ -223,11 +225,22 @@ class OWLOntologyBuilder:
         self._addGenericAxioms(propobj, propdesc, expanddef)
 
         # Get the IRI objects of parent properties and add them as parents.
-        for parentID in self.dsparser.parseString(propdesc['Parent']):
+        parentIDs = (
+            self.dsparser.parseString(propdesc['Parent'])
+            + self.dsparser.parseString(propdesc['Subproperty of'])
+        )
+        for parentID in parentIDs:
             parentIRI = self.ontology.resolveIdentifier(parentID)
-            if parentIRI != None:
+            if parentIRI is not None:
                 propobj.addSuperproperty(parentIRI)
 
+        # Add subproperties specified in the 'Superproperty of' field.
+        childIDs = (
+            self.dsparser.parseString(propdesc['Superproperty of'])
+        )
+        for childID in childIDs:
+            propobj.addSubproperty(childID)
+ 
         # Add any domain axioms (specified as class expressions in Manchester
         # Syntax).
         ms_exps = self.dsparser.parseString(propdesc['Domain'])
@@ -244,7 +257,7 @@ class OWLOntologyBuilder:
         propIDs = self.dsparser.parseString(propdesc['Disjoint with'])
         for propID in propIDs:
             disjIRI = self.ontology.resolveIdentifier(propID)
-            if disjIRI != None:
+            if disjIRI is not None:
                 propobj.addDisjointWith(disjIRI)
 
         # Add the characteristics, if provided.  The only supported
@@ -275,7 +288,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newprop.addLabel(labeltext)
         except RuntimeError as err:
-            raise EntityDescriptionError(str(err), propdesc)
+            raise EntityDescriptionError(unicode(err), propdesc)
         
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
@@ -290,11 +303,22 @@ class OWLOntologyBuilder:
         self._addGenericAxioms(propobj, propdesc, expanddef)
 
         # Get the IRI objects of parent properties and add them as parents.
-        for parentID in self.dsparser.parseString(propdesc['Parent']):
+        parentIDs = (
+            self.dsparser.parseString(propdesc['Parent'])
+            + self.dsparser.parseString(propdesc['Subproperty of'])
+        )
+        for parentID in parentIDs:
             parentIRI = self.ontology.resolveIdentifier(parentID)
-            if parentIRI != None:
+            if parentIRI is not None:
                 propobj.addSuperproperty(parentIRI)
 
+        # Add subproperties specified in the 'Superproperty of' field.
+        childIDs = (
+            self.dsparser.parseString(propdesc['Superproperty of'])
+        )
+        for childID in childIDs:
+            propobj.addSubproperty(childID)
+ 
         # Add any domain axioms (specified as class expressions in Manchester
         # Syntax).
         ms_exps = self.dsparser.parseString(propdesc['Domain'])
@@ -311,14 +335,14 @@ class OWLOntologyBuilder:
         propIDs = self.dsparser.parseString(propdesc['Inverse'])
         for propID in propIDs:
             inverseIRI = self.ontology.resolveIdentifier(propID)
-            if inverseIRI != None:
+            if inverseIRI is not None:
                 propobj.addInverse(inverseIRI)
 
         # Add any disjointness axioms.
         propIDs = self.dsparser.parseString(propdesc['Disjoint with'])
         for propID in propIDs:
             disjIRI = self.ontology.resolveIdentifier(propID)
-            if disjIRI != None:
+            if disjIRI is not None:
                 propobj.addDisjointWith(disjIRI)
 
         # Add the characteristics, if provided.
@@ -331,6 +355,11 @@ class OWLOntologyBuilder:
         Sets the characteristics of an object property according to a string
         containing a comma-separated list of property characteristics.
         """
+        # First normalize the string using unicode compatibility equivalents.
+        # This ensures that "space-like" characters (e.g., no-break space) are
+        # converted to the ordinary space character.
+        char_str = unicodedata.normalize('NFKC', chars_str)
+
         for char_str in chars_str.split(','):
             char_str = char_str.strip().lower()
 
@@ -370,7 +399,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newprop.addLabel(labeltext)
         except RuntimeError as err:
-            raise EntityDescriptionError(str(err), propdesc)
+            raise EntityDescriptionError(unicode(err), propdesc)
         
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
@@ -385,11 +414,22 @@ class OWLOntologyBuilder:
         self._addGenericAxioms(propobj, propdesc, expanddef)
 
         # Get the IRI objects of parent properties and add them as parents.
-        for parentID in self.dsparser.parseString(propdesc['Parent']):
+        parentIDs = (
+            self.dsparser.parseString(propdesc['Parent'])
+            + self.dsparser.parseString(propdesc['Subproperty of'])
+        )
+        for parentID in parentIDs:
             parentIRI = self.ontology.resolveIdentifier(parentID)
-            if parentIRI != None:
+            if parentIRI is not None:
                 propobj.addSuperproperty(parentIRI)
 
+        # Add subproperties specified in the 'Superproperty of' field.
+        childIDs = (
+            self.dsparser.parseString(propdesc['Superproperty of'])
+        )
+        for childID in childIDs:
+            propobj.addSubproperty(childID)
+ 
     def addIndividual(self, indvdesc):
         """
         Adds a new named individual to the ontology, based on a description
@@ -405,7 +445,7 @@ class OWLOntologyBuilder:
             if labeltext != '':
                 newindv.addLabel(labeltext)
         except RuntimeError as err:
-            raise EntityDescriptionError(str(err), indvdesc)
+            raise EntityDescriptionError(unicode(err), indvdesc)
         
         # Cache the remainder of the individual description.
         self.entity_trows.append((newindv, indvdesc))
@@ -495,10 +535,12 @@ class OWLOntologyBuilder:
                 elif typeconst == INDIVIDUAL_ENTITY:
                     self._addIndividualAxioms(entity, desc, expanddefs)
                 else:
-                    raise RuntimeError('Unsupported ontology entity type: '
-                            + str(typeconst) + '.')
+                    raise RuntimeError(
+                        'Unsupported ontology entity type: '
+                        '{0}.'.format(typeconst)
+                    )
             except RuntimeError as err:
-                raise EntityDescriptionError(str(err), desc)
+                raise EntityDescriptionError(unicode(err), desc)
 
             # Putting the pop() operation at the end of the loop ensures that a
             # description is only removed from the list/stack if it was
@@ -542,8 +584,8 @@ class OWLOntologyBuilder:
         newdef = ''
         for defpart in defparts:
             res = labelre.match(defpart)
-            if res != None:
-                id_only = res.group('idonly') != None
+            if res is not None:
+                id_only = res.group('idonly') is not None
 
                 # Handle cases where the label text is not wrapped in single
                 # quotes.  IDResolver expects label strings to be quoted, so
@@ -551,7 +593,7 @@ class OWLOntologyBuilder:
                 # parse out the label components (prefix, if present, and
                 # actual label text) and then reassemble the label, making sure
                 # the label text is enclosed in single quotes.
-                if res.group('prefix') != None:
+                if res.group('prefix') is not None:
                     label = res.group('prefix')
                 else:
                     label = ''
@@ -578,7 +620,7 @@ class OWLOntologyBuilder:
                     labelID = self.prefix_df.getPrefixIRI(labelIRI)
 
                 if labelID is None:
-                    labelID = str(labelIRI)
+                    labelID = unicode(labelIRI)
 
                 if not(id_only):
                     newdef += label + ' '

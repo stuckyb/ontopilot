@@ -18,6 +18,7 @@
 #
 
 # Python imports.
+from __future__ import unicode_literals
 import os, shutil
 import re
 from ontopilot import logger
@@ -71,7 +72,7 @@ class ProjectCreator:
             with file(srcpath) as filein, file(destpath, 'w') as fileout:
                 for line in filein:
                     for replacement in replacements:
-                        if replacement[0].search(line) != None:
+                        if replacement[0].search(line) is not None:
                             line = replacement[0].sub(replacement[1], line)
 
                     fileout.write(line)
@@ -85,8 +86,9 @@ class ProjectCreator:
 
     def _initConfig(self):
         """
-        Copies the template configuration file and initializes it with the
-        ontology file path and IRI.  Returns an initialized OntoConfig object.
+        Copies the template configuration file and initializes it with a
+        variety of project-specific settings.  Returns an initialized
+        OntoConfig object.
         """
         configpath = os.path.join(self.templatedir, 'project.conf')
         ontname = os.path.splitext(os.path.basename(self.ontfilename))[0]
@@ -119,9 +121,21 @@ class ProjectCreator:
             (
                 re.compile('^entity_sourcefiles =\s*$'),
                 (
-                    'entity_sourcefiles = {0}_classes.csv, {0}_properties.csv,'
-                    ' {0}_individuals.csv\n'.format(ontname)
+                    'entity_sourcefiles = {0}_*.csv, {0}_*.ods, {0}_*.xls, '
+                    '{0}_*.xlsx\n'.format(ontname)
                 )
+            ),
+            (
+                re.compile('^imports_src =\s*$'),
+                'imports_src = src/imports/\n'
+            ),
+            (
+                re.compile('^imports_dir =\s*$'),
+                'imports_dir = imports/\n'
+            ),
+            (
+                re.compile('^entity_sourcedir =\s*$'),
+                'entity_sourcedir = src/entities/\n'
             )
         ]
 

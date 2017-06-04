@@ -15,6 +15,7 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 from ontopilot import logger
 from ontology import Ontology
 from buildtarget import BuildTargetWithConfig
