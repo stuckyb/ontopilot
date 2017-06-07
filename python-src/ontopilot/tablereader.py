@@ -110,7 +110,7 @@ class TableRow:
                     self
                 )
             else:
-                if colname not in self.optional:
+                if (self.optional != [0]) and (colname not in self.optional):
                     logger.warning(
                         'The column "' + colname
                         + '" was missing in the table row.'
@@ -207,7 +207,9 @@ class BaseTable:
         Sets the column names that are optional in the input CSV file.  If one
         or more of these columns are missing, no exception will be thrown and
         no warning will be issued.  Access to missing columns that are neither
-        required nor optional will result in a warning being issued.
+        required nor optional will result in a warning being issued.  To
+        specify that all non-required columns are optional, set colnames to
+        [0].
 
         colnames: A list of column names (strings).
         """

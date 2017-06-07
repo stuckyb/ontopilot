@@ -139,6 +139,17 @@ class TestTableRow(unittest.TestCase):
             'The column "col6" was missing in the table row.'
         ))
 
+        # Test support for making all non-required columns optional.
+        self.tr.optional = [0]
+        with LogCapture() as lc:
+            self.tr['col6']
+        # No warnings should have been issued.
+        self.assertEqual(0, len(lc.records))
+
+        # A missing required column should still trigger an error.
+        with self.assertRaises(ColumnNameError):
+            self.tr['col1']
+
     def test_iteration(self):
         """
         Tests that iteration through the column names (keys) works properly.
