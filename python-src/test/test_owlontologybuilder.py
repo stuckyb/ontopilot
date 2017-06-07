@@ -226,7 +226,7 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         self.tr['Label'] = 'incorrect label'
         with self.assertRaisesRegexp(
             EntityDescriptionError,
-            'label does not match the label in the current source row'
+            'does not match the label in the current source row'
         ):
             self._do_addOrUpdateEntity(enttype, self.tr)
 

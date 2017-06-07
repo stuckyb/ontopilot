@@ -191,13 +191,14 @@ class OWLOntologyBuilder:
             entobj.addLabel(labeltext)
         elif labeltext not in labelvals:
             raise EntityDescriptionError(
-                'There is already {2} {1} with the ID {0} in the ontology, but '
-                'its label does not match the label in the current source '
-                'row.  If you intended to modify the existing {1}, please '
-                'update the label in the source file so it matches that of the '
-                'existing {1}.  If you intended to create a new {1}, please '
-                'provide a different {1} ID.'.format(
-                    entdesc['ID'], ent_txtdesc, article
+                "There is already {2} {1} with the ID {0} in the ontology, but "
+                "its label ('{3}') does not match the label in the current "
+                "source row ('{4}').  If you intended to modify the existing "
+                "{1}, please update the label in the source file so it matches "
+                "that of the existing {1}.  If you intended to create a new "
+                "{1}, please provide a different {1} ID.".format(
+                    entdesc['ID'], ent_txtdesc, article, labelvals[0],
+                    labeltext
                 ), entdesc
             )
 
