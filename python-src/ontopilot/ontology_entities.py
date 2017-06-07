@@ -168,10 +168,11 @@ class _OntologyEntity:
         """
         annotvals = []
 
-        owlont = self.ontology.getOWLOntology()
-        for annot_ax in owlont.getAnnotationAssertionAxioms(self.entityIRI):
-            if annot_ax.getProperty().getIRI().equals(annotpropIRI):
-                annotvals.append(annot_ax.getValue().getLiteral())
+        ontset = self.ontology.getOWLOntology().getImportsClosure()
+        for owlont in ontset:
+            for annot_ax in owlont.getAnnotationAssertionAxioms(self.entityIRI):
+                if annot_ax.getProperty().getIRI().equals(annotpropIRI):
+                    annotvals.append(annot_ax.getValue().getLiteral())
 
         return annotvals
 
