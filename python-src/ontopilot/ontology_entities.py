@@ -112,6 +112,12 @@ class _OntologyEntity:
 
         self.ontology.addEntityAxiom(annotaxiom)
 
+    def getLabels(self):
+        """
+        Returns a list of all rdfs:label values for this entity.
+        """
+        return self.getAnnotationValues(self.df.getRDFSLabel().getIRI())
+
     def addComment(self, commenttxt):
         """
         Adds an rdfs:comment for this entity.

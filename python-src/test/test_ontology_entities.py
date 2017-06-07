@@ -81,6 +81,20 @@ class _TestOntologyEntity:
         # Test that the label annotation exists and has the correct value.
         self._checkAnnotation(self.LABEL_IRI, labelstr)
 
+    def test_getLabels(self):
+        # Test the case of no labels.
+        self.assertEqual(0, len(self.t_ent.getLabels()))
+
+        # Test a single label.
+        self.t_ent.addLabel('Label 1')
+        labelvals = self.t_ent.getLabels()
+        self.assertEqual(['Label 1'], labelvals)
+
+        # Test multiple labels.
+        self.t_ent.addLabel('Label 2')
+        labelvals = self.t_ent.getLabels()
+        self.assertEqual(['Label 1', 'Label 2'], sorted(labelvals))
+
     def test_addComment(self):
         commentstr = 'A useful comment.'
 
