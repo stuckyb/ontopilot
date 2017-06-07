@@ -264,15 +264,15 @@ class OntoBuildTarget(BuildTargetWithConfig):
                             typestr = t_row['Type'].lower().replace(' ', '')
             
                             if typestr == 'class':
-                                ontbuilder.addClass(t_row)
+                                ontbuilder.addOrUpdateClass(t_row)
                             elif typestr == 'dataproperty':
-                                ontbuilder.addDataProperty(t_row)
+                                ontbuilder.addOrUpdateDataProperty(t_row)
                             elif typestr == 'objectproperty':
-                                ontbuilder.addObjectProperty(t_row)
+                                ontbuilder.addOrUpdateObjectProperty(t_row)
                             elif typestr == 'annotationproperty':
-                                ontbuilder.addAnnotationProperty(t_row)
+                                ontbuilder.addOrUpdateAnnotationProperty(t_row)
                             elif typestr == 'individual':
-                                ontbuilder.addIndividual(t_row)
+                                ontbuilder.addOrUpdateIndividual(t_row)
                             elif typestr == '':
                                 raise EntityDescriptionError(
                                     'The entity type (e.g., "class", "data '
