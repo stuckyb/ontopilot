@@ -158,7 +158,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         self.ont.createNewClass('OBTO:9999')
         ent.addSuperclass('OBTO:9999')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, relatives
         )
 
@@ -173,7 +173,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         # Test a disjointness relationship.
         owlent = self.ont.getExistingClass('OBTO:0010').getOWLAPIObj()
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, {rel_axiom_types.DISJOINTS}
         )
 
@@ -192,7 +192,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         ent.addEquivalentTo('OBTO:0013')
         ent.addEquivalentTo('OBTO:0014')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, {rel_axiom_types.EQUIVALENTS}
         )
 
@@ -216,7 +216,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         newent = self.ont.createNewObjectProperty('OBTO:0003')
         newent.addSuperproperty('OBTO:0001')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, relatives
         )
 
@@ -230,7 +230,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         self.ont.createNewObjectProperty('OBTO:0004')
         ent.addEquivalentTo('OBTO:0004')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, {rel_axiom_types.EQUIVALENTS}
         )
 
@@ -246,7 +246,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         self.ont.createNewObjectProperty('OBTO:0005')
         ent.addDisjointWith('OBTO:0005')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, {rel_axiom_types.DISJOINTS}
         )
 
@@ -262,7 +262,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         self.ont.createNewObjectProperty('OBTO:0006')
         ent.addInverse('OBTO:0006')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, {rel_axiom_types.INVERSES}
         )
 
@@ -277,7 +277,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         # Test a domain axiom.
         ent.addDomain('OBTO:0010')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, {rel_axiom_types.DOMAINS}
         )
 
@@ -292,7 +292,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         # Test a range axiom.
         ent.addRange('OBTO:0011')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, {rel_axiom_types.RANGES}
         )
 
@@ -318,7 +318,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         newent = self.ont.createNewDataProperty('OBTO:0022')
         newent.addSuperproperty('OBTO:0020')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, relatives
         )
 
@@ -332,7 +332,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         self.ont.createNewDataProperty('OBTO:0023')
         ent.addEquivalentTo('OBTO:0023')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, {rel_axiom_types.EQUIVALENTS}
         )
 
@@ -348,7 +348,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         self.ont.createNewDataProperty('OBTO:0024')
         ent.addDisjointWith('OBTO:0024')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, {rel_axiom_types.DISJOINTS}
         )
 
@@ -363,7 +363,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         # Test a domain axiom.
         ent.addDomain('OBTO:0010')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, {rel_axiom_types.DOMAINS}
         )
 
@@ -378,7 +378,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         # Test a range axiom.
         ent.addRange('xsd:string')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, {rel_axiom_types.RANGES}
         )
 
@@ -404,7 +404,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         newent = self.ont.createNewAnnotationProperty('OBTO:0032')
         newent.addSuperproperty('OBTO:0030')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, relatives
         )
 
@@ -425,7 +425,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         owlent = ent.getOWLAPIObj()
         ent.addType('OBTO:0010')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, {rel_axiom_types.TYPES}
         )
 
@@ -441,7 +441,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         self.ont.createNewIndividual('OBTO:0043')
         ent.addObjectPropertyFact('OBTO:0001', 'OBTO:0043')
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, {rel_axiom_types.PROPERTY_ASSERTIONS}
         )
 
@@ -460,7 +460,7 @@ class Test_ModuleExtractor(unittest.TestCase):
             'OBTO:0020', '"literal"^^xsd:string', is_negative=True
         )
 
-        entset, axiomset = self.me._getDirectlyRelatedComponents(
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, {rel_axiom_types.PROPERTY_ASSERTIONS}
         )
 
@@ -482,7 +482,7 @@ class Test_ModuleExtractor(unittest.TestCase):
 
         # Test class descendant retrieval.
         ent = self.ont.getExistingClass('OBITO:0001').getOWLAPIObj()
-        entset, axiomset = self.me._getRelatedComponents(
+        entset, axiomset = self.me.getRelatedComponents(
             ent, {rel_axiom_types.DESCENDANTS}
         )
 
@@ -499,7 +499,7 @@ class Test_ModuleExtractor(unittest.TestCase):
         # Verify that the cycle is correctly handled.
         ent = self.ont.getExistingClass('OBTO:0011').getOWLAPIObj()
 
-        entset, axiomset = self.me._getRelatedComponents(
+        entset, axiomset = self.me.getRelatedComponents(
             ent, {rel_axiom_types.DESCENDANTS}
         )
 
