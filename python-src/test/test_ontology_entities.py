@@ -73,6 +73,20 @@ class _TestOntologyEntity:
         # Test that the definition annotation exists and has the correct value.
         self._checkAnnotation(self.t_ent.DEFINITION_IRI, defstr)
 
+    def test_getDefinitions(self):
+        # Test the case of no definitions.
+        self.assertEqual(0, len(self.t_ent.getDefinitions()))
+
+        # Test a single definition.
+        self.t_ent.addDefinition('Definition 1.')
+        defvals = self.t_ent.getDefinitions()
+        self.assertEqual(['Definition 1.'], defvals)
+
+        # Test multiple labels.
+        self.t_ent.addDefinition('Definition 2.')
+        defvals = self.t_ent.getDefinitions()
+        self.assertEqual(['Definition 1.', 'Definition 2.'], sorted(defvals))
+
     def test_addLabel(self):
         labelstr = 'term label!'
 

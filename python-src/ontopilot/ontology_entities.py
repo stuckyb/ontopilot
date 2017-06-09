@@ -99,6 +99,12 @@ class _OntologyEntity:
 
         self.ontology.addEntityAxiom(annotaxiom)
 
+    def getDefinitions(self):
+        """
+        Returns a list of all IAO:0000115 annotation values for this entity.
+        """
+        return self.getAnnotationValues(self.DEFINITION_IRI)
+
     def addLabel(self, labeltxt):
         """
         Adds an rdfs:label for this entity.
