@@ -26,7 +26,7 @@ import re
 from org.semanticweb.owlapi.model import IRI
 
 
-class OBOIdentiferError(RuntimeError):
+class OBOIdentifierError(RuntimeError):
     """
     An exception that indicates an OBO identifer (either an OBO ID, OBO IRI, or
     OBO prefix) was invalid.
@@ -82,13 +82,13 @@ def termIRIToOboID(termIRI):
 
     # First, verify that the IRI is OBO Foundry compliant.
     if not(termIRIstr.startswith(OBO_BASE_IRI)):
-        raise OBOIdentiferError(invalid_IRI_msg)
+        raise OBOIdentifierError(invalid_IRI_msg)
 
     rawID = termIRIstr.replace(OBO_BASE_IRI, '', 1)
     res = raw_oboid_re.match(rawID)
 
     if res is None:
-        raise OBOIdentiferError(invalid_IRI_msg)
+        raise OBOIdentifierError(invalid_IRI_msg)
     
     # Convert it to an OBO ID.
     obIDstr = res.group('idspace') + ':' + res.group('localid')
@@ -103,7 +103,7 @@ def oboIDToIRI(oboID):
     oboID = oboID.strip()
 
     if not(isOboID(oboID)):
-        raise OBOIdentiferError(
+        raise OBOIdentifierError(
             'The string "{0}" is not a valid OBO ID, so it cannot be '
             'converted to an OBO Foundry IRI.'.format(oboID)
         )
@@ -121,7 +121,7 @@ def getIRIForOboPrefix(obo_prefix):
     res = obo_prefix_re.match(obo_prefix)
 
     if res is None:
-        raise OBOIdentiferError(
+        raise OBOIdentifierError(
             'The string "{0}" is not a valid OBO prefix (also known as as the '
             '"ID space" for OBO identifiers), so it cannot be converted to an '
             'OBO Foundry IRI.'.format(obo_prefix)

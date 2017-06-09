@@ -23,7 +23,7 @@
 from __future__ import unicode_literals
 import re
 import unicodedata
-from obohelper import termIRIToOboID, OBOIdentiferError
+from obohelper import termIRIToOboID, OBOIdentifierError
 from ontology import Ontology
 from ontology_entities import (
     CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,
@@ -735,7 +735,7 @@ class OWLOntologyBuilder:
                 labelIRI = self.ontology.resolveLabel(label)
                 try:
                     labelID = termIRIToOboID(labelIRI)
-                except OBOIdentiferError:
+                except OBOIdentifierError:
                     labelID = ''
 
                 if labelID == '':
