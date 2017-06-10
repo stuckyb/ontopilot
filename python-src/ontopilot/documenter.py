@@ -35,6 +35,27 @@ class DocumentSpecificationError(RuntimeError):
     pass
 
 
+class _Document:
+    """
+    Top-level class for data structures that provide an abstract representation
+    of a complete ontology documentation document.
+    """
+    def __init__(self):
+        self.sections = []
+
+    def __str__(self):
+        strval = ''
+        sectioncnt = 0
+        for section in self.sections:
+            sectioncnt += 1
+            if sectioncnt > 1:
+                strval += '\n' + str(section)
+            else:
+                strval += str(section)
+
+        return strval
+
+
 class _DocumentSection:
     """
     An internal "struct" that represents one top-level section in an ontology
@@ -45,19 +66,16 @@ class _DocumentSection:
         self.docnodes = []
 
     def __str__(self):
-        docnodes_str = ''
+        docnodes_str = 'Title: {0}\nEntities:'.format(self.title)
+
         for docnode in self.docnodes:
             docnodes_str += '\n' + str(docnode)
 
         # Handle the case where docnodes is empty.
-        if docnodes_str == '':
+        if docnodes_str[-1] != '\n':
             docnodes_str = '\n'
 
-        return (
-            'Title: {0}\nEntities:{1}'.format(
-                self.title, docnodes_str
-            )
-        )
+        return docnodes_str
 
 
 class _DocumentNode:
@@ -226,26 +244,32 @@ class Documenter:
 
         return new_section
 
-    def _buildDocumentDS(self, docspec):
+    def _parseDocSpec(self, docspec):
         """
         Builds a data structure that captures the components of the ontology
-        and relevant information from the docspecs that will be used to
-        generate the final documentation.  The data structure is a list of
-        _DocumentSection objects.
+        and relevant information from a documentation specification provided in
+        YAML format.  The returned data structure is a list of _DocumentSection
+        objects.
 
-        specs: Documentation specification parsed from a YAML source.
+        docspec: A source of YAML-formatted documentation specification
+            information.  Can be either a byte string, regular (or unicode)
+            string, or a file object.
         """
-        document = []
+        parsed_docspec = yaml.load(docspec)
+        #print parsed_docspec
 
-        for rawsection in docspec:
+        document = _Document()
+
+        for rawsection in parsed_docspec:
             section = self._buildDocumentSection(rawsection)
-            document.append(section)
+            document.sections.append(section)
         
         return document
 
     def _writeMarkdown(self, doctree, fileout):
         """
-        Uses a _DocumentNode tree to generate an output Markdown document.
+        Uses a list of _DocumentSection objects to generate an output Markdown
+        document.
         """
 
     def document(self, docspec, fileout):
@@ -258,10 +282,6 @@ class Documenter:
             string, or a file object.
         fileout: A writable file object.
         """
-        parsed_docspec = yaml.load(docspec)
-        print parsed_docspec
-
-        docDS = self._buildDocumentDS(parsed_docspec)
-        for section in docDS:
-            print section
+        docDS = self._parseDocSpec(docspec)
+        print docDS
 
