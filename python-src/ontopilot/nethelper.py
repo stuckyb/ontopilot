@@ -114,9 +114,7 @@ def httpHEAD(sourceIRI):
                 'Unable to access the resource at <{0}> due to a TCP '
                 'connection error: {1}.'.format(source_iri, unicode(err))
             )
-
-    # Printing (response.getheader('Content-Length') here for the example in 
-    # ontopilot_main.py should return a number)
+            
     return response
 
 def checkForRedirect(sourceIRI):

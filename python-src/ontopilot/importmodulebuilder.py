@@ -265,7 +265,7 @@ class ImportModuleBuilder:
         # Verify that the source ontology file exists; if not, download it.
         # Also download it if there is a new version (as dictacted by a change
         # in Content-Length from a HTTP request).
-        content_length = nethelper.checkForContent(ontologyIRI)
+        content_length = nethelper.checkForContentLength(ontologyIRI)
 
         if not(os.path.isfile(ontfile)) or (
             content_length != 'None' and content_length != os.path.getsize(ontfile)):
