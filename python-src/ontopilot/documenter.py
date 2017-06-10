@@ -73,7 +73,7 @@ class _DocumentSection:
 
         # Handle the case where docnodes is empty.
         if docnodes_str[-1] != '\n':
-            docnodes_str = '\n'
+            docnodes_str += '\n'
 
         return docnodes_str
 
@@ -194,7 +194,7 @@ class Documenter:
         Builds a _DocumentNode objects that corresponds with the raw data
         structure parsed from a strict YAML documentation specification.
         """
-        if 'ID' not in rawdocnode:
+        if ('ID' not in rawdocnode) or not(isinstance(rawdocnode, dict)):
             raise DocumentSpecificationError(
                 'No entity ID was provided for an element in the documentation specification.  An ID must be provided for each ontology entity you wish to include in the ontology documentation.  The element with the missing ID is: {0}.'.format(rawdocnode)
             )
@@ -208,11 +208,12 @@ class Documenter:
         elif 'descendants' in rawdocnode:
             # Get the value of maxdepth for the call to getDescendants() that
             # corresponds with the value of the "descendants" directive.
-            if rawdocnode['descendants'].lower() == 'all':
+            desc_str = str(rawdocnode['descendants']).lower()
+            if desc_str == 'all':
                 maxdepth = -1
             else:
                 try:
-                    maxdepth = int(rawdocnode['descendants'])
+                    maxdepth = int(desc_str)
                 except ValueError:
                     raise DocumentSpecificationError(
                         'Invalid value for "descendants" directive in document specification file: "{0}".'.format(rawdocnode['descendants'])
@@ -238,31 +239,34 @@ class Documenter:
         new_section = _DocumentSection()
         new_section.title = title
 
-        for rawdocnode in rawsection[title_strs[0]]:
-            docnode = self._buildDocumentNode(rawdocnode)
-            new_section.docnodes.append(docnode)
+        if rawsection[title_strs[0]] is not None:
+            for rawdocnode in rawsection[title_strs[0]]:
+                docnode = self._buildDocumentNode(rawdocnode)
+                new_section.docnodes.append(docnode)
 
         return new_section
 
     def _parseDocSpec(self, docspec):
         """
-        Builds a data structure that captures the components of the ontology
-        and relevant information from a documentation specification provided in
-        YAML format.  The returned data structure is a list of _DocumentSection
-        objects.
+        Builds a _Document data structure that captures the components of the
+        ontology and relevant information from a documentation specification
+        provided in YAML format.
 
         docspec: A source of YAML-formatted documentation specification
             information.  Can be either a byte string, regular (or unicode)
             string, or a file object.
         """
-        parsed_docspec = yaml.load(docspec)
+        parsed_docspec = yaml.safe_load_all(docspec)
+        #print docspec
         #print parsed_docspec
 
         document = _Document()
 
-        for rawsection in parsed_docspec:
-            section = self._buildDocumentSection(rawsection)
-            document.sections.append(section)
+        if parsed_docspec is not None:
+            for rawsection in parsed_docspec:
+                #print rawsection
+                section = self._buildDocumentSection(rawsection)
+                document.sections.append(section)
         
         return document
 
