@@ -140,7 +140,10 @@ rel_axiom_types = _RelatedAxiomTypes()
 
 class ModuleExtractor:
     """
-    Extracts import "modules" from existing OWL ontologies.
+    Extracts import "modules" from existing OWL ontologies.  Also includes two
+    methods that might be useful in other contexts: getRelatedComponents() and
+    getDirectlyRelatedComponents().  These methods make it simple to traverse
+    the relationships among entities in an ontology.
     """
     def __init__(self, ontology_source):
         """
@@ -203,7 +206,7 @@ class ModuleExtractor:
 
         owlent = entity.getOWLAPIObj()
 
-        entset, axiomset = self._getRelatedComponents(owlent, rel_types)
+        entset, axiomset = self.getRelatedComponents(owlent, rel_types)
 
         self.saved_axioms.update(axiomset)
         self.signatures[method].update(entset)
@@ -232,7 +235,7 @@ class ModuleExtractor:
 
         owlent = entity.getOWLAPIObj()
 
-        entset, axiomset = self._getRelatedComponents(owlent, rel_types)
+        entset, axiomset = self.getRelatedComponents(owlent, rel_types)
 
         self.excluded_entities.update(entset)
 
@@ -379,7 +382,7 @@ class ModuleExtractor:
 
         return axiomset
 
-    def _getRelatedComponents(self, target_entity, rel_types):
+    def getRelatedComponents(self, target_entity, rel_types):
         """
         Gets all entities and axioms that are recursively (i.e., either
         directly or indirectly) related to the target entity by the specified
@@ -403,7 +406,7 @@ class ModuleExtractor:
 
             entset.add(entity)
 
-            new_sets = self._getDirectlyRelatedComponents(entity, rel_types)
+            new_sets = self.getDirectlyRelatedComponents(entity, rel_types)
             new_entset, new_axiomset = new_sets
 
             axiomset.update(new_axiomset)
@@ -416,7 +419,7 @@ class ModuleExtractor:
 
         return (entset, axiomset)
 
-    def _getDirectlyRelatedComponents(self, entity, rel_types):
+    def getDirectlyRelatedComponents(self, entity, rel_types):
         """
         Gets all entities and axioms that are directly related to the target
         entity by the specified axiom types.  Returns a tuple containing two

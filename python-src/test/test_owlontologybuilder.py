@@ -16,7 +16,13 @@
 
 # Python imports.
 from ontopilot.tablereader import TableRow
-from ontopilot.owlontologybuilder import OWLOntologyBuilder
+from ontopilot.owlontologybuilder import (
+    OWLOntologyBuilder, EntityDescriptionError
+)
+from ontopilot.ontology_entities import (
+    CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,
+    ANNOTATIONPROPERTY_ENTITY, INDIVIDUAL_ENTITY
+)
 import unittest
 from test_tablereader import TableStub
 #from testfixtures import LogCapture
@@ -163,6 +169,82 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
 
         self.assertEqual(expIRIs, actualIRIs)
 
+    def _do_addOrUpdateEntity(self, enttype, entdesc):
+        """
+        A supporting method for _test_addOrUpdateEntity() that runs the
+        appropriate addOrUpdateEntity() method in OOWLOntologyBuilder according
+        to the constant enttype.
+        """
+        if enttype == CLASS_ENTITY:
+            self.oob.addOrUpdateClass(entdesc)
+        elif enttype == DATAPROPERTY_ENTITY:
+            self.oob.addOrUpdateDataProperty(entdesc)
+        elif enttype == OBJECTPROPERTY_ENTITY:
+            self.oob.addOrUpdateObjectProperty(entdesc)
+        elif enttype == ANNOTATIONPROPERTY_ENTITY:
+            self.oob.addOrUpdateAnnotationProperty(entdesc)
+        elif enttype == INDIVIDUAL_ENTITY:
+            self.oob.addOrUpdateIndividual(entdesc)
+
+    def _test_addOrUpdateEntity(self, enttype, mismatch_id):
+        """
+        Generic method for testing addOrUpdateEntity() methods in
+        OWLOntologyBuilder.
+
+        enttype: The type constant for the entity to add/update.
+        mismatch_id: The ID of an extant entity of a different type.
+        """
+        # Verify that a new entity (with no label or definition) is created.
+        self.tr['Label'] = ''
+        self.tr['Text definition'] = ''
+        self._do_addOrUpdateEntity(enttype, self.tr)
+
+        newent = self.test_ont.getExistingEntity(self.tr['ID'])
+        self.assertIsNotNone(newent)
+        self.assertEqual(enttype, newent.getTypeConst())
+        self.assertEqual(0, len(newent.getLabels()))
+
+        # Test updating the entity by adding a label and definition.
+        self.tr['Label'] = 'label 1'
+        self.tr['Text definition'] = 'Update definition.'
+        self._do_addOrUpdateEntity(enttype, self.tr)
+        # Make all non-required columns optional so we don't get a bunch of
+        # warning log messages.
+        self.tr.optional = [0]
+        self.oob.processDeferredEntityAxioms()
+
+        newent = self.test_ont.getExistingEntity(self.tr['ID'])
+        self.assertIsNotNone(newent)
+        self.assertEqual(enttype, newent.getTypeConst())
+        self.assertEqual(['label 1'], newent.getLabels())
+        self.assertEqual(
+            ['Update definition.'],
+            newent.getAnnotationValues(newent.DEFINITION_IRI)
+        )
+
+        # Check that mismatched labels are correctly handled.
+        self.tr['Label'] = 'incorrect label'
+        with self.assertRaisesRegexp(
+            EntityDescriptionError,
+            'does not match the label in the current source row'
+        ):
+            self._do_addOrUpdateEntity(enttype, self.tr)
+
+        # Check that mismatched entity types are correctly handled.
+        # Use the ID of an existing object property.
+        self.tr['ID'] = mismatch_id
+        with self.assertRaisesRegexp(
+            EntityDescriptionError,
+            'An entity with the ID {0} already exists in the ontology'.format(
+                mismatch_id
+            )
+        ):
+            self._do_addOrUpdateEntity(enttype, self.tr)
+
+    def test_addOrUpdateClass(self):
+        # OBTO:0001 is an object property.
+        self._test_addOrUpdateEntity(CLASS_ENTITY, 'OBTO:0001')
+
     def test_addDataProperty(self):
         # Define additional row values.
         self.tr['Parent'] = 'obo:OBTO_2001'
@@ -251,6 +333,10 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         # Verify that the property is functional.
         axioms = self.owlont.getFunctionalDataPropertyAxioms(new_oaent)
         self.assertEqual(1, axioms.size())
+
+    def test_addOrUpdateDataProperty(self):
+        # OBTO:0001 is an object property.
+        self._test_addOrUpdateEntity(DATAPROPERTY_ENTITY, 'OBTO:0001')
 
     def test_addObjectProperty(self):
         # Define additional row values.
@@ -359,6 +445,10 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
         axioms = self.owlont.getTransitiveObjectPropertyAxioms(new_oaent)
         self.assertEqual(1, axioms.size())
 
+    def test_addOrUpdateObjectProperty(self):
+        # OBTO:0020 is a data property.
+        self._test_addOrUpdateEntity(OBJECTPROPERTY_ENTITY, 'OBTO:0020')
+
     def test_addAnnotationProperty(self):
         # Define additional row values.
         self.tr['Parent'] = 'obo:OBTO_2001'
@@ -401,6 +491,10 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
             actualIRIs.add(axiom.getSuperProperty().getIRI().toString())
 
         self.assertEqual(expIRIs, actualIRIs)
+
+    def test_addOrUpdateAnnotationProperty(self):
+        # OBTO:0020 is a data property.
+        self._test_addOrUpdateEntity(ANNOTATIONPROPERTY_ENTITY, 'OBTO:0020')
 
     def test_addIndividual(self):
         # Define additional row values.
@@ -533,6 +627,10 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
             results.add(factparts)
 
         self.assertEqual(expected, results)
+
+    def test_addOrUpdateIndividual(self):
+        # OBTO:0020 is a data property.
+        self._test_addOrUpdateEntity(INDIVIDUAL_ENTITY, 'OBTO:0020')
 
     def test_expandDefinition(self):
         # Test an expansion that includes the label text.  Express the label in

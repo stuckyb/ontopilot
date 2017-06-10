@@ -99,6 +99,12 @@ class _OntologyEntity:
 
         self.ontology.addEntityAxiom(annotaxiom)
 
+    def getDefinitions(self):
+        """
+        Returns a list of all IAO:0000115 annotation values for this entity.
+        """
+        return self.getAnnotationValues(self.DEFINITION_IRI)
+
     def addLabel(self, labeltxt):
         """
         Adds an rdfs:label for this entity.
@@ -111,6 +117,12 @@ class _OntologyEntity:
         annotaxiom = self.df.getOWLAnnotationAssertionAxiom(self.entityIRI, labelannot)
 
         self.ontology.addEntityAxiom(annotaxiom)
+
+    def getLabels(self):
+        """
+        Returns a list of all rdfs:label values for this entity.
+        """
+        return self.getAnnotationValues(self.df.getRDFSLabel().getIRI())
 
     def addComment(self, commenttxt):
         """
@@ -162,10 +174,11 @@ class _OntologyEntity:
         """
         annotvals = []
 
-        owlont = self.ontology.getOWLOntology()
-        for annot_ax in owlont.getAnnotationAssertionAxioms(self.entityIRI):
-            if annot_ax.getProperty().getIRI().equals(annotpropIRI):
-                annotvals.append(annot_ax.getValue().getLiteral())
+        ontset = self.ontology.getOWLOntology().getImportsClosure()
+        for owlont in ontset:
+            for annot_ax in owlont.getAnnotationAssertionAxioms(self.entityIRI):
+                if annot_ax.getProperty().getIRI().equals(annotpropIRI):
+                    annotvals.append(annot_ax.getValue().getLiteral())
 
         return annotvals
 

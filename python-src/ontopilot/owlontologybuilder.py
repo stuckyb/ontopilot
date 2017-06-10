@@ -23,7 +23,7 @@
 from __future__ import unicode_literals
 import re
 import unicodedata
-from obohelper import termIRIToOboID, OBOIdentiferError
+from obohelper import termIRIToOboID, OBOIdentifierError
 from ontology import Ontology
 from ontology_entities import (
     CLASS_ENTITY, DATAPROPERTY_ENTITY, OBJECTPROPERTY_ENTITY,
@@ -95,25 +95,6 @@ class OWLOntologyBuilder:
         """
         return self.ontology
 
-    def addClass(self, classdesc):
-        """
-        Adds a new class to the ontology, based on a class description provided
-        as the table row classdesc (i.e., the single explicit argument).
-        """
-        try:
-            # Create the new class.
-            newclass = self.ontology.createNewClass(classdesc['ID'])
-            
-            # Make sure we have a label and add it to the new class.
-            labeltext = self.dsparser.unquoteStr(classdesc['Label'])
-            if labeltext != '':
-                newclass.addLabel(labeltext)
-        except RuntimeError as err:
-            raise EntityDescriptionError(unicode(err), classdesc)
-
-        # Cache the remainder of the class description.
-        self.entity_trows.append((newclass, classdesc))
-
     def _addGenericAxioms(self, entobj, entdesc, expanddef=True):
         """
         Adds generic axioms (i.e., axioms that all entities have in common)
@@ -156,6 +137,86 @@ class OWLOntologyBuilder:
                 entobj.addAnnotation(
                     annotprop_id, self.dsparser.unquoteStr(entdesc[colname])
                 )
+
+    def addClass(self, classdesc):
+        """
+        Adds a new class to the ontology, based on a class description provided
+        as the table row classdesc (i.e., the single explicit argument).
+        """
+        try:
+            # Create the new class.
+            newclass = self.ontology.createNewClass(classdesc['ID'])
+            
+            # Make sure we have a label and add it to the new class.
+            labeltext = self.dsparser.unquoteStr(classdesc['Label'])
+            if labeltext != '':
+                newclass.addLabel(labeltext)
+        except RuntimeError as err:
+            raise EntityDescriptionError(unicode(err), classdesc)
+
+        # Cache the remainder of the class description.
+        self.entity_trows.append((newclass, classdesc))
+
+    def _updateEntity(self, entobj, entdesc, enttype, ent_txtdesc):
+        """
+        Updates an extant entity in the ontology with elements from an entity
+        description (a table row).
+
+        entobj: An _OntologyEntity object for the existing entity.
+        entdesc: The entity description (a table row).
+        enttype: The type constant expected for the existing entity.
+        ent_txtdesc: A text description of the entity type, used for error
+            messages.
+        """
+        # Get the correct article to use for error messages.
+        article = 'a'
+        if ent_txtdesc[0] in ('a','e','i','o','u'):
+            article = 'an'
+
+        # Make sure the existing entity is of the correct type.
+        if entobj.getTypeConst() != enttype:
+            raise EntityDescriptionError(
+                'An entity with the ID {0} already exists in the ontology, but '
+                'it is not {2} {1}.  If you intended to modify an existing '
+                '{1}, please verify the ID of the target {1}.  If you intended '
+                'to create a new {1}, please provide a different {1} '
+                'ID.'.format(entdesc['ID'], ent_txtdesc, article), entdesc
+            )
+
+        # If a label was provided, make sure it does not conflict with an
+        # existing label, and add it if no labels are already defined.
+        labeltext = self.dsparser.unquoteStr(entdesc['Label'])
+        labelvals = entobj.getLabels()
+        if len(labelvals) == 0:
+            entobj.addLabel(labeltext)
+        elif labeltext not in labelvals:
+            raise EntityDescriptionError(
+                "There is already {2} {1} with the ID {0} in the ontology, but "
+                "its label ('{3}') does not match the label in the current "
+                "source row ('{4}').  If you intended to modify the existing "
+                "{1}, please update the label in the source file so it matches "
+                "that of the existing {1}.  If you intended to create a new "
+                "{1}, please provide a different {1} ID.".format(
+                    entdesc['ID'], ent_txtdesc, article, labelvals[0],
+                    labeltext
+                ), entdesc
+            )
+
+        # Cache the the remainder of the entity description.
+        self.entity_trows.append((entobj, entdesc))
+
+    def addOrUpdateClass(self, classdesc):
+        """
+        Adds a new class to the ontology or updates an extant class in the
+        ontology, based on a class description provided as the table row
+        classdesc (i.e., the single explicit argument).
+        """
+        entobj = self.ontology.getExistingEntity(classdesc['ID'])
+
+        if entobj is None:
+            self.addClass(classdesc)
+        else:
+            self._updateEntity(entobj, classdesc, CLASS_ENTITY, 'class')
 
     def _addClassAxioms(self, classobj, classdesc, expanddef=True):
         """
@@ -214,6 +275,21 @@ class OWLOntologyBuilder:
         
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
+
+    def addOrUpdateDataProperty(self, propdesc):
+        """
+        Adds a new data property to the ontology or updates an extant data
+        property in the ontology, based on a description provided as the table
+        row propdesc (i.e., the single explicit argument).
+        """
+        entobj = self.ontology.getExistingEntity(propdesc['ID'])
+
+        if entobj is None:
+            self.addDataProperty(propdesc)
+        else:
+            self._updateEntity(
+                entobj, propdesc, DATAPROPERTY_ENTITY, 'data property'
+            )
 
     def _addDataPropertyAxioms(self, propobj, propdesc, expanddef=True):
         """
@@ -292,6 +368,21 @@ class OWLOntologyBuilder:
         
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
+
+    def addOrUpdateObjectProperty(self, propdesc):
+        """
+        Adds a new object property to the ontology or updates an extant object
+        property in the ontology, based on a description provided as the table
+        row propdesc (i.e., the single explicit argument).
+        """
+        entobj = self.ontology.getExistingEntity(propdesc['ID'])
+
+        if entobj is None:
+            self.addObjectProperty(propdesc)
+        else:
+            self._updateEntity(
+                entobj, propdesc, OBJECTPROPERTY_ENTITY, 'object property'
+            )
 
     def _addObjectPropertyAxioms(self, propobj, propdesc, expanddef=True):
         """
@@ -404,6 +495,22 @@ class OWLOntologyBuilder:
         # Cache the remainder of the property description.
         self.entity_trows.append((newprop, propdesc))
 
+    def addOrUpdateAnnotationProperty(self, propdesc):
+        """
+        Adds a new annotation property to the ontology or updates an extant
+        annotation property in the ontology, based on a description provided as
+        the table row propdesc (i.e., the single explicit argument).
+        """
+        entobj = self.ontology.getExistingEntity(propdesc['ID'])
+
+        if entobj is None:
+            self.addAnnotationProperty(propdesc)
+        else:
+            self._updateEntity(
+                entobj, propdesc, ANNOTATIONPROPERTY_ENTITY,
+                'annotation property'
+            )
+
     def _addAnnotationPropertyAxioms(self, propobj, propdesc, expanddef=True):
         """
         Adds axioms from a _TableRow object property description to an existing
@@ -449,6 +556,21 @@ class OWLOntologyBuilder:
         
         # Cache the remainder of the individual description.
         self.entity_trows.append((newindv, indvdesc))
+
+    def addOrUpdateIndividual(self, indvdesc):
+        """
+        Adds a new individual to the ontology or updates an extant individual
+        in the ontology, based on a description provided as the table row
+        indvdesc (i.e., the single explicit argument).
+        """
+        entobj = self.ontology.getExistingEntity(indvdesc['ID'])
+
+        if entobj is None:
+            self.addIndividual(indvdesc)
+        else:
+            self._updateEntity(
+                entobj, indvdesc, INDIVIDUAL_ENTITY, 'named individual'
+            )
 
     def _addIndividualAxioms(self, indvobj, indvdesc, expanddef=True):
         """
@@ -613,7 +735,7 @@ class OWLOntologyBuilder:
                 labelIRI = self.ontology.resolveLabel(label)
                 try:
                     labelID = termIRIToOboID(labelIRI)
-                except OBOIdentiferError:
+                except OBOIdentifierError:
                     labelID = ''
 
                 if labelID == '':
