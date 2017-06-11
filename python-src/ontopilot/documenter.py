@@ -150,6 +150,17 @@ class _DocumentNode:
                 if curdepth < maxdepth or maxdepth == -1:
                     childnode.getDescendants(maxdepth, curdepth + 1, entset)
 
+        # Sort the child nodes in the following order: entity label, OBO ID,
+        # IRI.  Use a custom function rather than attrgetter() to ensure that
+        # the sort is not case sensitive.
+        self.children.sort(
+            key=lambda node:
+                (
+                    node.entlabel.lower(), node.entOBO_ID.lower(),
+                    node.entIRI.lower()
+                )
+        )
+
     def _toIndentedStr(self, indentlevel):
         """
         Generates and returns a string representation of this _DocumentNode,
