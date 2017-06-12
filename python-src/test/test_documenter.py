@@ -59,6 +59,15 @@ class Test_Documenter(unittest.TestCase):
                 'docspec': ' \n',
                 'expected': ''
             },
+            # Only a title.
+            {
+                'docspec': 'Document title',
+                'expected':
+"""
+** Document title **
+
+"""
+            },
             # A single empty document section.
             {
                 'docspec':
@@ -68,6 +77,23 @@ Classes:
 """,
                 'expected':
 """
+Title: Classes
+Entities:
+"""
+            },
+            # A single document section with a document title.
+            {
+                'docspec':
+"""
+Document title
+
+---
+Classes:
+""",
+                'expected':
+"""
+** Document title **
+
 Title: Classes
 Entities:
 """

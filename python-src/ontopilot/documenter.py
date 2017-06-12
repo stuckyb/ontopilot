@@ -41,10 +41,15 @@ class _Document:
     of a complete ontology documentation document.
     """
     def __init__(self):
+        self.title = ''
         self.sections = []
 
     def __str__(self):
-        strval = ''
+        if self.title != '':
+            strval = '** {0} **\n\n'.format(self.title)
+        else:
+            strval = ''
+
         sectioncnt = 0
         for section in self.sections:
             sectioncnt += 1
@@ -292,10 +297,18 @@ class Documenter:
         document = _Document()
 
         if parsed_docspec is not None:
+            section_cnt = 0
             for rawsection in parsed_docspec:
-                #print rawsection
-                section = self._buildDocumentSection(rawsection)
-                document.sections.append(section)
+                section_cnt += 1
+
+                # If the first section contains only a string value, then
+                # interpret it as the document's title.
+                if (section_cnt == 1) and isinstance(rawsection, basestring):
+                    document.title = rawsection
+                else:
+                    #print rawsection
+                    section = self._buildDocumentSection(rawsection)
+                    document.sections.append(section)
         
         return document
 
