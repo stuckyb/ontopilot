@@ -28,7 +28,7 @@ import yaml
 # Java imports.
 
 
-class DocumentSpecificationError(RuntimeError):
+class DocumentationSpecificationError(RuntimeError):
     """
     Exception for errors detected in the documentation specification.
     """
@@ -93,8 +93,10 @@ class _DocumentNode:
         """
         entity = srcont.getExistingEntity(entID)
         if entity is None:
-            raise DocumentSpecificationError(
-                'No entity with the ID "{0}" could be found in the source ontology.  Please provide the correct entity ID in the documentation specification.'.format(entID)
+            raise DocumentationSpecificationError(
+                'No entity with the ID "{0}" could be found in the source '
+                'ontology.  Please provide the correct entity ID in the '
+                'documentation specification.'.format(entID)
             )
 
         self.entIRI = entity.getIRI().toString()
@@ -206,8 +208,11 @@ class Documenter:
         structure parsed from a strict YAML documentation specification.
         """
         if ('ID' not in rawdocnode) or not(isinstance(rawdocnode, dict)):
-            raise DocumentSpecificationError(
-                'No entity ID was provided for an element in the documentation specification.  An ID must be provided for each ontology entity you wish to include in the ontology documentation.  The element with the missing ID is: {0}.'.format(rawdocnode)
+            raise DocumentationSpecificationError(
+                'No entity ID was provided for an element in the documentation '
+                'specification.  An ID must be provided for each ontology '
+                'entity you wish to include in the ontology documentation.  '
+                'The element with the missing ID is: {0}.'.format(rawdocnode)
             )
 
         docnode = _DocumentNode(rawdocnode['ID'], self.ont)
@@ -217,20 +222,30 @@ class Documenter:
                 childnode = self._buildDocumentNode(child)
                 docnode.children.append(childnode)
         elif 'descendants' in rawdocnode:
-            # Get the value of maxdepth for the call to getDescendants() that
-            # corresponds with the value of the "descendants" directive.
             desc_str = str(rawdocnode['descendants']).lower()
-            if desc_str == 'all':
-                maxdepth = -1
-            else:
-                try:
-                    maxdepth = int(desc_str)
-                except ValueError:
-                    raise DocumentSpecificationError(
-                        'Invalid value for "descendants" directive in document specification file: "{0}".'.format(rawdocnode['descendants'])
-                    )
+            if desc_str != 'none':
+                # Get the integer value of maxdepth for the call to
+                # getDescendants() that corresponds with the value of the
+                # "descendants" directive.
+                if desc_str == 'all':
+                    maxdepth = -1
+                else:
+                    try:
+                        maxdepth = int(desc_str)
+                        if maxdepth < 0:
+                            raise ValueError()
+                    except ValueError:
+                        raise DocumentationSpecificationError(
+                            'Invalid value for "descendants" directive in '
+                            'documentation specification file: "{0}".  Valid '
+                            'values for "descendants" are "all", "none", or '
+                            'any non-negative integer.'.format(
+                                rawdocnode['descendants']
+                            )
+                        )
 
-            docnode.getDescendants(maxdepth)
+                if maxdepth != 0:
+                    docnode.getDescendants(maxdepth)
 
         return docnode
 
@@ -241,8 +256,11 @@ class Documenter:
         """
         title_strs = rawsection.keys()
         if len(title_strs) != 1:
-            raise DocumentSpecificationError(
-                'Each documentation section must have exactly one heading.  The current documentation section has the following headings: {0}.  Please correct the documentation specification file.'.format('"' + '", "'.join(title_strs) + '"')
+            raise DocumentationSpecificationError(
+                'Each documentation section must have exactly one heading.  '
+                'The current documentation section has the following headings: '
+                '{0}.  Please correct the documentation specification '
+                'file.'.format('"' + '", "'.join(title_strs) + '"')
             )
 
         title = title_strs[0].strip()
