@@ -21,6 +21,7 @@
 from __future__ import unicode_literals
 from module_extractor import ModuleExtractor, rel_axiom_types
 from obohelper import termIRIToOboID, OBOIdentifierError
+from documentation_writers import MarkdownWriter
 from ontopilot import logger
 from ontopilot import TRUE_STRS
 import yaml
@@ -168,6 +169,20 @@ class _DocumentNode:
                 )
         )
 
+    def getName(self):
+        """
+        Returns a string that can be used as the text name for this node.  The
+        string will be one of the contained element's label, OBO ID, or IRI.
+        Components will be evaluated in that order, and the forst non-empty
+        value will be returned.
+        """
+        if self.entlabel != '':
+            return self.entlabel
+        elif self.entOBO_ID != '':
+            return self.entOBO_ID
+        else:
+            return self.entIRI
+
     def _toIndentedStr(self, indentlevel):
         """
         Generates and returns a string representation of this _DocumentNode,
@@ -199,13 +214,26 @@ class _DocumentNode:
 
 
 class Documenter:
-    def __init__(self, src_ont):
+    def __init__(self, src_ont, writer=None):
         """
-        Initializes this Documenter with a source ontology.
+        Initializes this Documenter with a source ontology and, optionally, a
+        custom writer instance.  If no writer is provided, markdown will be
+        produced by default.
 
         src_ont: An ontopilot.Ontology instance.
         """
         self.ont = src_ont
+
+        if writer is None:
+            self.writer = MarkdownWriter()
+        else:
+            self.writer = writer
+
+    def setWriter(self, writer):
+        """
+        Configures this Documenter to write to a specified output format.
+        """
+        self.writer = writer
 
     def _buildDocumentNode(self, rawdocnode):
         """
@@ -312,12 +340,6 @@ class Documenter:
         
         return document
 
-    def _writeMarkdown(self, doctree, fileout):
-        """
-        Uses a list of _DocumentSection objects to generate an output Markdown
-        document.
-        """
-
     def document(self, docspec, fileout):
         """
         Generates Markdown documentation for the source ontology according to a
@@ -329,5 +351,7 @@ class Documenter:
         fileout: A writable file object.
         """
         docDS = self._parseDocSpec(docspec)
-        print docDS
+        #print docDS
+
+        self.writer.write(docDS, fileout)
 
