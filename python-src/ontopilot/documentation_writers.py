@@ -22,6 +22,7 @@
 
 # Python imports.
 from __future__ import unicode_literals
+from doc_toc_extension import DocToCExtension
 import StringIO
 import markdown
 from ontopilot import logger
@@ -30,8 +31,12 @@ from ontopilot import logger
 
 
 class MarkdownWriter:
-    def __init__(self):
-        pass
+    def __init__(self, include_ToC_marker=False):
+        """
+        include_ToC_marker (boolean): Whether to generate a marker in the
+            document for the preferred location of a table of contents.
+        """
+        self.include_ToC_marker = include_ToC_marker
 
     def _writeNode(self, node, fileout, indent_level):
         nname = node.getName()
@@ -73,13 +78,20 @@ class MarkdownWriter:
         if document.title != '':
             fileout.write('# {0}\n\n'.format(document.title))
 
+        if self.include_ToC_marker:
+            fileout.write('[ToC]\n\n')
+
         for section in document.sections:
             self._writeSection(section, fileout)
 
 
 class HTMLWriter:
-    def __init__(self):
-        pass
+    def __init__(self, include_ToC=True):
+        """
+        include_ToC (boolean): Whether to generate a table of contents for the
+            documentation.
+        """
+        self.include_ToC = include_ToC
 
     def write(self, document, fileout):
         """
@@ -90,7 +102,7 @@ class HTMLWriter:
         """
         # Use MarkdownWriter to get the Markdown representation of the
         # document, then convert that to HTML.
-        mdwriter = MarkdownWriter()
+        mdwriter = MarkdownWriter(self.include_ToC)
         strbuf = StringIO.StringIO()
         mdwriter.write(document, strbuf)
         mdtext = strbuf.getvalue()
@@ -101,14 +113,17 @@ class HTMLWriter:
     <head>
         <meta charset="utf-8" />
         <title>{0}</title>
-        <!--link rel="stylesheet" type="text/css" href="style.css" /-->
+        <link rel="stylesheet" type="text/css" href="documentation_styles.css" />
     </head>
     <body>
 """
 
         footer = '\n    </body>\n</html>'
 
-        htmltext = markdown.markdown(mdtext, output_format='xhtml5')
+        extns = [DocToCExtension(document)]
+        htmltext = markdown.markdown(
+            mdtext, output_format='xhtml5', extensions=extns
+        )
 
         fileout.write(header.format(document.title))
         fileout.write(htmltext)
