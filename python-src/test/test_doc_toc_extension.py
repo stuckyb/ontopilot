@@ -32,7 +32,16 @@ class Test_ToCGenerator(unittest.TestCase):
     HTMLWriter.
     """
     def setUp(self):
-        self.tg = _ToCGenerator(None, None)
+        self.tg = _ToCGenerator(None, 2)
+
+    def test_headerLevelError(self):
+        testvals = ['2', 0, 7]
+
+        for testval in testvals:
+            with self.assertRaisesRegexp(
+                RuntimeError, 'Invalid HTML header level'
+            ):
+                _ToCGenerator(None, testval)
 
     def test_getIDText(self):
         # String conversion tests.
