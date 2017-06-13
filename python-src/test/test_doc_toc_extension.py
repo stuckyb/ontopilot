@@ -32,7 +32,7 @@ class Test_ToCGenerator(unittest.TestCase):
     HTMLWriter.
     """
     def setUp(self):
-        self.tg = _ToCGenerator(None, 2)
+        self.tg = _ToCGenerator(None, None, 2)
 
     def test_headerLevelError(self):
         testvals = ['2', 0, 7]
@@ -41,7 +41,39 @@ class Test_ToCGenerator(unittest.TestCase):
             with self.assertRaisesRegexp(
                 RuntimeError, 'Invalid HTML header level'
             ):
-                _ToCGenerator(None, testval)
+                _ToCGenerator(None, None, testval)
+
+    def test_getUniqueValue(self):
+        coll = ['a', 'b', 'b-1', 'c-']
+
+        testvals = [
+            {
+                'text': '',
+                'expected': '-1'
+            },
+            {
+                'text': 'd',
+                'expected': 'd'
+            },
+            {
+                'text': 'a',
+                'expected': 'a-1'
+            },
+            {
+                'text': 'b',
+                'expected': 'b-2'
+            },
+            {
+                'text': 'c-',
+                'expected': 'c--1'
+            }
+        ]
+
+        for testval in testvals:
+            self.assertEqual(
+                testval['expected'],
+                self.tg._getUniqueValue(testval['text'], coll)
+            )
 
     def test_getIDText(self):
         # String conversion tests.
