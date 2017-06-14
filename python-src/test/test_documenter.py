@@ -16,8 +16,10 @@
 
 # Python imports.
 from ontopilot.documenter import Documenter, DocumentationSpecificationError
+from ontopilot.documentation_writers import MarkdownWriter, HTMLWriter
 from ontopilot.ontology import Ontology
 import unittest
+import StringIO
 #from testfixtures import LogCapture
 
 # Java imports.
@@ -40,7 +42,6 @@ class Test_Documenter(unittest.TestCase):
     """
     def setUp(self):
         self.ont = Ontology('test_data/ontology.owl')
-        self.docspec = open('test_data/docspec.yaml')
         self.doc = Documenter(self.ont)
 
     def test_parseDocSpec(self):

@@ -15,33 +15,75 @@
 
 
 # Python imports.
-from ontopilot.doc_toc_extension import _ToCGenerator
+from ontopilot.documenter import Documenter
+from ontopilot.documentation_writers import MarkdownWriter, HTMLWriter
+from ontopilot.ontology import Ontology
 import unittest
+import StringIO
 #from testfixtures import LogCapture
 
 # Java imports.
 
 
-class Test_ToCGenerator(unittest.TestCase):
+class Test_MarkdownWriter(unittest.TestCase):
     """
-    Tests the _ToCGenerator class.  The DocToCExtension class doesn't do much
-    beyond instantiating a _ToCGenerator instance, so we don't bother with
-    formally testing DocToCExtension.
-    Testing is currently limited to _getIDText(), which is probably sufficient,
-    because the overall functionality is covered in the unit tests for
-    HTMLWriter.
+    Tests the MarkdownWriter class.  No attempt is made to cover every possible
+    input data structure variation, or even most of them.  Instead, it
+    basically just confirms that the converter is working and producing correct
+    output for a sample input document.
     """
     def setUp(self):
-        self.tg = _ToCGenerator(None, None, 2)
+        self.ont = Ontology('test_data/ontology.owl')
+        self.doc = Documenter(self.ont)
 
-    def test_headerLevelError(self):
-        testvals = ['2', 0, 7]
+    def test_write(self):
+        docspec = """
+Test documentation
+---
+Classes:
+    - ID: OBITO:0001
+      descendants: 1
+"""
+        expected = """
+# Test documentation
 
-        for testval in testvals:
-            with self.assertRaisesRegexp(
-                RuntimeError, 'Invalid HTML header level'
-            ):
-                _ToCGenerator(None, None, testval)
+## Classes
+
+* ### imported test class 1
+* OBO ID: OBITO:0001
+* IRI: http://purl.obolibrary.org/obo/OBITO_0001
+    * ### test class 1
+    * OBO ID: OBTO:0010
+    * IRI: http://purl.obolibrary.org/obo/OBTO_0010
+    * ### test class 2
+    * OBO ID: OBTO:0011
+    * IRI: http://purl.obolibrary.org/obo/OBTO_0011
+    * ### test class 3
+    * OBO ID: OBTO:0012
+    * IRI: http://purl.obolibrary.org/obo/OBTO_0012
+
+
+"""
+
+        self.doc.setWriter(MarkdownWriter())
+
+        strbuf = StringIO.StringIO()
+        self.doc.document(docspec, strbuf)
+        result = strbuf.getvalue()
+        strbuf.close()
+
+        self.assertEqual(expected[1:], result)
+
+
+class Test_HTMLWriter(unittest.TestCase):
+    """
+    Tests the HTMLWriter class.
+    """
+    def setUp(self):
+        self.ont = Ontology('test_data/ontology.owl')
+        self.doc = Documenter(self.ont)
+
+        self.hw = HTMLWriter()
 
     def test_getUniqueValue(self):
         coll = ['a', 'b', 'b-1', 'c-']
@@ -72,7 +114,7 @@ class Test_ToCGenerator(unittest.TestCase):
         for testval in testvals:
             self.assertEqual(
                 testval['expected'],
-                self.tg._getUniqueValue(testval['text'], coll)
+                self.hw._getUniqueValue(testval['text'], coll)
             )
 
     def test_getIDText(self):
@@ -107,13 +149,13 @@ class Test_ToCGenerator(unittest.TestCase):
 
         for testval in testvals:
             self.assertEqual(
-                testval['expected'], self.tg._getIDText(testval['text'])
+                testval['expected'], self.hw._getIDText(testval['text'], set())
             )
 
         # Test unique ID generation.
-        self.tg.usedIDs.update(
-            {'ida', 'idb', 'idb-1', 'idc', 'idc-2', 'idd', 'idd-1', 'idd-2'}
-        )
+        usedIDs = {
+            'ida', 'idb', 'idb-1', 'idc', 'idc-2', 'idd', 'idd-1', 'idd-2'
+        }
 
         testvals = [
             {
@@ -140,6 +182,7 @@ class Test_ToCGenerator(unittest.TestCase):
 
         for testval in testvals:
             self.assertEqual(
-                testval['expected'], self.tg._getIDText(testval['text'])
+                testval['expected'],
+                self.hw._getIDText(testval['text'], usedIDs)
             )
 
