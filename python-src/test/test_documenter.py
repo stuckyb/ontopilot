@@ -16,24 +16,11 @@
 
 # Python imports.
 from ontopilot.documenter import Documenter, DocumentationSpecificationError
-from ontopilot.documentation_writers import MarkdownWriter, HTMLWriter
 from ontopilot.ontology import Ontology
 import unittest
-import StringIO
 #from testfixtures import LogCapture
 
 # Java imports.
-
-
-# IRIs of entities in the test ontology.
-OBJPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0001'
-DATAPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0020'
-ANNOTPROP_IRI = 'http://purl.obolibrary.org/obo/OBTO_0030'
-CLASS_IRI = 'http://purl.obolibrary.org/obo/OBTO_0010'
-INDIVIDUAL_IRI = 'http://purl.obolibrary.org/obo/OBTO_8001'
-
-# IRI that is not used in the test ontology.
-NULL_IRI = 'http://purl.obolibrary.org/obo/OBTO_9999'
 
 
 class Test_Documenter(unittest.TestCase):
