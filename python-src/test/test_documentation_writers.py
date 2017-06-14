@@ -190,5 +190,82 @@ class Test_HTMLWriter(unittest.TestCase):
             )
 
     def test_write(self):
-        pass
+        docspec = """
+Test documentation
+---
+Classes:
+    - ID: OBITO:0001
+      descendants: 1
+"""
+        expected = """
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Test documentation</title>
+    <link rel="stylesheet" type="text/css" href="documentation_styles.css" />
+</head>
+<body>
+
+<h1>Test documentation</h1>
+
+<div class="toc">
+<ul>
+<li><a href="#classes">Classes</a>
+    <ul>
+    <li><a href="#imported-test-class-1">imported test class 1</a>
+        <ul>
+        <li><a href="#test-class-1">test class 1</a></li>
+        <li><a href="#test-class-2">test class 2</a></li>
+        <li><a href="#test-class-3">test class 3</a></li>
+        </ul>
+    </li>
+    </ul>
+</li>
+</ul>
+</div>
+
+<h2 id="classes">Classes</h2>
+
+<ul>
+<li>
+    <h3 id="imported-test-class-1">imported test class 1</h3>
+    <p>OBO ID: OBITO:0001</p>
+    <p>IRI: http://purl.obolibrary.org/obo/OBITO_0001</p>
+    <ul>
+    <li>
+        <h3 id="test-class-1">test class 1</h3>
+        <p>OBO ID: OBTO:0010</p>
+        <p>IRI: http://purl.obolibrary.org/obo/OBTO_0010</p>
+    </li>
+    <li>
+        <h3 id="test-class-2">test class 2</h3>
+        <p>OBO ID: OBTO:0011</p>
+        <p>IRI: http://purl.obolibrary.org/obo/OBTO_0011</p>
+    </li>
+    <li>
+        <h3 id="test-class-3">test class 3</h3>
+        <p>OBO ID: OBTO:0012</p>
+        <p>IRI: http://purl.obolibrary.org/obo/OBTO_0012</p>
+    </li>
+    </ul>
+</li>
+</ul>
+
+</body>
+</html>"""
+
+        self.doc.setWriter(HTMLWriter())
+
+        strbuf = StringIO.StringIO()
+        self.doc.document(docspec, strbuf)
+        result = strbuf.getvalue()
+        strbuf.close()
+
+        # Uncomment these lines to print a character-by-character comparison of
+        # the expected and result strings.
+        #for i in range(len(expected[1:])):
+        #    print '{0}{1}'.format(expected[i+1], result[i])
+
+        self.assertEqual(expected[1:], result)
 
