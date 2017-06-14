@@ -22,8 +22,6 @@ from __future__ import unicode_literals
 from module_extractor import ModuleExtractor, rel_axiom_types
 from obohelper import termIRIToOboID, OBOIdentifierError
 from documentation_writers import MarkdownWriter
-from ontopilot import logger
-from ontopilot import TRUE_STRS
 import yaml
 
 # Java imports.
