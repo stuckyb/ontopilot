@@ -22,9 +22,6 @@
 
 # Python imports.
 from __future__ import unicode_literals
-from doc_toc_extension import DocToCExtension
-import StringIO
-import markdown
 import re
 from ontopilot import logger
 
@@ -35,35 +32,38 @@ class MarkdownWriter:
     def __init__(self):
         pass
 
-    def _writeNode(self, node, fileout, indent_level):
-        nname = node.getName()
-        indentstr = '    ' * indent_level
+    def _writeNodeList(self, nodelist, fileout, indent_level):
+        for node in nodelist:
+            nname = node.getName()
+            indentstr = '    ' * indent_level
+    
+            fileout.write('{0}* ### {1}\n'.format(indentstr, nname))
+    
+            if node.entOBO_ID != nname and node.entOBO_ID != '':
+                fileout.write(
+                    '{0}  OBO ID: {1}  \n'.format(indentstr, node.entOBO_ID)
+                )
 
-        fileout.write('{0}* ### {1}\n'.format(indentstr, nname))
-
-        if node.entOBO_ID != nname:
-            fileout.write(
-                '{0}* OBO ID: {1}\n'.format(indentstr, node.entOBO_ID)
-            )
-        if node.entIRI != nname:
-            fileout.write('{0}* IRI: {1}\n'.format(indentstr, node.entIRI))
-
-        if node.entdef != '':
-            fileout.write(
-                '{0}* Definition: {1}\n'.format(indentstr, node.entdef)
-            )
-
-        for childnode in node.children:
-            self._writeNode(childnode, fileout, indent_level + 1)
+            fileout.write('{0}  IRI: {1}'.format(indentstr, node.entIRI))
+    
+            if node.entdef != '':
+                fileout.write(
+                    '  \n{0}  Definition: {1}\n\n'.format(indentstr, node.entdef)
+                )
+            else:
+                fileout.write('\n\n')
+    
+            if len(node.children) > 0:
+                self._writeNodeList(node.children, fileout, indent_level + 1)
 
     def _writeSection(self, section, fileout):
         if section.title != '':
             fileout.write('## {0}\n\n'.format(section.title))
 
-        for node in section.docnodes:
-            self._writeNode(node, fileout, 0)
+        if len(section.docnodes) > 0:
+            self._writeNodeList(section.docnodes, fileout, 0)
 
-        fileout.write('\n\n')
+        fileout.write('\n')
         
     def write(self, document, fileout):
         """
@@ -197,14 +197,15 @@ class HTMLWriter:
                 subindentstr, node.custom_id, nname
             ))
     
-            if node.entOBO_ID != nname:
+            if node.entOBO_ID != nname and node.entOBO_ID != '':
                 fileout.write('{0}<p>OBO ID: {1}</p>\n'.format(
                         subindentstr, node.entOBO_ID
                 ))
-            if node.entIRI != nname:
-                fileout.write('{0}<p>IRI: {1}</p>\n'.format(
-                    subindentstr, node.entIRI
-                ))
+
+            fileout.write('{0}<p>IRI: {1}</p>\n'.format(
+                subindentstr, node.entIRI
+            ))
+
             if node.entdef != '':
                 fileout.write('{0}<p>Definition: {1}</p>\n'.format(
                         subindentstr, node.entdef

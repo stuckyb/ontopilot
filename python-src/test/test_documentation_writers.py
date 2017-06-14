@@ -50,17 +50,20 @@ Classes:
 ## Classes
 
 * ### imported test class 1
-* OBO ID: OBITO:0001
-* IRI: http://purl.obolibrary.org/obo/OBITO_0001
+  OBO ID: OBITO:0001  
+  IRI: http://purl.obolibrary.org/obo/OBITO_0001
+
     * ### test class 1
-    * OBO ID: OBTO:0010
-    * IRI: http://purl.obolibrary.org/obo/OBTO_0010
+      OBO ID: OBTO:0010  
+      IRI: http://purl.obolibrary.org/obo/OBTO_0010
+
     * ### test class 2
-    * OBO ID: OBTO:0011
-    * IRI: http://purl.obolibrary.org/obo/OBTO_0011
+      OBO ID: OBTO:0011  
+      IRI: http://purl.obolibrary.org/obo/OBTO_0011
+
     * ### test class 3
-    * OBO ID: OBTO:0012
-    * IRI: http://purl.obolibrary.org/obo/OBTO_0012
+      OBO ID: OBTO:0012  
+      IRI: http://purl.obolibrary.org/obo/OBTO_0012
 
 
 """
@@ -185,4 +188,7 @@ class Test_HTMLWriter(unittest.TestCase):
                 testval['expected'],
                 self.hw._getIDText(testval['text'], usedIDs)
             )
+
+    def test_write(self):
+        pass
 
