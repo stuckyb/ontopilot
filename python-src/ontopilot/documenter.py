@@ -69,6 +69,7 @@ class _DocumentSection:
     """
     def __init__(self):
         self.title = ''
+        self.custom_id = ''
         self.docnodes = []
 
     def __str__(self):
@@ -123,6 +124,7 @@ class _DocumentNode:
         else:
             self.entdef = ''
 
+        self.custom_id = ''
         self.children = []
 
         self.entity = entity
