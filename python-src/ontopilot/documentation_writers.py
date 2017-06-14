@@ -244,6 +244,7 @@ class HTMLWriter:
     <link rel="stylesheet" type="text/css" href="documentation_styles.css" />
 </head>
 <body>
+
 """
 
         footer = '</body>\n</html>'
