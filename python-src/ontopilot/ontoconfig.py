@@ -583,3 +583,27 @@ class OntoConfig(RawConfigParser):
 
         return oformat
 
+    def getDocSpecificationFile(self):
+        """
+        Returns the path to a file containing documentation specification.  If
+        this setting is not defined, returns "src/doc_specification.yaml" as
+        the default.
+        """
+        specpath = self.getCustom(
+            'Documentation', 'doc_specification', 'src/doc_specification.yaml'
+        )
+        specpath = self._getAbsPath(specpath)
+
+        return specpath
+
+    def getDocumentationDir(self):
+        """
+        Returns the absolute path to the compiled user documentation.
+        """
+        pathstr = self.getCustom(
+            'Documentation', 'documentation_dir', 'documentation/'
+        )
+        pathstr = self._getAbsPath(pathstr)
+
+        return pathstr
+

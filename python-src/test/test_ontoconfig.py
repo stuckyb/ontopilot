@@ -575,3 +575,39 @@ class TestOntoConfig(unittest.TestCase):
         ):
             self.oc.getOutputFormat()
 
+    def test_getDocSpecificationFile(self):
+        # Test the default case.
+        expected = self.td_path + '/src/doc_specification.yaml'
+        self.assertEqual(expected, self.oc.getDocSpecificationFile())
+
+        # Test a custom relative file path.
+        relpath = 'rel/path/docspec.yaml'
+        self.oc.set('Documentation', 'doc_specification', relpath)
+        self.assertEqual(
+            self.td_path + '/' + relpath,
+            self.oc.getDocSpecificationFile()
+        )
+
+        # Test a custom absolute file path.
+        abspath = '/an/absolute/path/docspec.yaml'
+        self.oc.set('Documentation', 'doc_specification', abspath)
+        self.assertEqual(abspath, self.oc.getDocSpecificationFile())
+
+    def test_getDocumentationDir(self):
+        # Test the default case.
+        self.assertEqual(
+            self.td_path + '/documentation', self.oc.getDocumentationDir()
+        )
+
+        # Test a custom relative path.
+        relpath = 'rel/path/docs'
+        self.oc.set('Documentation', 'documentation_dir', relpath)
+        self.assertEqual(
+            self.td_path + '/' + relpath, self.oc.getDocumentationDir()
+        )
+
+        # Test a custom absolute path.
+        abspath = '/an/absolute/path/docs'
+        self.oc.set('Documentation', 'documentation_dir', abspath)
+        self.assertEqual(abspath, self.oc.getDocumentationDir())
+
