@@ -22,9 +22,12 @@ import logging
 from argparse import ArgumentParser
 import ontopilot
 from ontopilot import ConfigError
-from ontopilot import InitTarget, ImportsBuildTarget, OntoBuildTarget
-from ontopilot import ModifiedOntoBuildTarget, ReleaseBuildTarget
-from ontopilot import ErrorCheckBuildTarget, UpdateBaseImportsBuildTarget
+from ontopilot import InitTarget
+from ontopilot import ImportsBuildTarget
+from ontopilot import OntoBuildTarget, ModifiedOntoBuildTarget
+from ontopilot import ReleaseBuildTarget, DocsBuildTarget
+from ontopilot import ErrorCheckBuildTarget
+from ontopilot import UpdateBaseImportsBuildTarget
 from ontopilot import InferencePipelineBuildTarget
 from ontopilot import BuildTargetManager
 
@@ -41,6 +44,7 @@ buildtm.addBuildTarget(
 )
 buildtm.addBuildTarget(ModifiedOntoBuildTarget, task='make', taskarg='ontology')
 buildtm.addBuildTarget(ReleaseBuildTarget, task='make', taskarg='release')
+buildtm.addBuildTarget(DocsBuildTarget, task='make', taskarg='documentation')
 buildtm.addBuildTarget(UpdateBaseImportsBuildTarget, task='update_base')
 buildtm.addBuildTarget(UpdateBaseImportsBuildTarget, task='updatebase')
 buildtm.addBuildTarget(ErrorCheckBuildTarget, task='error_check')
