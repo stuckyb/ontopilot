@@ -1,0 +1,12 @@
+ontname Documentation
+
+---
+Classes:
+    - ID: BFO:'continuant'
+      descendants: all
+
+---
+Properties and individuals:
+    - ID: FSO:'sample property'
+    - ID: FSO:'sample individual'
+
