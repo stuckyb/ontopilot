@@ -596,14 +596,28 @@ class OntoConfig(RawConfigParser):
 
         return specpath
 
-    def getDocumentationDir(self):
+    def getDocsFilePath(self):
         """
-        Returns the absolute path to the compiled user documentation.
+        Returns the absolute path to the base name to use for compiled user
+        documentation.  If no such value is explicitly provided in the
+        configuration file, a sensible default is used.
         """
-        pathstr = self.getCustom(
-            'Documentation', 'documentation_dir', 'documentation/'
+        default = 'documentation/' + self.getOntFileBase() + '_doc'
+        raw_docsfpath = self.getCustom(
+            'Documentation', 'docs_file_path', default
         )
-        pathstr = self._getAbsPath(pathstr)
+        docsfpath = self._getAbsPath(raw_docsfpath)
 
-        return pathstr
+        # Make sure we got a base name to use for generating documentation file
+        # names.
+        if os.path.basename(docsfpath) == '':
+            raise ConfigError(
+                'Invalid value for the "docs_file_path" setting in the project '
+                'configuration file: "{0}".  Please provide a base file name '
+                'to use for generating documentation file names.'.format(
+                    raw_docsfpath
+                )
+            )
+
+        return docsfpath
 

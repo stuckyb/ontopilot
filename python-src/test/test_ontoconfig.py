@@ -593,21 +593,28 @@ class TestOntoConfig(unittest.TestCase):
         self.oc.set('Documentation', 'doc_specification', abspath)
         self.assertEqual(abspath, self.oc.getDocSpecificationFile())
 
-    def test_getDocumentationDir(self):
+    def test_getDocsFilePath(self):
         # Test the default case.
         self.assertEqual(
-            self.td_path + '/documentation', self.oc.getDocumentationDir()
+            self.td_path + '/documentation/ontname_doc',
+            self.oc.getDocsFilePath()
         )
 
-        # Test a custom relative path.
-        relpath = 'rel/path/docs'
-        self.oc.set('Documentation', 'documentation_dir', relpath)
+        # Test a custom relative file path and name.
+        relpath = 'rel/path/docs/docbase'
+        self.oc.set('Documentation', 'docs_file_path', relpath)
         self.assertEqual(
-            self.td_path + '/' + relpath, self.oc.getDocumentationDir()
+            self.td_path + '/' + relpath, self.oc.getDocsFilePath()
         )
 
-        # Test a custom absolute path.
-        abspath = '/an/absolute/path/docs'
-        self.oc.set('Documentation', 'documentation_dir', abspath)
-        self.assertEqual(abspath, self.oc.getDocumentationDir())
+        # Test a custom absolute file path and name.
+        abspath = '/an/absolute/path/docs/docbase'
+        self.oc.set('Documentation', 'docs_file_path', abspath)
+        self.assertEqual(abspath, self.oc.getDocsFilePath())
+
+        self.oc.set('Documentation', 'docs_file_path', '/')
+        with self.assertRaisesRegexp(
+            ConfigError, 'Invalid value for the "docs_file_path" setting'
+        ):
+            self.oc.getDocsFilePath()
 
