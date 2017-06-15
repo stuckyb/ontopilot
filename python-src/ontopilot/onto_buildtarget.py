@@ -187,6 +187,8 @@ class OntoBuildTarget(BuildTargetWithConfig):
         """
         foutpath = self.getOutputFilePath()
 
+        self._retrieveAndCheckFilePaths()
+
         if os.path.isfile(foutpath):
             mtime = os.path.getmtime(foutpath)
 
@@ -220,13 +222,16 @@ class OntoBuildTarget(BuildTargetWithConfig):
         """
         Runs the build process and produces a compiled OWL ontology file.
         """
+        # We don't need to run _retrieveAndCheckFilePaths() here because the
+        # base class ensures that _isBuildRequired() will always be called
+        # prior to this method, so _retrieveAndCheckFilePaths() will have
+        # already been run.
+
         timer = BasicTimer()
         timer.start()
 
         # Get the imports modules IRIs from the imports build target.
         importsIRIs = [info.iristr for info in self.ibt.getImportsInfo()]
-
-        self._retrieveAndCheckFilePaths()
 
         fileoutpath = self.getOutputFilePath()
 
