@@ -586,11 +586,11 @@ class OntoConfig(RawConfigParser):
     def getDocSpecificationFile(self):
         """
         Returns the path to a file containing documentation specification.  If
-        this setting is not defined, returns "src/doc_specification.yaml" as
-        the default.
+        this setting is not defined, returns "src/doc_specification.txt" as the
+        default.
         """
         specpath = self.getCustom(
-            'Documentation', 'doc_specification', 'src/doc_specification.yaml'
+            'Documentation', 'doc_specification', 'src/doc_specification.txt'
         )
         specpath = self._getAbsPath(specpath)
 

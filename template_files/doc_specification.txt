@@ -1,4 +1,6 @@
-ontname Documentation
+# ontname Documentation
+
+This is a sample documentation specification file.
 
 ---
 Classes:

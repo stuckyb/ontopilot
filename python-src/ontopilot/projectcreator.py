@@ -251,7 +251,7 @@ class ProjectCreator:
         self._robustCopy(srcpath, destpath)
 
         # Copy and customize the documentation specification file.
-        docspec_fname = 'doc_specification.yaml'
+        docspec_fname = 'doc_specification.txt'
         srcpath = os.path.join(self.templatedir, docspec_fname)
         destpath = os.path.join(
             os.path.dirname(config.getDocSpecificationFile()), docspec_fname
