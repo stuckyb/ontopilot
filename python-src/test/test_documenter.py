@@ -31,6 +31,8 @@ class Test_Documenter(unittest.TestCase):
         self.ont = Ontology('test_data/ontology.owl')
         self.doc = Documenter(self.ont)
 
+        self.longMessage = True
+
     def test_parseDocSpec(self):
         """
         This method tests the results of _parseDocSpec() by converting the
@@ -49,12 +51,10 @@ class Test_Documenter(unittest.TestCase):
             },
             # Only a title.
             {
-                'docspec': 'Document title',
-                'expected':
+                'docspec': '# Document title',
+                'expected': 
 """
-** Document title **
-
-"""
+# Document title"""
             },
             # A single empty document section.
             {
@@ -67,26 +67,28 @@ Classes:
 """
 Title: Classes
 Entities:
+
 """
             },
-            # A single document section with a document title.
+            # A single entities section with an opening Markdown section.
             {
                 'docspec':
 """
-Document title
+#Document title
 
 ---
 Classes:
 """,
                 'expected':
-"""
-** Document title **
+""" 
+#Document title
 
 Title: Classes
 Entities:
+
 """
             },
-            # Multiple empty document sections.
+            # Multiple empty entities sections.
             {
                 'docspec':
 """
@@ -102,6 +104,7 @@ Entities:
 
 Title: Classes
 Entities:
+
 """
             },
             # Multiple non-empty document sections.
@@ -133,6 +136,7 @@ Entities:
     IRI: http://purl.obolibrary.org/obo/OBTO_0011
     OBO ID: OBTO:0011
     Label: test class 2
+
 """
             },
             # Multi-level nested child specifications.
@@ -172,6 +176,7 @@ Entities:
     IRI: http://purl.obolibrary.org/obo/OBTO_0090
     OBO ID: OBTO:0090
     Label: 
+
 """
             },
             # Values of "descendants" that do not result in entity retrieval.
@@ -190,6 +195,7 @@ Entities:
     IRI: http://purl.obolibrary.org/obo/OBITO_0001
     OBO ID: OBITO:0001
     Label: imported test class 1
+
 """
             },
             {
@@ -207,6 +213,7 @@ Entities:
     IRI: http://purl.obolibrary.org/obo/OBITO_0001
     OBO ID: OBITO:0001
     Label: imported test class 1
+
 """
             },
             # Single-level automatic descendants retrieval.
@@ -237,6 +244,7 @@ Entities:
         IRI: http://purl.obolibrary.org/obo/OBTO_0012
         OBO ID: OBTO:0012
         Label: test class 3
+
 """
             },
             # Multi-level automatic descendants retrieval.
@@ -271,8 +279,81 @@ Entities:
         IRI: http://purl.obolibrary.org/obo/OBTO_0012
         OBO ID: OBTO:0012
         Label: test class 3
+
 """
-            }
+            },
+            # Multiple mixed Markdown and entities sections.
+            {
+                'docspec':
+"""
+# Document title.
+
+Markdown paragraph.
+
+---
+Classes:
+    - ID: OBITO:0001
+
+Another Markdown *paragraph*.
+
+* a
+* list
+---
+Properties:
+    - ID: OBTO:'test data property 1'
+A final Markdown paragraph.
+""",
+                'expected':
+""" 
+# Document title.
+
+Markdown paragraph.
+
+Title: Classes
+Entities:
+    IRI: http://purl.obolibrary.org/obo/OBITO_0001
+    OBO ID: OBITO:0001
+    Label: imported test class 1
+
+Another Markdown *paragraph*.
+
+* a
+* list
+Title: Properties
+Entities:
+    IRI: http://purl.obolibrary.org/obo/OBTO_0020
+    OBO ID: OBTO:0020
+    Label: test data property 1
+
+A final Markdown paragraph.
+"""
+            },
+            # Including literal '---' in a Markdown section.
+            {
+                'docspec':
+r"""
+ ---
+\---
+\\---
+\\\---
+---
+Classes:
+    - ID: OBITO:0001
+""",
+                'expected':
+r""" 
+ ---
+---
+\---
+\\---
+Title: Classes
+Entities:
+    IRI: http://purl.obolibrary.org/obo/OBITO_0001
+    OBO ID: OBITO:0001
+    Label: imported test class 1
+
+"""
+            },
         ]
 
         # Add some extra classes to the test ontology hierarchy.
@@ -286,7 +367,10 @@ Entities:
             #print result
             # When testing the result, remove the leading newline from the
             # expected results string.
-            self.assertEqual(testval['expected'][1:], result)
+            self.assertEqual(
+                testval['expected'][1:], result,
+                msg='Input specification:"""{0}"""'.format(testval['docspec'])
+            )
 
         # Create a cycle in the descendant relationships, then run the last
         # test again to make sure the cycle doesn't "trap" the algorithm.
@@ -297,16 +381,6 @@ Entities:
 
         # Test error conditions to make sure they are handled correctly.
         testvals = [
-            # Multiple top-level keys (headings) in one section.
-            {
-                'docspec':
-"""
----
-Classes:
-Invalid:
-""",
-                'errorstr': 'must have exactly one heading'
-            },
             # Missing entity ID.
             {
                 'docspec':

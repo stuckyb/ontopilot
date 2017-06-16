@@ -22,6 +22,8 @@ from __future__ import unicode_literals
 from module_extractor import ModuleExtractor, rel_axiom_types
 from obohelper import termIRIToOboID, OBOIdentifierError
 from documentation_writers import MarkdownWriter
+import StringIO
+import re
 import yaml
 
 # Java imports.
@@ -40,32 +42,45 @@ class _Document:
     of a complete ontology documentation document.
     """
     def __init__(self):
-        self.title = ''
         self.sections = []
 
     def __str__(self):
-        if self.title != '':
-            strval = '** {0} **\n\n'.format(self.title)
-        else:
-            strval = ''
+        strval = ''
 
         sectioncnt = 0
         for section in self.sections:
             sectioncnt += 1
             if sectioncnt > 1:
-                strval += '\n' + str(section)
+                strval += '' + str(section)
             else:
                 strval += str(section)
 
         return strval
 
 
-class _DocumentSection:
+class _MarkdownSection:
     """
-    An internal "struct" that represents one top-level section in an ontology
-    documentation document.
+    Represents one top-level section in an ontology documentation document.
+    EntitiesSection objects contain arbitrary Markdown content.
+    """
+    def __init__(self, contentstr):
+        self.content = contentstr
+
+    def __str__(self):
+        return self.content
+
+
+class _EntitiesSection:
+    """
+    Represents one top-level section in an ontology documentation document.
+    EntitiesSection objects contain ontology entity information.
     """
     def __init__(self):
+        """
+        Accepts a string that contains a YAML specification for an entities
+        section, parses it, and instantiates the corresponding data structures
+        as attributes of this EntitiesSection object.
+        """
         self.title = ''
         self.custom_id = ''
         self.docnodes = []
@@ -80,7 +95,7 @@ class _DocumentSection:
         if docnodes_str[-1] != '\n':
             docnodes_str += '\n'
 
-        return docnodes_str
+        return docnodes_str + '\n'
 
 
 class _DocumentNode:
@@ -282,15 +297,15 @@ class Documenter:
 
         return docnode
 
-    def _buildDocumentSection(self, rawsection):
+    def _buildEntitiesSection(self, rawsection):
         """
-        Builds a _DocumentSection object that corresponds with the raw section
-        data structure parsed from a strict YAML documentation specification.
+        Builds an EntitiesSection object that corresponds with the raw section
+        data structure parsed from a YAML documentation specification.
         """
         title_strs = rawsection.keys()
         if len(title_strs) != 1:
             raise DocumentationSpecificationError(
-                'Each documentation section must have exactly one heading.  '
+                'Each ontology entities documentation section must have exactly one heading.  '
                 'The current documentation section has the following headings: '
                 '{0}.  Please correct the documentation specification '
                 'file.'.format('"' + '", "'.join(title_strs) + '"')
@@ -298,7 +313,7 @@ class Documenter:
 
         title = title_strs[0].strip()
 
-        new_section = _DocumentSection()
+        new_section = _EntitiesSection()
         new_section.title = title
 
         if rawsection[title_strs[0]] is not None:
@@ -308,35 +323,103 @@ class Documenter:
 
         return new_section
 
+    def _readMarkdownSection(self, fin, firstline):
+        """
+        Reads a Markdown document section from a file-like object.
+        """
+        # A regular expression to match lines that include an escaped '---'.
+        escp_re = re.compile(r'^\\+---\s*$')
+
+        section_ended = False
+        sectionstr = firstline
+
+        while not(section_ended):
+            pos = fin.tell()
+            line = fin.readline()
+
+            if line == '':
+                section_ended = True
+            elif line.rstrip() == '---':
+                section_ended = True
+            else:
+                if escp_re.match(line) is not None:
+                        line = line.replace(r'\-', '-', 1)
+
+                sectionstr += line
+
+        # Reset the file pointer to the beginning of the previous line.
+        fin.seek(pos)
+
+        if sectionstr.strip() == '':
+            return None
+        else:
+            return _MarkdownSection(sectionstr)
+
+    def _readEntitiesSection(self, fin):
+        """
+        Reads an ontology entities document section from a file-like object.
+        """
+        # A regular expression to match lines that do not start with
+        # whitespace.
+        nws_re = re.compile('^\S+')
+
+        section_ended = False
+        sectionstr = ''
+
+        linecnt = 0
+        while not(section_ended):
+            pos = fin.tell()
+            line = fin.readline()
+            linecnt += 1
+
+            if line == '':
+                section_ended = True
+            elif (nws_re.match(line) is not None) and (linecnt > 1):
+                section_ended = True
+            else:
+                sectionstr += line
+
+        # Reset the file pointer to the beginning of the previous line.
+        fin.seek(pos)
+
+        content = yaml.load(sectionstr)
+
+        return self._buildEntitiesSection(content)
+
     def _parseDocSpec(self, docspec):
         """
         Builds a _Document data structure that captures the components of the
         ontology and relevant information from a documentation specification
-        provided in YAML format.
+        provided in mixed Markdown/YAML format.
 
-        docspec: A source of YAML-formatted documentation specification
-            information.  Can be either a byte string, regular (or unicode)
-            string, or a file object.
+        docspec: A source of mixed Markdown/YAML documentation specification
+            information.  Can be either a regular string, unicode string, or a
+            file object.
         """
-        parsed_docspec = yaml.safe_load_all(docspec)
-        #print docspec
-        #print parsed_docspec
+        if isinstance(docspec, basestring):
+            docspecf = StringIO.StringIO(docspec)
+        else:
+            docspecf = docspec
 
         document = _Document()
 
-        if parsed_docspec is not None:
-            section_cnt = 0
-            for rawsection in parsed_docspec:
-                section_cnt += 1
+        # Parse the input document, separating Markdown content sections from
+        # ontology entities sections.
+        at_file_end = False        
+        while not(at_file_end):
+            line = docspecf.readline()
 
-                # If the first section contains only a string value, then
-                # interpret it as the document's title.
-                if (section_cnt == 1) and isinstance(rawsection, basestring):
-                    document.title = rawsection
-                else:
-                    #print rawsection
-                    section = self._buildDocumentSection(rawsection)
-                    document.sections.append(section)
+            if line == '':
+                at_file_end = True
+            elif line.rstrip() == '---':
+                document.sections.append(self._readEntitiesSection(docspecf))
+            else:
+                newsection = self._readMarkdownSection(docspecf, line)
+                if newsection is not None:
+                    document.sections.append(newsection)
+
+        if isinstance(docspec, basestring):
+            docspecf.close()
         
         return document
 
