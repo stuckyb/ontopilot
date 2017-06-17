@@ -36,7 +36,7 @@ class DocumentationSpecificationError(RuntimeError):
     pass
 
 
-class _Document:
+class Document:
     """
     Top-level class for data structures that provide an abstract representation
     of a complete ontology documentation document.
@@ -58,7 +58,7 @@ class _Document:
         return strval
 
 
-class _MarkdownSection:
+class MarkdownSection:
     """
     Represents one top-level section in an ontology documentation document.
     EntitiesSection objects contain arbitrary Markdown content.
@@ -70,7 +70,7 @@ class _MarkdownSection:
         return self.content
 
 
-class _EntitiesSection:
+class EntitiesSection:
     """
     Represents one top-level section in an ontology documentation document.
     EntitiesSection objects contain ontology entity information.
@@ -98,14 +98,14 @@ class _EntitiesSection:
         return docnodes_str + '\n'
 
 
-class _DocumentNode:
+class DocumentNode:
     """
     An internal class for building a tree-like data structure that
     represents ontology entities in an ontology documentation document.
     """
     def __init__(self, entID, srcont):
         """
-        Initializes this _DocumentNode with information from the ontology
+        Initializes this DocumentNode with information from the ontology
         entity specified by entID.
 
         entID: An entity identifier.
@@ -168,7 +168,7 @@ class _DocumentNode:
             iristr = child.getIRI().toString()
             if iristr not in entset:
                 entset.add(iristr)
-                childnode = _DocumentNode(iristr, self.ont)
+                childnode = DocumentNode(iristr, self.ont)
                 self.children.append(childnode)
                 if curdepth < maxdepth or maxdepth == -1:
                     childnode.getDescendants(maxdepth, curdepth + 1, entset)
@@ -200,7 +200,7 @@ class _DocumentNode:
 
     def _toIndentedStr(self, indentlevel):
         """
-        Generates and returns a string representation of this _DocumentNode,
+        Generates and returns a string representation of this DocumentNode,
         indented according to the specified indentlevel.
         """
         indent = '    ' * indentlevel
@@ -252,7 +252,7 @@ class Documenter:
 
     def _buildDocumentNode(self, rawdocnode):
         """
-        Builds a _DocumentNode objects that corresponds with the raw data
+        Builds a DocumentNode objects that corresponds with the raw data
         structure parsed from a strict YAML documentation specification.
         """
         if ('ID' not in rawdocnode) or not(isinstance(rawdocnode, dict)):
@@ -263,7 +263,7 @@ class Documenter:
                 'The element with the missing ID is: {0}.'.format(rawdocnode)
             )
 
-        docnode = _DocumentNode(rawdocnode['ID'], self.ont)
+        docnode = DocumentNode(rawdocnode['ID'], self.ont)
 
         if 'children' in rawdocnode:
             for child in rawdocnode['children']:
@@ -313,7 +313,7 @@ class Documenter:
 
         title = title_strs[0].strip()
 
-        new_section = _EntitiesSection()
+        new_section = EntitiesSection()
         new_section.title = title
 
         if rawsection[title_strs[0]] is not None:
@@ -353,7 +353,7 @@ class Documenter:
         if sectionstr.strip() == '':
             return None
         else:
-            return _MarkdownSection(sectionstr)
+            return MarkdownSection(sectionstr)
 
     def _readEntitiesSection(self, fin):
         """
@@ -388,7 +388,7 @@ class Documenter:
 
     def _parseDocSpec(self, docspec):
         """
-        Builds a _Document data structure that captures the components of the
+        Builds a Document data structure that captures the components of the
         ontology and relevant information from a documentation specification
         provided in mixed Markdown/YAML format.
 
@@ -401,7 +401,7 @@ class Documenter:
         else:
             docspecf = docspec
 
-        document = _Document()
+        document = Document()
 
         # Parse the input document, separating Markdown content sections from
         # ontology entities sections.

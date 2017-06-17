@@ -36,7 +36,7 @@ class Test_Documenter(unittest.TestCase):
     def test_parseDocSpec(self):
         """
         This method tests the results of _parseDocSpec() by converting the
-        returned _Document objects to a string representation and checking the
+        returned Document objects to a string representation and checking the
         string.
         """
         # Define test values and results for valid specifications.
