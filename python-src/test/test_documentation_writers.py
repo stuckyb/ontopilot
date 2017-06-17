@@ -38,7 +38,8 @@ class Test_MarkdownWriter(unittest.TestCase):
 
     def test_write(self):
         docspec = """
-Test documentation
+# Test documentation
+
 ---
 Classes:
     - ID: OBITO:0001
@@ -75,7 +76,7 @@ Classes:
         result = strbuf.getvalue()
         strbuf.close()
 
-        self.assertEqual(expected[1:], result)
+        self.assertEqual(expected, result)
 
 
 class Test_HTMLWriter(unittest.TestCase):
@@ -191,7 +192,8 @@ class Test_HTMLWriter(unittest.TestCase):
 
     def test_write(self):
         docspec = """
-Test documentation
+# Test documentation
+
 ---
 Classes:
     - ID: OBITO:0001
@@ -206,8 +208,6 @@ Classes:
     <link rel="stylesheet" type="text/css" href="documentation_styles.css" />
 </head>
 <body>
-
-<h1>Test documentation</h1>
 
 <div class="toc">
 <ul>
@@ -225,7 +225,7 @@ Classes:
 </ul>
 </div>
 
-<h2 id="classes">Classes</h2>
+<h1>Test documentation</h1><h2 id="classes">Classes</h2>
 
 <ul>
 <li>

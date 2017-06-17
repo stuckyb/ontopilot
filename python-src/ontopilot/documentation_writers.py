@@ -14,15 +14,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #
-# Provides writer classes that convert abstract _Document data structures to
+# Provides writer classes that convert abstract Document data structures to
 # documentation files.  Each writer class must provide a single public method,
-# called write(), that accepts a _Document object and a writable file object as
+# called write(), that accepts a Document object and a writable file object as
 # its arguments.
 #
 
 # Python imports.
 from __future__ import unicode_literals
 import re
+import markdown
+from doc_document import MarkdownSection, EntitiesSection
+
 
 # Java imports.
 
@@ -56,24 +59,24 @@ class MarkdownWriter:
                 self._writeNodeList(node.children, fileout, indent_level + 1)
 
     def _writeSection(self, section, fileout):
-        if section.title != '':
-            fileout.write('## {0}\n\n'.format(section.title))
-
-        if len(section.docnodes) > 0:
-            self._writeNodeList(section.docnodes, fileout, 0)
-
-        fileout.write('\n')
+        if isinstance(section, MarkdownSection):
+            fileout.write(section.content)
+        else:
+            if section.title != '':
+                fileout.write('## {0}\n\n'.format(section.title))
+    
+            if len(section.docnodes) > 0:
+                self._writeNodeList(section.docnodes, fileout, 0)
+    
+            fileout.write('\n')
         
     def write(self, document, fileout):
         """
-        Generates a markdown representation of a _Document data structure.
+        Generates a markdown representation of a Document data structure.
 
-        document: A _Document instance.
+        document: A Document instance.
         fileout: A writable file object.
         """
-        if document.title != '':
-            fileout.write('# {0}\n\n'.format(document.title))
-
         for section in document.sections:
             self._writeSection(section, fileout)
 
@@ -138,9 +141,10 @@ class HTMLWriter:
         usedIDs = set()
 
         for section in document.sections:
-            section.custom_id = self._getIDText(section.title, usedIDs)
+            if isinstance(section, EntitiesSection):
+                section.custom_id = self._getIDText(section.title, usedIDs)
 
-            self._assignHeaderIDsToNodeList(section.docnodes, usedIDs)
+                self._assignHeaderIDsToNodeList(section.docnodes, usedIDs)
 
     def _writeToCNodeList(self, nodelist, fileout, indent_level):
         indentstr = '    ' * indent_level
@@ -171,14 +175,15 @@ class HTMLWriter:
         fileout.write('<div class="toc">\n<ul>\n')
 
         for section in document.sections:
-            fileout.write('<li><a href="#{0}">{1}</a>\n'.format(
-                section.custom_id, section.title
-            ))
-
-            if len(section.docnodes) > 0:
-                self._writeToCNodeList(section.docnodes, fileout, 1)
-
-            fileout.write('</li>\n')
+            if isinstance(section, EntitiesSection):
+                fileout.write('<li><a href="#{0}">{1}</a>\n'.format(
+                    section.custom_id, section.title
+                ))
+    
+                if len(section.docnodes) > 0:
+                    self._writeToCNodeList(section.docnodes, fileout, 1)
+    
+                fileout.write('</li>\n')
 
         fileout.write('</ul>\n</div>\n\n')
 
@@ -218,21 +223,25 @@ class HTMLWriter:
         fileout.write('{0}</ul>\n'.format(indentstr))
 
     def _writeSection(self, section, fileout):
-        if section.title != '':
-            fileout.write('<h2 id="{0}">{1}</h2>\n\n'.format(
-                section.custom_id, section.title
-            ))
-
-        if len(section.docnodes) > 0:
-            self._writeNodeList(section.docnodes, fileout, 0)
-
-        fileout.write('\n')
+        if isinstance(section, MarkdownSection):
+            htmltext = markdown.markdown(section.content)
+            fileout.write(htmltext)
+        else:
+            if section.title != '':
+                fileout.write('<h2 id="{0}">{1}</h2>\n\n'.format(
+                    section.custom_id, section.title
+                ))
+    
+            if len(section.docnodes) > 0:
+                self._writeNodeList(section.docnodes, fileout, 0)
+    
+            fileout.write('\n')
         
     def write(self, document, fileout):
         """
-        Generates an XHTML5 representation of a _Document data structure.
+        Generates an XHTML5 representation of a Document data structure.
 
-        document: A _Document instance.
+        document: A Document instance.
         fileout: A writable file object.
         """
         header = """<!doctype html>
@@ -250,10 +259,18 @@ class HTMLWriter:
 
         self._assignHeaderIDs(document)
 
-        fileout.write(header.format(document.title))
+        # If the first document section is a MarkdownSection with a level 1
+        # header, use it as the document's title.
+        titlestr = ''
+        if (
+            (len(document.sections) > 0) and
+            isinstance(document.sections[0], MarkdownSection)
+        ):
+            for line in document.sections[0].content.splitlines():
+                if line.startswith('# ') and len(line) > 2:
+                    titlestr = line[2:]
 
-        if document.title != '':
-            fileout.write('<h1>{0}</h1>\n\n'.format(document.title))
+        fileout.write(header.format(titlestr))
 
         if self.include_ToC:
             self._writeToC(document, fileout)
