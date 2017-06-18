@@ -120,24 +120,11 @@ class Documenter:
         Builds an EntitiesSection object that corresponds with the raw section
         data structure parsed from a YAML documentation specification.
         """
-        title_strs = rawsection.keys()
-        if len(title_strs) != 1:
-            raise DocumentationSpecificationError(
-                'Each ontology entities documentation section must have exactly one heading.  '
-                'The current documentation section has the following headings: '
-                '{0}.  Please correct the documentation specification '
-                'file.'.format('"' + '", "'.join(title_strs) + '"')
-            )
-
-        title = title_strs[0].strip()
-
         new_section = EntitiesSection()
-        new_section.title = title
 
-        if rawsection[title_strs[0]] is not None:
-            for rawdocnode in rawsection[title_strs[0]]:
-                docnode = self._buildDocumentNode(rawdocnode)
-                new_section.docnodes.append(docnode)
+        for rawdocnode in rawsection:
+            docnode = self._buildDocumentNode(rawdocnode)
+            new_section.docnodes.append(docnode)
 
         return new_section
 
@@ -145,8 +132,8 @@ class Documenter:
         """
         Reads a Markdown document section from a file-like object.
         """
-        # A regular expression to match lines that include an escaped '---'.
-        escp_re = re.compile(r'^\\+---\s*$')
+        # A regular expression to match lines that start with an escaped '- '.
+        escp_re = re.compile(r'^\\+- ')
 
         section_ended = False
         sectionstr = firstline
@@ -157,7 +144,7 @@ class Documenter:
 
             if line == '':
                 section_ended = True
-            elif line.rstrip() == '---':
+            elif line.startswith('- '):
                 section_ended = True
             else:
                 if escp_re.match(line) is not None:
@@ -173,7 +160,7 @@ class Documenter:
         else:
             return MarkdownSection(sectionstr)
 
-    def _readEntitiesSection(self, fin):
+    def _readEntitiesSection(self, fin, firstline):
         """
         Reads an ontology entities document section from a file-like object.
         """
@@ -182,17 +169,17 @@ class Documenter:
         nws_re = re.compile('^\S+')
 
         section_ended = False
-        sectionstr = ''
+        sectionstr = firstline
 
-        linecnt = 0
         while not(section_ended):
             pos = fin.tell()
             line = fin.readline()
-            linecnt += 1
 
             if line == '':
                 section_ended = True
-            elif (nws_re.match(line) is not None) and (linecnt > 1):
+            elif (
+                not(line.startswith('- ')) and (nws_re.match(line) is not None)
+            ):
                 section_ended = True
             else:
                 sectionstr += line
@@ -229,8 +216,8 @@ class Documenter:
 
             if line == '':
                 at_file_end = True
-            elif line.rstrip() == '---':
-                document.sections.append(self._readEntitiesSection(docspecf))
+            elif line.startswith('- '):
+                document.sections.append(self._readEntitiesSection(docspecf, line))
             else:
                 newsection = self._readMarkdownSection(docspecf, line)
                 if newsection is not None:

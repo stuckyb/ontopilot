@@ -52,82 +52,49 @@ class Test_Documenter(unittest.TestCase):
             # Only a title.
             {
                 'docspec': '# Document title',
-                'expected': 
-"""
-# Document title"""
+                'expected': '# Document title'
             },
-            # A single empty document section.
+            # Several headings and other non-entities text.
             {
                 'docspec':
 """
+# Document title
+
 ---
-Classes:
+## Classes
+
+ - not an entities entry
 """,
                 'expected':
 """
-Title: Classes
-Entities:
-
-"""
-            },
-            # A single entities section with an opening Markdown section.
-            {
-                'docspec':
-"""
-#Document title
+# Document title
 
 ---
-Classes:
-""",
-                'expected':
-""" 
-#Document title
+## Classes
 
-Title: Classes
-Entities:
-
-"""
-            },
-            # Multiple empty entities sections.
-            {
-                'docspec':
-"""
----
-Properties:
----
-Classes:
-""",
-                'expected':
-"""
-Title: Properties
-Entities:
-
-Title: Classes
-Entities:
-
+ - not an entities entry
 """
             },
             # Multiple non-empty document sections.
             {
                 'docspec':
 """
----
-Properties:
-    - ID: OBTO:'test data property 1'
----
-Classes:
-    - ID: OBTO:0010
-    - ID: OBTO:0011
+## Properties
+- ID: OBTO:'test data property 1'
+
+## Classes
+- ID: OBTO:0010
+- ID: OBTO:0011
 """,
                 'expected':
 """
-Title: Properties
+## Properties
 Entities:
     IRI: http://purl.obolibrary.org/obo/OBTO_0020
     OBO ID: OBTO:0020
     Label: test data property 1
 
-Title: Classes
+## Classes
 Entities:
     IRI: http://purl.obolibrary.org/obo/OBTO_0010
     OBO ID: OBTO:0010
@@ -143,19 +110,18 @@ Entities:
             {
                 'docspec':
 """
----
-Classes:
-    - ID: OBITO:0001
-      children:
-          - ID: OBTO:0010
-            children:
-                - ID: OBTO:0012
-          - ID: OBTO:0011
-    - ID: OBTO:0090
+## Classes
+- ID: OBITO:0001
+  children:
+      - ID: OBTO:0010
+        children:
+            - ID: OBTO:0012
+      - ID: OBTO:0011
+- ID: OBTO:0090
 """,
                 'expected':
 """
-Title: Classes
+## Classes
 Entities:
     IRI: http://purl.obolibrary.org/obo/OBITO_0001
     OBO ID: OBITO:0001
@@ -183,14 +149,13 @@ Entities:
             {
                 'docspec':
 """
----
-Classes:
-    - ID: OBITO:0001
-      descendants: none
+## Classes
+- ID: OBITO:0001
+  descendants: none
 """,
                 'expected':
 """
-Title: Classes
+## Classes
 Entities:
     IRI: http://purl.obolibrary.org/obo/OBITO_0001
     OBO ID: OBITO:0001
@@ -201,14 +166,13 @@ Entities:
             {
                 'docspec':
 """
----
-Classes:
-    - ID: OBITO:0001
-      descendants: 0
+## Classes
+- ID: OBITO:0001
+  descendants: 0
 """,
                 'expected':
 """
-Title: Classes
+## Classes
 Entities:
     IRI: http://purl.obolibrary.org/obo/OBITO_0001
     OBO ID: OBITO:0001
@@ -220,14 +184,13 @@ Entities:
             {
                 'docspec':
 """
----
-Classes:
-    - ID: OBITO:0001
-      descendants: 1
+## Classes
+- ID: OBITO:0001
+  descendants: 1
 """,
                 'expected':
 """
-Title: Classes
+## Classes
 Entities:
     IRI: http://purl.obolibrary.org/obo/OBITO_0001
     OBO ID: OBITO:0001
@@ -251,14 +214,13 @@ Entities:
             {
                 'docspec':
 """
----
-Classes:
-    - ID: OBITO:0001
-      descendants: all
+## Classes
+- ID: OBITO:0001
+  descendants: all
 """,
                 'expected':
 """
-Title: Classes
+## Classes
 Entities:
     IRI: http://purl.obolibrary.org/obo/OBITO_0001
     OBO ID: OBITO:0001
@@ -290,26 +252,25 @@ Entities:
 
 Markdown paragraph.
 
----
-Classes:
-    - ID: OBITO:0001
+## Classes
+- ID: OBITO:0001
 
 Another Markdown *paragraph*.
 
 * a
 * list
----
-Properties:
-    - ID: OBTO:'test data property 1'
+
+## Properties
+- ID: OBTO:'test data property 1'
 A final Markdown paragraph.
 """,
                 'expected':
-""" 
+"""
 # Document title.
 
 Markdown paragraph.
 
-Title: Classes
+## Classes
 Entities:
     IRI: http://purl.obolibrary.org/obo/OBITO_0001
     OBO ID: OBITO:0001
@@ -319,7 +280,8 @@ Another Markdown *paragraph*.
 
 * a
 * list
-Title: Properties
+
+## Properties
 Entities:
     IRI: http://purl.obolibrary.org/obo/OBTO_0020
     OBO ID: OBTO:0020
@@ -328,25 +290,28 @@ Entities:
 A final Markdown paragraph.
 """
             },
-            # Including literal '---' in a Markdown section.
+            # Including literal '^- .*' in a Markdown section.
             {
                 'docspec':
 r"""
- ---
-\---
-\\---
-\\\---
----
-Classes:
-    - ID: OBITO:0001
+ - text
+-- text
+\- text
+\\- text
+\\\- text
+
+## Classes
+- ID: OBITO:0001
 """,
                 'expected':
-r""" 
- ---
----
-\---
-\\---
-Title: Classes
+r"""
+ - text
+-- text
+- text
+\- text
+\\- text
+
+## Classes
 Entities:
     IRI: http://purl.obolibrary.org/obo/OBITO_0001
     OBO ID: OBITO:0001
@@ -368,7 +333,7 @@ Entities:
             # When testing the result, remove the leading newline from the
             # expected results string.
             self.assertEqual(
-                testval['expected'][1:], result,
+                testval['expected'], result,
                 msg='Input specification:"""{0}"""'.format(testval['docspec'])
             )
 
@@ -377,7 +342,7 @@ Entities:
         newclass.addSubclass('OBTO:0010')
         testval = testvals[-1]
         result = str(self.doc._parseDocSpec(testval['docspec']))
-        self.assertEqual(testval['expected'][1:], result)
+        self.assertEqual(testval['expected'], result)
 
         # Test error conditions to make sure they are handled correctly.
         testvals = [
@@ -385,9 +350,8 @@ Entities:
             {
                 'docspec':
 """
----
-Classes:
-    - descendants: 1
+## Classes
+- descendants: 1
 """,
                 'errorstr': 'No entity ID was provided'
             },
@@ -395,9 +359,8 @@ Classes:
             {
                 'docspec':
 """
----
-Classes:
-    - ID: OBTO:INVALID
+## Classes
+- ID: OBTO:INVALID
 """,
                 'errorstr': 'No entity with the ID ".*" could be found'
             },
@@ -405,20 +368,18 @@ Classes:
             {
                 'docspec':
 """
----
-Classes:
-    - ID: OBTO:0010
-      descendants: invalid
+## Classes
+- ID: OBTO:0010
+  descendants: invalid
 """,
                 'errorstr': 'Invalid value for "descendants" directive'
             },
             {
                 'docspec':
 """
----
-Classes:
-    - ID: OBTO:0010
-      descendants: -1
+## Classes
+- ID: OBTO:0010
+  descendants: -1
 """,
                 'errorstr': 'Invalid value for "descendants" directive'
             },

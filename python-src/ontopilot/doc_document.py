@@ -70,12 +70,10 @@ class EntitiesSection:
         section, parses it, and instantiates the corresponding data structures
         as attributes of this EntitiesSection object.
         """
-        self.title = ''
-        self.custom_id = ''
         self.docnodes = []
 
     def __str__(self):
-        docnodes_str = 'Title: {0}\nEntities:'.format(self.title)
+        docnodes_str = 'Entities:'
 
         for docnode in self.docnodes:
             docnodes_str += '\n' + str(docnode)
