@@ -191,10 +191,12 @@ class Test_HTMLWriter(unittest.TestCase):
             )
 
     def test_write(self):
-        # Define a document specification that includes two Markdown sections
-        # with h2 headers, separated by an entities section, followed by
-        # another entities section.
-        docspec = """
+        testvals = [
+            # A document specification that includes two Markdown sections with
+            # h2 headers, separated by an entities section, followed by another
+            # entities section.
+            {
+                'docspec': """
 # Test documentation
 
 ## First h2 header
@@ -206,8 +208,8 @@ class Test_HTMLWriter(unittest.TestCase):
 
 - ID: OBITO:0001
   descendants: 1
-"""
-        expected = """
+""",
+                'expected': """
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
@@ -281,22 +283,54 @@ class Test_HTMLWriter(unittest.TestCase):
 
 </body>
 </html>"""
+            },
+            # A document specification that includes UTF-8 non-ASCI text.
+            {
+                'docspec': """
+## UTF-8 Greek alpha: \xce\xb1
+""",
+                'expected': """
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="documentation_styles.css" />
+</head>
+<body>
+
+<div class="toc">
+<ul>
+<li><a href="#utf-8-greek-alpha-">UTF-8 Greek alpha: \xce\xb1</a>
+</li>
+</ul>
+</div>
+
+<h2 id="utf-8-greek-alpha-">UTF-8 Greek alpha: \xce\xb1</h2>
+</body>
+</html>"""
+            }
+        ]
 
         self.doc.setWriter(HTMLWriter())
 
-        strbuf = StringIO.StringIO()
-        self.doc.document(docspec, strbuf)
-        result = strbuf.getvalue()
-        strbuf.close()
+        for testval in testvals:
+            docspec = testval['docspec']
+            expected = testval['expected']
 
-        # Uncomment these lines to do a line-by-line comparison of the expected
-        # and result strings.
-        #for e_line, r_line in zip(
-        #    expected[1:].splitlines(), result.splitlines()
-        #):
-        #    if e_line != r_line:
-        #        print 'MISMATCH:'
-        #    print 'exp: "{0}"\nres: "{1}"'.format(e_line, r_line)
+            strbuf = StringIO.StringIO()
+            self.doc.document(docspec, strbuf)
+            result = strbuf.getvalue()
+            strbuf.close()
 
-        self.assertEqual(expected[1:], result)
+            # Uncomment these lines to do a line-by-line comparison of the
+            # expected and result strings.
+            #for e_line, r_line in zip(
+            #    expected[1:].splitlines(), result.splitlines()
+            #):
+            #    if e_line != r_line:
+            #        print 'MISMATCH:'
+            #    print 'exp: "{0}"\nres: "{1}"'.format(e_line, r_line)
+    
+            self.assertEqual(expected[1:], result)
 

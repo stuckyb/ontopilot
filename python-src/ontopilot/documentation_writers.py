@@ -22,6 +22,7 @@
 
 # Python imports.
 from __future__ import unicode_literals
+import codecs
 import re
 from xml.etree import ElementTree as ET
 import markdown
@@ -161,8 +162,19 @@ class HTMLWriter:
         html_sd = _HTMLSectionDetails()
         html_sd.htmltext = ''
 
-        htmltxt = markdown.markdown(mdtext, output_format='xhtml5')
-        root = ET.fromstring('<body>' + htmltxt + '</body>')
+        # Convert the Markdown text to unicode, if needed (assuming UTF-8).
+        if isinstance(mdtext, str):
+            u_mdtext = mdtext.decode('utf-8')
+        else:
+            u_mdtext = mdtext
+
+        # Convert the Markdown to HTML and parse it to a document tree.
+        htmltxt = markdown.markdown(u_mdtext, output_format='xhtml5')
+        htmltxt = (
+            '<?xml version="1.0" encoding="UTF-8"?><body>' + htmltxt +
+            '</body>'
+        )
+        root = ET.fromstring(htmltxt.encode('utf-8'))
 
         # Find all level 2 headers and generate IDs for each.
         for child in root:
@@ -178,9 +190,13 @@ class HTMLWriter:
 
         # Convert the document tree back to XHTML.
         for child in root:
-            html_sd.htmltext += ET.tostring(
-                child, encoding='UTF-8', method='html'
-            )
+            # Serialize the XML as UTF-8, but then convert it back to Python's
+            # internal unicode representation.  This is necessary because the
+            # string will automatically be serialized again as UTF-8 when
+            # writing to the output destination.  It also avoids problems cause
+            # by concatenating 8-bit strings and unicode strings.
+            xhtmlstr = ET.tostring(child, encoding='utf-8', method='html')
+            html_sd.htmltext += xhtmlstr.decode('utf-8')
             html_sd.htmltext += '\n'
 
         return html_sd
@@ -234,9 +250,8 @@ class HTMLWriter:
                 for h_txt, h_id in self.html_sds[md_section_cnt].headers:
                     if md_li_open:
                         fileout.write('</li>\n')
-                    fileout.write(
-                        '<li><a href="#{0}">{1}</a>\n'.format(h_id, h_txt)
-                    )
+                    li_str = '<li><a href="#{0}">{1}</a>\n'.format(h_id, h_txt)
+                    fileout.write(li_str)
                     md_li_open = True
 
                 md_section_cnt += 1
@@ -322,6 +337,9 @@ class HTMLWriter:
 
         footer = '</body>\n</html>'
 
+        ufileout = codecs.getwriter('utf-8')(fileout)
+
+        self.html_sds = []
         self._assignHeaderIDs(document)
 
         # If the first document section is a MarkdownSection with a level 1
@@ -335,12 +353,12 @@ class HTMLWriter:
                 if line.startswith('# ') and len(line) > 2:
                     titlestr = line[2:]
 
-        fileout.write(header.format(titlestr))
+        ufileout.write(header.format(titlestr))
 
         if self.include_ToC:
-            self._writeToC(document, fileout)
+            self._writeToC(document, ufileout)
 
-        self._writeSections(document.sections, fileout)
+        self._writeSections(document.sections, ufileout)
 
-        fileout.write(footer)
+        ufileout.write(footer)
 
