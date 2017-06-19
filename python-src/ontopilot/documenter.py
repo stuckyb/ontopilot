@@ -19,13 +19,14 @@
 
 # Python imports.
 from __future__ import unicode_literals
+import codecs
+import StringIO
+import re
+import yaml
 from doc_document import (
     Document, MarkdownSection, EntitiesSection, DocumentNode
 )
 from documentation_writers import MarkdownWriter
-import StringIO
-import re
-import yaml
 
 # Java imports.
 
@@ -139,8 +140,7 @@ class Documenter:
         sectionstr = firstline
 
         while not(section_ended):
-            pos = fin.tell()
-            line = fin.readline().decode('utf-8')
+            line = fin.readline()
 
             if line == '':
                 section_ended = True
@@ -152,13 +152,10 @@ class Documenter:
 
                 sectionstr += line
 
-        # Reset the file pointer to the beginning of the previous line.
-        fin.seek(pos)
-
         if sectionstr.strip() == '':
-            return None
+            return (None, line)
         else:
-            return MarkdownSection(sectionstr)
+            return (MarkdownSection(sectionstr), line)
 
     def _readEntitiesSection(self, fin, firstline):
         """
@@ -172,8 +169,7 @@ class Documenter:
         sectionstr = firstline
 
         while not(section_ended):
-            pos = fin.tell()
-            line = fin.readline().decode('utf-8')
+            line = fin.readline()
 
             if line == '':
                 section_ended = True
@@ -184,12 +180,9 @@ class Documenter:
             else:
                 sectionstr += line
 
-        # Reset the file pointer to the beginning of the previous line.
-        fin.seek(pos)
-
         content = yaml.load(sectionstr)
 
-        return self._buildEntitiesSection(content)
+        return (self._buildEntitiesSection(content), line)
 
     def _parseDocSpec(self, docspec):
         """
@@ -206,22 +199,25 @@ class Documenter:
         else:
             docspecf = docspec
 
+        udocspecf = codecs.getreader('utf-8')(docspecf)
+
         document = Document()
 
         # Parse the input document, separating Markdown content sections from
         # ontology entities sections.
-        at_file_end = False        
-        while not(at_file_end):
-            line = docspecf.readline().decode('utf-8')
-
-            if line == '':
-                at_file_end = True
-            elif line.startswith('- '):
-                document.sections.append(self._readEntitiesSection(docspecf, line))
+        nextline = udocspecf.readline()
+        while nextline != '':
+            if nextline.startswith('- '):
+                entsec, nextline = self._readEntitiesSection(
+                    udocspecf, nextline
+                )
+                document.sections.append(entsec)
             else:
-                newsection = self._readMarkdownSection(docspecf, line)
-                if newsection is not None:
-                    document.sections.append(newsection)
+                mdsec, nextline = self._readMarkdownSection(
+                    udocspecf, nextline
+                )
+                if mdsec is not None:
+                    document.sections.append(mdsec)
 
         if isinstance(docspec, basestring):
             docspecf.close()
