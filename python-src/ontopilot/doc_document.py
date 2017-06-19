@@ -40,9 +40,9 @@ class Document:
         for section in self.sections:
             sectioncnt += 1
             if sectioncnt > 1:
-                strval += '' + str(section)
+                strval += '' + unicode(section)
             else:
-                strval += str(section)
+                strval += unicode(section)
 
         return strval
 
@@ -76,7 +76,7 @@ class EntitiesSection:
         docnodes_str = 'Entities:'
 
         for docnode in self.docnodes:
-            docnodes_str += '\n' + str(docnode)
+            docnodes_str += '\n' + unicode(docnode)
 
         # Handle the case where docnodes is empty.
         if docnodes_str[-1] != '\n':

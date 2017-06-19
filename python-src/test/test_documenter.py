@@ -319,6 +319,23 @@ Entities:
 
 """
             },
+            # Test UTF-8 unicode support.
+            {
+                'docspec':
+"""
+# Document title
+
+## Greek alpha: \xce\xb1
+Other text.
+""",
+                'expected':
+u"""
+# Document title
+
+## Greek alpha: \u03b1
+Other text.
+"""
+            }
         ]
 
         # Add some extra classes to the test ontology hierarchy.
@@ -328,7 +345,7 @@ Entities:
         classent.addSubclass('OBTO:0091')
 
         for testval in testvals:
-            result = str(self.doc._parseDocSpec(testval['docspec']))
+            result = unicode(self.doc._parseDocSpec(testval['docspec']))
             #print result
             # When testing the result, remove the leading newline from the
             # expected results string.
@@ -341,7 +358,7 @@ Entities:
         # test again to make sure the cycle doesn't "trap" the algorithm.
         newclass.addSubclass('OBTO:0010')
         testval = testvals[-1]
-        result = str(self.doc._parseDocSpec(testval['docspec']))
+        result = unicode(self.doc._parseDocSpec(testval['docspec']))
         self.assertEqual(testval['expected'], result)
 
         # Test error conditions to make sure they are handled correctly.

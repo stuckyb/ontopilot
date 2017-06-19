@@ -88,7 +88,7 @@ class Documenter:
                 childnode = self._buildDocumentNode(child)
                 docnode.children.append(childnode)
         elif 'descendants' in rawdocnode:
-            desc_str = str(rawdocnode['descendants']).lower()
+            desc_str = unicode(rawdocnode['descendants']).lower()
             if desc_str != 'none':
                 # Get the integer value of maxdepth for the call to
                 # getDescendants() that corresponds with the value of the
@@ -140,7 +140,7 @@ class Documenter:
 
         while not(section_ended):
             pos = fin.tell()
-            line = fin.readline()
+            line = fin.readline().decode('utf-8')
 
             if line == '':
                 section_ended = True
@@ -173,7 +173,7 @@ class Documenter:
 
         while not(section_ended):
             pos = fin.tell()
-            line = fin.readline()
+            line = fin.readline().decode('utf-8')
 
             if line == '':
                 section_ended = True
@@ -212,7 +212,7 @@ class Documenter:
         # ontology entities sections.
         at_file_end = False        
         while not(at_file_end):
-            line = docspecf.readline()
+            line = docspecf.readline().decode('utf-8')
 
             if line == '':
                 at_file_end = True
