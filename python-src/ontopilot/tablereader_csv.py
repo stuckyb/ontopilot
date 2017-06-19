@@ -134,7 +134,11 @@ class CSVTableReader(BaseTableReader):
         BaseTableReader.__init__(self)
 
         self.filename = filepath
-        self.filein = open(filepath, 'r')
+
+        # We need to use universal newline mode because at least some mac
+        # software will still produce CSV files that use '\r' (carriage return)
+        # line endings.
+        self.filein = open(filepath, 'rU')
 
         # Use a standard table name.
         self.tablename = 'table'
