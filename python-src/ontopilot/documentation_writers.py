@@ -71,13 +71,15 @@ class MarkdownWriter:
         
     def write(self, document, fileout):
         """
-        Generates a markdown representation of a Document data structure.
+        Generates a UTF-8 markdown representation of a Document data structure.
 
         document: A Document instance.
         fileout: A writable file object.
         """
+        ufileout = codecs.getwriter('utf-8')(fileout)
+
         for section in document.sections:
-            self._writeSection(section, fileout)
+            self._writeSection(section, ufileout)
 
 
 class _HTMLSectionDetails:
@@ -319,7 +321,7 @@ class HTMLWriter:
         
     def write(self, document, fileout):
         """
-        Generates an XHTML5 representation of a Document data structure.
+        Generates a UTF-8 XHTML5 representation of a Document data structure.
 
         document: A Document instance.
         fileout: A writable file object.

@@ -37,15 +37,17 @@ class Test_MarkdownWriter(unittest.TestCase):
         self.doc = Documenter(self.ont)
 
     def test_write(self):
-        docspec = """
+        testvals = [
+            {
+                'docspec': """
 # Test documentation
 
 ## Classes
 
 - ID: OBITO:0001
   descendants: 1
-"""
-        expected = """
+""",
+                'expected': """
 # Test documentation
 
 ## Classes
@@ -68,15 +70,30 @@ class Test_MarkdownWriter(unittest.TestCase):
 
 
 """
+            },
+            # A document specification that includes UTF-8 non-ASCI text.
+            {
+                'docspec': """
+## UTF-8 Greek alpha: \xce\xb1
+""",
+                'expected': """
+## UTF-8 Greek alpha: \xce\xb1
+"""
+            }
+        ]
 
         self.doc.setWriter(MarkdownWriter())
 
-        strbuf = StringIO.StringIO()
-        self.doc.document(docspec, strbuf)
-        result = strbuf.getvalue()
-        strbuf.close()
+        for testval in testvals:
+            docspec = testval['docspec']
+            expected = testval['expected']
+            
+            strbuf = StringIO.StringIO()
+            self.doc.document(docspec, strbuf)
+            result = strbuf.getvalue()
+            strbuf.close()
 
-        self.assertEqual(expected, result)
+            self.assertEqual(expected, result)
 
 
 class Test_HTMLWriter(unittest.TestCase):
