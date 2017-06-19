@@ -40,10 +40,10 @@ class Test_MarkdownWriter(unittest.TestCase):
         docspec = """
 # Test documentation
 
----
-Classes:
-    - ID: OBITO:0001
-      descendants: 1
+## Classes
+
+- ID: OBITO:0001
+  descendants: 1
 """
         expected = """
 # Test documentation
@@ -191,13 +191,21 @@ class Test_HTMLWriter(unittest.TestCase):
             )
 
     def test_write(self):
+        # Define a document specification that includes two Markdown sections
+        # with h2 headers, separated by an entities section, followed by
+        # another entities section.
         docspec = """
 # Test documentation
 
----
-Classes:
-    - ID: OBITO:0001
-      descendants: 1
+## First h2 header
+
+## Properties
+- ID: OBTO:0020
+
+## Classes
+
+- ID: OBITO:0001
+  descendants: 1
 """
         expected = """
 <!doctype html>
@@ -211,6 +219,13 @@ Classes:
 
 <div class="toc">
 <ul>
+<li><a href="#first-h2-header">First h2 header</a>
+</li>
+<li><a href="#properties">Properties</a>
+    <ul>
+    <li><a href="#test-data-property-1">test data property 1</a></li>
+    </ul>
+</li>
 <li><a href="#classes">Classes</a>
     <ul>
     <li><a href="#imported-test-class-1">imported test class 1</a>
@@ -225,8 +240,20 @@ Classes:
 </ul>
 </div>
 
-<h1>Test documentation</h1><h2 id="classes">Classes</h2>
+<h1>Test documentation</h1>
 
+<h2 id="first-h2-header">First h2 header</h2>
+
+<h2 id="properties">Properties</h2>
+<ul>
+<li>
+    <h3 id="test-data-property-1">test data property 1</h3>
+    <p>OBO ID: OBTO:0020</p>
+    <p>IRI: http://purl.obolibrary.org/obo/OBTO_0020</p>
+</li>
+</ul>
+
+<h2 id="classes">Classes</h2>
 <ul>
 <li>
     <h3 id="imported-test-class-1">imported test class 1</h3>
@@ -262,10 +289,14 @@ Classes:
         result = strbuf.getvalue()
         strbuf.close()
 
-        # Uncomment these lines to print a character-by-character comparison of
-        # the expected and result strings.
-        #for i in range(len(expected[1:])):
-        #    print '{0}{1}'.format(expected[i+1], result[i])
+        # Uncomment these lines to do a line-by-line comparison of the expected
+        # and result strings.
+        #for e_line, r_line in zip(
+        #    expected[1:].splitlines(), result.splitlines()
+        #):
+        #    if e_line != r_line:
+        #        print 'MISMATCH:'
+        #    print 'exp: "{0}"\nres: "{1}"'.format(e_line, r_line)
 
         self.assertEqual(expected[1:], result)
 

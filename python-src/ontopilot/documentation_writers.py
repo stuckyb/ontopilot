@@ -23,6 +23,7 @@
 # Python imports.
 from __future__ import unicode_literals
 import re
+from xml.etree import ElementTree as ET
 import markdown
 from doc_document import MarkdownSection, EntitiesSection
 
@@ -62,9 +63,6 @@ class MarkdownWriter:
         if isinstance(section, MarkdownSection):
             fileout.write(section.content)
         else:
-            if section.title != '':
-                fileout.write('## {0}\n\n'.format(section.title))
-    
             if len(section.docnodes) > 0:
                 self._writeNodeList(section.docnodes, fileout, 0)
     
@@ -81,6 +79,20 @@ class MarkdownWriter:
             self._writeSection(section, fileout)
 
 
+class _HTMLSectionDetails:
+    """
+    A data structure used by HTMLWriter that stores a pre-rendered HTML version
+    of a Markdown section and a list of header texts and header IDs from the
+    section.
+    """
+    def __init__(self):
+        # For pre-rendered HTML text.
+        self.htmltext = ''
+
+        # A list of (header_text, header_ID) pairs.
+        self.headers = []
+
+
 class HTMLWriter:
     def __init__(self, include_ToC=True):
         """
@@ -88,6 +100,9 @@ class HTMLWriter:
             documentation.
         """
         self.include_ToC = include_ToC
+
+        # A list of _HTMLSectionDetails objects.
+        self.html_sds = []
 
     def _getIDText(self, text, usedIDs):
         """
@@ -137,14 +152,51 @@ class HTMLWriter:
 
             self._assignHeaderIDsToNodeList(node.children, usedIDs)
 
+    def _assignHeaderIDsToMarkdown(self, mdtext, usedIDs):
+        """
+        Assigns header IDs to a Markdown document section.  Returns an
+        _HTMLSectionDetails object that contain the resulting HTML with ID
+        attributes and a list of header texts and IDs for the Markdown text.
+        """
+        html_sd = _HTMLSectionDetails()
+        html_sd.htmltext = ''
+
+        htmltxt = markdown.markdown(mdtext, output_format='xhtml5')
+        root = ET.fromstring('<body>' + htmltxt + '</body>')
+
+        # Find all level 2 headers and generate IDs for each.
+        for child in root:
+            # For now, only level 2 headers in Markdown sections will be
+            # included in tables of contents.
+            if child.tag in ('h2', 'H2'):
+                innertext = ''.join(child.itertext())
+                idtext = self._getIDText(innertext, usedIDs)
+
+                child.set('id', idtext)
+
+                html_sd.headers.append((innertext, idtext))
+
+        # Convert the document tree back to XHTML.
+        for child in root:
+            html_sd.htmltext += ET.tostring(
+                child, encoding='UTF-8', method='html'
+            )
+            html_sd.htmltext += '\n'
+
+        return html_sd
+
     def _assignHeaderIDs(self, document):
         usedIDs = set()
 
         for section in document.sections:
             if isinstance(section, EntitiesSection):
-                section.custom_id = self._getIDText(section.title, usedIDs)
-
                 self._assignHeaderIDsToNodeList(section.docnodes, usedIDs)
+            elif isinstance(section, MarkdownSection):
+                html_sd = self._assignHeaderIDsToMarkdown(
+                    section.content, usedIDs
+                )
+
+                self.html_sds.append(html_sd)
 
     def _writeToCNodeList(self, nodelist, fileout, indent_level):
         indentstr = '    ' * indent_level
@@ -174,16 +226,31 @@ class HTMLWriter:
     def _writeToC(self, document, fileout):
         fileout.write('<div class="toc">\n<ul>\n')
 
+        md_section_cnt = 0
+        md_li_open = False
+
         for section in document.sections:
-            if isinstance(section, EntitiesSection):
-                fileout.write('<li><a href="#{0}">{1}</a>\n'.format(
-                    section.custom_id, section.title
-                ))
-    
+            if isinstance(section, MarkdownSection):
+                for h_txt, h_id in self.html_sds[md_section_cnt].headers:
+                    if md_li_open:
+                        fileout.write('</li>\n')
+                    fileout.write(
+                        '<li><a href="#{0}">{1}</a>\n'.format(h_id, h_txt)
+                    )
+                    md_li_open = True
+
+                md_section_cnt += 1
+
+            elif isinstance(section, EntitiesSection):
                 if len(section.docnodes) > 0:
                     self._writeToCNodeList(section.docnodes, fileout, 1)
-    
-                fileout.write('</li>\n')
+
+                if md_li_open:
+                    fileout.write('</li>\n')
+                    md_li_open = False
+
+        if md_li_open:
+            fileout.write('</li>\n')
 
         fileout.write('</ul>\n</div>\n\n')
 
@@ -222,20 +289,18 @@ class HTMLWriter:
 
         fileout.write('{0}</ul>\n'.format(indentstr))
 
-    def _writeSection(self, section, fileout):
-        if isinstance(section, MarkdownSection):
-            htmltext = markdown.markdown(section.content)
-            fileout.write(htmltext)
-        else:
-            if section.title != '':
-                fileout.write('<h2 id="{0}">{1}</h2>\n\n'.format(
-                    section.custom_id, section.title
-                ))
-    
-            if len(section.docnodes) > 0:
-                self._writeNodeList(section.docnodes, fileout, 0)
-    
-            fileout.write('\n')
+    def _writeSections(self, sections, fileout):
+        md_section_cnt = 0
+
+        for section in sections:
+            if isinstance(section, MarkdownSection):
+                fileout.write(self.html_sds[md_section_cnt].htmltext)
+                md_section_cnt += 1
+            else:
+                if len(section.docnodes) > 0:
+                    self._writeNodeList(section.docnodes, fileout, 0)
+        
+                fileout.write('\n')
         
     def write(self, document, fileout):
         """
@@ -275,8 +340,7 @@ class HTMLWriter:
         if self.include_ToC:
             self._writeToC(document, fileout)
 
-        for section in document.sections:
-            self._writeSection(section, fileout)
+        self._writeSections(document.sections, fileout)
 
         fileout.write(footer)
 
