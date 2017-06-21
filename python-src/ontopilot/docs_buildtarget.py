@@ -22,7 +22,7 @@ from ontology import Ontology
 from buildtarget import BuildTargetWithConfig
 from modified_onto_buildtarget import ModifiedOntoBuildTarget
 from documenter import Documenter
-from documentation_writers import HTMLWriter
+from documentation_writers import getDocumentationWriter
 from collections import namedtuple
 
 # Java imports.
@@ -41,10 +41,8 @@ class _ArgsType:
             setattr(self, key, value)
 
 
-# Define a simple "struct" type for gathering file path and IRI information.
-FileInfo = namedtuple(
-    'FileInfo', ['sourcepath', 'destpath', 'oldIRI', 'destIRI', 'versionIRI']
-)
+# Define a simple "struct" type for gathering file format and path information.
+DocFileInfo = namedtuple('DocFileInfo', ['formatstr', 'destpath'])
 
 
 class DocsBuildTarget(BuildTargetWithConfig):
@@ -88,6 +86,38 @@ class DocsBuildTarget(BuildTargetWithConfig):
     def getBuildNotRequiredMsg(self):
         return 'The documentation files are already up to date.'
 
+    def getOutputFileInfos(self):
+        """
+        Returns the formats and paths of the compiled ontology documentation
+        files as a list of DocFileInfo objects.
+        """
+        docsbasepath = self.config.getDocsFilePath()
+
+        fileinfos = []
+
+        for formatstr in self.config.getDocFormats():
+            lc_formatstr = formatstr.lower()
+
+            if lc_formatstr == 'html':
+                rawpath = docsbasepath + '.html'
+            elif lc_formatstr == 'markdown':
+                rawpath = docsbasepath + '.md'
+            else:
+                raise RuntimeError(
+                    'Unrecognized output documentation format string: '
+                    '"{0}".'.format(formatstr)
+                )
+
+            if self.config.getDoInSourceBuilds():
+                destpath = rawpath
+            else:
+                docfilename = os.path.basename(rawpath)
+                destpath = os.path.join(self.config.getBuildDir(), docfilename)
+
+            fileinfos.append(DocFileInfo(lc_formatstr, destpath))
+
+        return fileinfos
+
     def _isBuildRequired(self):
         """
         Checks if the documentation files already exist, and if so, whether
@@ -96,53 +126,42 @@ class DocsBuildTarget(BuildTargetWithConfig):
         (re)built, then the base class ensures that the documentation will also
         be (re)built.  Returns True if the documentation needs to be updated.
         """
-        foutpath = self.getOutputFilePath()
+        foutinfos = self.getOutputFileInfos()
 
         self._checkFilePaths()
 
-        if os.path.isfile(foutpath):
-            mtime = os.path.getmtime(foutpath)
+        for foutinfo in foutinfos:
+            foutpath = foutinfo.destpath
 
-            # If the configuration file is newer than the compiled
-            # documentation, a new build might be needed if any
-            # documentation-related changes were made.
-            if mtime < os.path.getmtime(self.config.getConfigFilePath()):
+            if os.path.isfile(foutpath):
+                mtime = os.path.getmtime(foutpath)
+    
+                # If the configuration file is newer than the compiled
+                # documentation, a new build might be needed if any
+                # documentation-related changes were made.
+                if mtime < os.path.getmtime(self.config.getConfigFilePath()):
+                    return True
+    
+                # Check the modification time of the documentation specification
+                # file.
+                if mtime < os.path.getmtime(self.config.getDocSpecificationFile()):
+                    return True
+    
+                return False
+            else:
                 return True
-
-            # Check the modification time of the documentation specification
-            # file.
-            if mtime < os.path.getmtime(self.config.getDocSpecificationFile()):
-                return True
-
-            return False
-        else:
-            return True
-
-    def getOutputFilePath(self):
-        """
-        Returns the path of the compiled ontology documentation file.
-        """
-        rawpath = self.config.getDocsFilePath() + '.html'
-
-        if self.config.getDoInSourceBuilds():
-            destpath = rawpath
-        else:
-            docfilename = os.path.basename(rawpath)
-            destpath = os.path.join(self.config.getBuildDir(), docfilename)
-
-        return destpath
 
     def _run(self):
         """
         Runs the build process to produce the ontology documentation.
         """
-        fileoutpath = self.getOutputFilePath()
+        fileoutinfos = self.getOutputFileInfos()
 
         # Create the destination directory, if needed.  We only need to check
         # this for in-source builds, since the BuildDirTarget dependency will
         # take care of this for out-of-source builds.
         if self.config.getDoInSourceBuilds():
-            destdir = os.path.dirname(fileoutpath)
+            destdir = os.path.dirname(fileoutinfos[0].destpath)
             if not(os.path.isdir(destdir)):
                 self._makeDirs(destdir)
 
@@ -151,8 +170,11 @@ class DocsBuildTarget(BuildTargetWithConfig):
         ont = Ontology(self.mobt_reasoned.getOutputFilePath())
 
         # Create the documentation files.
-        documenter = Documenter(ont, HTMLWriter())
-        with open(self.config.getDocSpecificationFile()) as docspec:
-            with open(fileoutpath, 'w') as fout:
-                documenter.document(docspec, fout)
+        for foutinfo in fileoutinfos:
+            writer = getDocumentationWriter(foutinfo.formatstr)
+            documenter = Documenter(ont, writer)
+
+            with open(self.config.getDocSpecificationFile()) as docspec:
+                with open(foutinfo.destpath, 'w') as fout:
+                    documenter.document(docspec, fout)
 

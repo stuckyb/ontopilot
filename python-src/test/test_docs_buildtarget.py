@@ -16,7 +16,7 @@
 
 # Python imports.
 from ontopilot.ontoconfig import OntoConfig
-from ontopilot.docs_buildtarget import DocsBuildTarget
+from ontopilot.docs_buildtarget import DocsBuildTarget, DocFileInfo
 import unittest
 import os.path
 from collections import namedtuple
@@ -52,12 +52,39 @@ class TestDocsBuildTarget(unittest.TestCase):
         ):
             self.dbt._checkFilePaths()
 
-    def test_getOutputFilePath(self):
+    def test_getOutputFileInfos(self):
         self.oc.set('Build', 'insource_builds', 'True')
-        exppath = os.path.join(self.td_path, 'documentation/ontname_doc.html')
-        self.assertEqual(exppath, self.dbt.getOutputFilePath())
+
+        self.oc.set('Documentation', 'doc_formats', 'HTML')
+        expinfos = [
+            DocFileInfo(
+                'html',
+                os.path.join(self.td_path, 'documentation/ontname_doc.html')
+            )
+        ]
+        self.assertEqual(expinfos, self.dbt.getOutputFileInfos())
+
+        self.oc.set('Documentation', 'doc_formats', 'HTML, Markdown')
+        expinfos = [
+            DocFileInfo(
+                'html',
+                os.path.join(self.td_path, 'documentation/ontname_doc.html')
+            ),
+            DocFileInfo(
+                'markdown',
+                os.path.join(self.td_path, 'documentation/ontname_doc.md')
+            )
+        ]
+        self.assertEqual(expinfos, self.dbt.getOutputFileInfos())
 
         self.oc.set('Build', 'insource_builds', 'False')
-        exppath = os.path.join(self.td_path, 'build/ontname_doc.html')
-        self.assertEqual(exppath, self.dbt.getOutputFilePath())
+
+        self.oc.set('Documentation', 'doc_formats', 'HTML')
+        expinfos = [
+            DocFileInfo(
+                'html',
+                os.path.join(self.td_path, 'build/ontname_doc.html')
+            )
+        ]
+        self.assertEqual(expinfos, self.dbt.getOutputFileInfos())
 
