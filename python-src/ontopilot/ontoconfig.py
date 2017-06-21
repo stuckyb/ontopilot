@@ -24,6 +24,7 @@ from rfc3987 import rfc3987
 from ontopilot import logger, TRUE_STRS
 from ontology import OUTPUT_FORMATS
 from inferred_axiom_adder import INFERENCE_TYPES
+from documentation_writers import DOC_FORMAT_TYPES
 
 # Java imports.
 
@@ -620,4 +621,38 @@ class OntoConfig(RawConfigParser):
             )
 
         return docsfpath
+
+    def getDocFormats(self):
+        """
+        Returns a list of strings identifying the formats to use when
+        generating documentation files.  If this option is not configured,
+        ['HTML'] will be returned.
+        """
+        rawval = self.getCustom('Documentation', 'doc_formats', '')
+
+        raw_format_strs = [strval.strip() for strval in rawval.split(',')]
+
+        LC_DOC_FORMAT_TYPES = [fstr.lower() for fstr in DOC_FORMAT_TYPES]
+
+        # Make sure all of the inference types are valid, and ignore empty
+        # format strings (this can happen, e.g., if the raw string contains a
+        # comma without a value on one side of it).
+        format_strs = []
+        for format_str in raw_format_strs:
+            if format_str != '':
+                if not(format_str.lower() in LC_DOC_FORMAT_TYPES):
+                    raise ConfigError(
+                        'Invalid documentation format string for the '
+                        '"doc_formats" setting in the build configuration '
+                        'file: "{0}".  Supported values are: "{1}".'.format(
+                            format_str, '", "'.join(DOC_FORMAT_TYPES)
+                        )
+                    )
+                else:
+                    format_strs.append(format_str)
+
+        if len(format_strs) == 0:
+            format_strs = ['HTML']
+
+        return format_strs
 

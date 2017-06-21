@@ -577,11 +577,11 @@ class TestOntoConfig(unittest.TestCase):
 
     def test_getDocSpecificationFile(self):
         # Test the default case.
-        expected = self.td_path + '/src/doc_specification.yaml'
+        expected = self.td_path + '/src/doc_specification.txt'
         self.assertEqual(expected, self.oc.getDocSpecificationFile())
 
         # Test a custom relative file path.
-        relpath = 'rel/path/docspec.yaml'
+        relpath = 'rel/path/docspec.txt'
         self.oc.set('Documentation', 'doc_specification', relpath)
         self.assertEqual(
             self.td_path + '/' + relpath,
@@ -589,7 +589,7 @@ class TestOntoConfig(unittest.TestCase):
         )
 
         # Test a custom absolute file path.
-        abspath = '/an/absolute/path/docspec.yaml'
+        abspath = '/an/absolute/path/docspec.txt'
         self.oc.set('Documentation', 'doc_specification', abspath)
         self.assertEqual(abspath, self.oc.getDocSpecificationFile())
 
@@ -617,4 +617,36 @@ class TestOntoConfig(unittest.TestCase):
             ConfigError, 'Invalid value for the "docs_file_path" setting'
         ):
             self.oc.getDocsFilePath()
+
+    def test_getDocFormats(self):
+        # Check the default value.
+        exp_strs = ['HTML']
+        self.oc.set('Documentation', 'doc_formats', '')
+        self.assertEqual(exp_strs, self.oc.getDocFormats())
+
+        # Verify that empty type strings are ignored.
+        self.oc.set('Documentation', 'doc_formats', ',')
+        self.assertEqual(exp_strs, self.oc.getDocFormats())
+        self.oc.set('Documentation', 'doc_formats', 'Markdown,')
+        self.assertEqual(['Markdown'], self.oc.getDocFormats())
+
+        # Verify that format type strings are not case sensitive.  If matching
+        # were case sensitive, than at least one of the following would throw
+        # an exception.
+        self.oc.set('Documentation', 'doc_formats', 'HTML')
+        self.assertEqual(['HTML'], self.oc.getDocFormats())
+        self.oc.set('Documentation', 'doc_formats', 'html')
+        self.assertEqual(['html'], self.oc.getDocFormats())
+
+        # Verify that multiple values are correctly handled.
+        self.oc.set('Documentation', 'doc_formats', 'HTML, Markdown')
+        self.assertEqual(['HTML', 'Markdown'], self.oc.getDocFormats())
+
+        # Verify that invalid format strings are properly handled.
+        self.oc.set('Documentation', 'doc_formats', 'HTML, invalid')
+        with self.assertRaisesRegexp(
+            ConfigError,
+            'Invalid documentation format string for the "doc_formats" setting'
+        ):
+            self.oc.getDocFormats()
 
