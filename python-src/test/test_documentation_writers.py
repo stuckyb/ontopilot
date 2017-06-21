@@ -16,6 +16,7 @@
 
 # Python imports.
 from ontopilot.documenter import Documenter
+from ontopilot.documentation_writers import getDocumentationWriter
 from ontopilot.documentation_writers import MarkdownWriter, HTMLWriter
 from ontopilot.ontology import Ontology
 import unittest
@@ -23,6 +24,25 @@ import StringIO
 #from testfixtures import LogCapture
 
 # Java imports.
+
+
+class Test_GetDocumentationWriter(unittest.TestCase):
+    """
+    Tests the getDocumentationWriter factory function.
+    """
+    def setUp(self):
+        pass
+
+    def test_getDocumentationWriter(self):
+        self.assertIsInstance(
+            getDocumentationWriter('Markdown'), MarkdownWriter
+        )
+        self.assertIsInstance(getDocumentationWriter('HTML'), HTMLWriter)
+
+        with self.assertRaisesRegexp(
+            RuntimeError, 'Unrecognized documentation format string'
+        ):
+            getDocumentationWriter('invalid')
 
 
 class Test_MarkdownWriter(unittest.TestCase):
@@ -233,9 +253,10 @@ class Test_HTMLWriter(unittest.TestCase):
     <meta charset="utf-8" />
     <title>Test documentation</title>
     <link rel="stylesheet" type="text/css" href="documentation_styles.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="navtree.js"></script>
 </head>
 <body>
-
 <div class="toc">
 <ul>
 <li><a href="#first-h2-header">First h2 header</a>
@@ -313,9 +334,10 @@ class Test_HTMLWriter(unittest.TestCase):
     <meta charset="utf-8" />
     <title></title>
     <link rel="stylesheet" type="text/css" href="documentation_styles.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="navtree.js"></script>
 </head>
 <body>
-
 <div class="toc">
 <ul>
 <li><a href="#utf-8-greek-alpha-">UTF-8 Greek alpha: \xce\xb1</a>

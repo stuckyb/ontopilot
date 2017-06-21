@@ -32,6 +32,28 @@ from doc_document import MarkdownSection, EntitiesSection
 # Java imports.
 
 
+# Defines string constants for documentation format types.
+DOC_FORMAT_TYPES = ('HTML', 'Markdown')
+
+
+def getDocumentationWriter(docformat):
+    """
+    A factory function to instantiate a Writer class for a given documentation
+    format string constant.
+    """
+    if docformat == 'HTML':
+        return HTMLWriter()
+    elif docformat == 'Markdown':
+        return MarkdownWriter()
+    else:
+        raise RuntimeError(
+            'Unrecognized documentation format string: "{0}".  Supported '
+            'values are: "{1}".'.format(
+                docformat, '", "'.join(DOC_FORMAT_TYPES)
+            )
+        )
+
+
 class MarkdownWriter:
     def __init__(self):
         pass
@@ -332,9 +354,10 @@ class HTMLWriter:
     <meta charset="utf-8" />
     <title>{0}</title>
     <link rel="stylesheet" type="text/css" href="documentation_styles.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="navtree.js"></script>
 </head>
 <body>
-
 """
 
         footer = '</body>\n</html>'
