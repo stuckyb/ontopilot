@@ -41,9 +41,11 @@ def getDocumentationWriter(docformat):
     A factory function to instantiate a Writer class for a given documentation
     format string constant.
     """
-    if docformat == 'HTML':
+    lc_docformat = docformat.lower()
+
+    if lc_docformat == 'html':
         return HTMLWriter()
-    elif docformat == 'Markdown':
+    elif lc_docformat == 'markdown':
         return MarkdownWriter()
     else:
         raise RuntimeError(

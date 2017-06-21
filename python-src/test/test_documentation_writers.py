@@ -39,6 +39,9 @@ class Test_GetDocumentationWriter(unittest.TestCase):
         )
         self.assertIsInstance(getDocumentationWriter('HTML'), HTMLWriter)
 
+        # Verify that format string matching is not case sensitive.
+        self.assertIsInstance(getDocumentationWriter('html'), HTMLWriter)
+
         with self.assertRaisesRegexp(
             RuntimeError, 'Unrecognized documentation format string'
         ):
