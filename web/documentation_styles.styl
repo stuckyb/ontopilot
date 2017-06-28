@@ -1,0 +1,162 @@
+/*
+ * Document-wide styles.
+ */
+
+// The width of the table of contents pane.
+toc_width = 24%
+
+
+body
+    margin: 0
+    margin-left: toc_width
+    border: none
+    border-left: solid #bbb 2px
+    border-right: solid #bbb 2px
+    padding: 1em 3em
+    font-family: sans-serif
+    background: #eee
+
+a
+    text-decoration: none
+    color: #00A
+
+a:hover
+    text-decoration: underline
+
+h1, h2, h3, h4
+    margin: 0
+    padding: 0
+
+h1
+    font-size: 170%
+    text-align: left
+    margin: 1em 0
+
+h2_bg_color = rgb(#91d0ff)
+h2
+    font-size: 120%
+    margin-top: 2em
+    padding: 6px 6px
+    border-radius: 8px
+    border: solid 1px darken(h2_bg_color, 50%)
+    background: h2_bg_color
+    background: linear-gradient(to bottom, lighten(h2_bg_color, 50%), h2_bg_color)
+
+h3
+    font-size: 110%
+    margin-top: 0.8em
+
+ul
+    list-style-type: none
+    border: none
+    border-left: solid 2px #888
+    border-radius: 12px
+    margin: 0
+    padding: 1em
+    padding-top: 0
+    padding-bottom: 0.8em
+    margin-top: 10px
+
+ul ul
+    margin-left: 3em
+
+li
+    margin: 0.4em 0
+
+/*
+ * Styles for the table of contents, including the table of contents pane, list
+ * layouts, and navigation components.
+ */
+
+// Expander arrow dimensions.
+arrow_w_coll = 8px
+arrow_h_coll = 11px
+arrow_w_exp = arrow_h_coll
+arrow_h_exp = arrow_w_coll
+// Arrow color.
+arrow_color = rgb(0,0,0)
+// Spaces between expander and other elements.
+arrow_margin_left = 2px
+arrow_margin_right = 8px
+ 
+div.toc
+    box-sizing: border-box
+    position: fixed
+    left: 0
+    top: 0
+    width: toc_width
+    height: 100%
+    overflow: auto
+    padding: 0
+    margin: 0
+    padding-left: 12px
+    padding-right: 10px
+    border-right: solid #555 2px
+
+div.toc ul
+    border: none
+    border-radius: 0
+    list-style-type: none
+    margin: 0
+    padding: 0
+    /*font-size: 16px*/
+
+div.toc > ul ul
+    margin-left: arrow_margin_left + arrow_w_coll + arrow_margin_right + 10px
+
+div.toc li
+    margin: 0
+    min-width: 14em
+    position: relative
+    margin: 2px 0 2px 0
+
+div.toc > ul > li
+    margin-bottom: 0
+
+div.li_c
+    // This is a container for toc_expander and <a> elements that form the
+    // interactive labels for list items.
+    position: relative
+    padding: 0
+    border-top: solid #888 1px
+    border-bottom: solid #888 1px
+
+div.toc a
+    display: block
+    margin: 0
+    margin-left: 0
+    padding: 0.1em 0
+    /*border: solid #888 1px
+    border-radius: 4px
+    background: #ccc*/
+
+div.li_c a
+    margin-left: arrow_margin_left + arrow_w_coll + arrow_margin_right
+
+div.toc_expander
+    display: block
+    position: absolute
+    cursor: pointer
+    top: 50%
+
+div.toc_expander::before
+    content: ""
+    position: absolute
+
+div.toc_expander.collapsed::before
+    border-left: solid arrow_color arrow_w_coll
+    border-top: solid transparent (arrow_h_coll / 2)
+    border-bottom: solid transparent (arrow_h_coll / 2)
+    border-right: none
+    margin-top: -(arrow_h_coll / 2)
+    left: arrow_margin_left
+
+div.toc_expander.expanded::before
+    border-left: solid transparent (arrow_w_exp / 2)
+    border-top: solid arrow_color arrow_h_exp
+    border-right: solid transparent (arrow_w_exp / 2)
+    border-bottom: none
+    top: auto
+    margin-top: -(arrow_h_exp / 2)
+    left: arrow_margin_left + (arrow_w_coll / 2) - (arrow_w_exp / 2)
+

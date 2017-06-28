@@ -1,162 +1,145 @@
-/**
+/*
  * Document-wide styles.
- **/
+ */
 body {
-    margin: 0;
-    margin-left: 24%;
-    border: none;
-    border-left: solid #bbb 2px;
-    border-right: solid #bbb 2px;
-    padding: 1em 3em;
-    font-family: sans-serif;
-    background: #eee;
+  margin: 0;
+  margin-left: 24%;
+  border: none;
+  border-left: solid #bbb 2px;
+  border-right: solid #bbb 2px;
+  padding: 1em 3em;
+  font-family: sans-serif;
+  background: #eee;
 }
-
 a {
-    text-decoration: none;
-    color: #00A;
+  text-decoration: none;
+  color: #00a;
 }
-
 a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
-
-h1, h2, h3, h4 {
-    margin: 0;
-    padding: 0;
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  padding: 0;
 }
-
 h1 {
-    font-size: 170%;
-    text-align: left;
-    margin: 1em 0;
+  font-size: 170%;
+  text-align: left;
+  margin: 1em 0;
 }
-
 h2 {
-    font-size: 120%;
-    margin-top: 2em;
-    padding: 6px 6px;
-    border-radius: 8px;
-    background: #91d0ff;
-    background: linear-gradient(to bottom, #bfe4ff, #91d0ff);
+  font-size: 120%;
+  margin-top: 2em;
+  padding: 6px 6px;
+  border-radius: 8px;
+  border: solid 1px #0073c8;
+  background: #91d0ff;
+  background: linear-gradient(to bottom, #c8e8ff, #91d0ff);
 }
-
 h3 {
-    font-size: 110%;
-    margin-top: 0.8em;
+  font-size: 110%;
+  margin-top: 0.8em;
 }
-
 ul {
-    list-style-type: none;
-    border: none;
-    border-left: solid 2px #888;
-    border-radius: 12px;
-    margin: 0;
-    padding: 1em;
-    padding-top: 0;
-    padding-bottom: 0.8em;
-    margin-top: 10px;
+  list-style-type: none;
+  border: none;
+  border-left: solid 2px #888;
+  border-radius: 12px;
+  margin: 0;
+  padding: 1em;
+  padding-top: 0;
+  padding-bottom: 0.8em;
+  margin-top: 10px;
 }
-
 ul ul {
-    margin-left: 3em;
+  margin-left: 3em;
 }
-
 li {
-    margin: 0.4em 0;
+  margin: 0.4em 0;
 }
-
-/**
- * Table of contents.
+/*
+ * Styles for the table of contents, including the table of contents pane, list
+ * layouts, and navigation components.
  */
 div.toc {
-    box-sizing: border-box;
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 24%;
-    height: 100%;
-    overflow: auto;
-    padding: 0;
-    margin: 0;
-    padding-left: 12px;
-    padding-right: 10px;
-    border-right: solid #555 2px;
+  box-sizing: border-box;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 24%;
+  height: 100%;
+  overflow: auto;
+  padding: 0;
+  margin: 0;
+  padding-left: 12px;
+  padding-right: 10px;
+  border-right: solid #555 2px;
 }
-
 div.toc ul {
-    border: none;
-    border-radius: 0;
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    /*font-size: 16px;*/
+  border: none;
+  border-radius: 0;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+/*font-size: 16px*/
 }
-
 div.toc > ul ul {
-    margin-left: 24px;
+  margin-left: 28px;
 }
-
 div.toc li {
-    margin: 0;
-    min-width: 14em;
-    position: relative;
-    margin: 2px 0 2px 0;
+  margin: 0;
+  min-width: 14em;
+  position: relative;
+  margin: 2px 0 2px 0;
 }
-
-/*
- * Container for toc_expander and <a> elements that form the interactive labels
- * for list items.
- */
-div.li_c {
-    position: relative;
-    padding: 0;
-    border-top: solid #888 1px;
-    border-bottom: solid #888 1px;
-}
-
-div.toc a {
-    display: block;
-    margin: 0;
-    margin-left: 16px;
-    padding: 0.1em 0.4em;
-    /*border: solid #888 1px;
-    border-radius: 4px;
-    background: #ccc;*/
-}
-
-div.toc_expander {
-    display: block;
-    position: absolute;
-    cursor: pointer;
-    top: 50%;
-}
-
-div.toc_expander::before {
-    content: "";
-    position: absolute;
-}
-
-div.toc_expander.collapsed::before {
-    border-left: solid black 7px;
-    border-top: solid transparent 5px;
-    border-bottom: solid transparent 5px;
-    border-right: none;
-    margin-top: -5px;
-    left: 4px;
-}
-
-div.toc_expander.expanded::before {
-    border-left: solid transparent 5px;
-    border-top: solid black 7px;
-    border-right: solid transparent 5px;
-    border-bottom: none;
-    top: auto;
-    margin-top: -4px;
-    left: 2px;
-}
-
 div.toc > ul > li {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }
-
+div.li_c {
+  position: relative;
+  padding: 0;
+  border-top: solid #888 1px;
+  border-bottom: solid #888 1px;
+}
+div.toc a {
+  display: block;
+  margin: 0;
+  margin-left: 0;
+  padding: 0.1em 0;
+/*border: solid #888 1px
+    border-radius: 4px
+    background: #ccc*/
+}
+div.li_c a {
+  margin-left: 18px;
+}
+div.toc_expander {
+  display: block;
+  position: absolute;
+  cursor: pointer;
+  top: 50%;
+}
+div.toc_expander::before {
+  content: "";
+  position: absolute;
+}
+div.toc_expander.collapsed::before {
+  border-left: solid #000 8px;
+  border-top: solid transparent 5.5px;
+  border-bottom: solid transparent 5.5px;
+  border-right: none;
+  margin-top: -5.5px;
+  left: 2px;
+}
+div.toc_expander.expanded::before {
+  border-left: solid transparent 5.5px;
+  border-top: solid #000 8px;
+  border-right: solid transparent 5.5px;
+  border-bottom: none;
+  top: auto;
+  margin-top: -4px;
+  left: 0.5px;
+}
