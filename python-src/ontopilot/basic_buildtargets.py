@@ -20,10 +20,7 @@
 
 # Python imports.
 from __future__ import unicode_literals
-import sys, os, shutil
-from zipfile import ZipFile
-import tempfile
-from contextlib import contextmanager
+import sys, os
 from buildtarget import BuildTarget, BuildTargetWithConfig
 from projectcreator import ProjectCreator
 
@@ -51,19 +48,6 @@ class InitTarget(BuildTarget):
         """
         return True
 
-    @contextmanager
-    def _getManagedTmpDir(self):
-        """
-        Implements a context manager that creates a temporary directory and
-        ensures the directory and its contents are deleted upon context exit.
-        Returns the path to the temporary directory.
-        """
-        tmpdir = tempfile.mkdtemp()
-        try:
-            yield tmpdir
-        finally:
-            shutil.rmtree(tmpdir)
-
     def _run(self):
         """
         Attempts to create a new ontology project.
@@ -75,29 +59,8 @@ class InitTarget(BuildTarget):
                     os.path.basename(sys.argv[0])
                 )
             )
-    
-        script_path = os.path.abspath(os.path.realpath(__file__))
-        if ('.jar/Lib' in script_path) or ('.jar\\Lib' in script_path):
-            # We're running from a JAR file, so we need to extract the template
-            # files to a temporary location.
-            jar_path = script_path.rpartition('.jar')[0] + '.jar'
-            zip_ref = ZipFile(jar_path)
 
-            # Extract the template files into a temporary directory.
-            with self._getManagedTmpDir() as tmpdir:
-                for filepath in zip_ref.namelist():
-                    if filepath.startswith('template_files/'):
-                        zip_ref.extract(filepath, tmpdir)
-
-                templatedir = os.path.join(tmpdir, 'template_files')
-                projc = ProjectCreator('.', self.args.taskarg, templatedir)
-                projc.createProject()
-        else:
-            # We're not running from a JAR file, so we can directly access the
-            # template files from the installation location.
-            templatedir = os.path.join(
-                os.path.dirname(script_path), '../../template_files'
-            )
+        with self.getSourceDirectory('template_files') as templatedir:
             projc = ProjectCreator('.', self.args.taskarg, templatedir)
             projc.createProject()
 

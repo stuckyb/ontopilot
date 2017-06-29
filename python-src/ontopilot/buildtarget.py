@@ -27,7 +27,10 @@
 # Python imports.
 from __future__ import unicode_literals
 import abc
-import os
+import os, shutil
+from contextlib import contextmanager
+import tempfile
+from zipfile import ZipFile
 from ontoconfig import OntoConfig
 
 # Java imports.
@@ -88,6 +91,49 @@ class BuildTarget:
                 os.makedirs(dirpath)
             except OSError:
                 raise RuntimeError(bad_dirperms_msg.format(dirpath))
+
+    @contextmanager
+    def getSourceDirectory(self, dirpath):
+        """
+        Implements a context manager that returns the path to a directory in
+        the OntoPilot installation location.  If OntoPilot is run from a JAR
+        file, a temporary directory will be created, the relevant source
+        directory will be extracted from the JAR, and the temporary directory
+        will be deleted upon context exit.
+
+        dirpath: A directory path string relative to the root of the OntoPilot
+            installation.
+        """
+        tmpdir = ''
+        sourcedir = ''
+
+        script_path = os.path.abspath(os.path.realpath(__file__))
+
+        if ('.jar/Lib' in script_path) or ('.jar\\Lib' in script_path):
+            # We're running from a JAR file, so we need to extract the source
+            # files to a temporary location.
+            jar_path = script_path.rpartition('.jar')[0] + '.jar'
+            zip_ref = ZipFile(jar_path)
+
+            # Extract the files into a temporary directory.
+            tmpdir = tempfile.mkdtemp()
+            for filepath in zip_ref.namelist():
+                if filepath.startswith(dirpath):
+                    zip_ref.extract(filepath, tmpdir)
+
+            sourcedir = os.path.join(tmpdir, dirpath)
+        else:
+            # We're not running from a JAR file, so we can directly access the
+            # source files from the installation location.
+            sourcedir = os.path.abspath(os.path.join(
+                os.path.dirname(script_path), '../../', dirpath
+            ))
+
+        try:
+            yield sourcedir
+        finally:
+            if tmpdir != '':
+                shutil.rmtree(tmpdir)
 
     def addDependency(self, target):
         """
