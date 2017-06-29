@@ -16,7 +16,7 @@
 
 # Python imports.
 from __future__ import unicode_literals
-import os
+import os, shutil
 from ontopilot import logger
 from ontology import Ontology
 from buildtarget import BuildTargetWithConfig
@@ -151,6 +151,38 @@ class DocsBuildTarget(BuildTargetWithConfig):
             else:
                 return True
 
+    def _checkWebFile(self, fname, destdir):
+        """
+        Checks whether a required Web supporting documentation file is present
+        in the project's documentation directory.  If not, copies the file from
+        the source "web" directory to the project's documentation location.
+        Checks for some common file copy error conditions and generates error
+        message that try to be helpful to end users.
+        """
+        if os.path.isfile(os.path.join(destdir, fname)):
+            return
+
+        with self.getSourceDirectory('web') as srcdir:
+            sourcepath = os.path.join(srcdir, fname)
+            destpath = os.path.join(destdir, fname)
+
+            if not(os.path.isfile(sourcepath)):
+                raise RuntimeError(
+                    'The source documentation file "{0}" could not be found.  '
+                    'Please check that the software was installed '
+                    'correctly.'.format(sourcepath)
+                )
+
+            try:
+                shutil.copyfile(sourcepath, destpath)
+            except IOError:
+                raise RuntimeError(
+                    'The file "{0}" could not be copied to the project\'s '
+                    'documentation directory.  Please make sure that you have '
+                    'permission to create new files and directories in the new '
+                    'project location.'.format(sourcepath)
+            )
+
     def _run(self):
         """
         Runs the build process to produce the ontology documentation.
@@ -171,6 +203,13 @@ class DocsBuildTarget(BuildTargetWithConfig):
 
         # Create the documentation files.
         for foutinfo in fileoutinfos:
+            # If the format is HTML, make sure the supporting CSS and
+            # Javascript files are present.
+            if foutinfo.formatstr == 'html':
+                destdir = os.path.dirname(foutinfo.destpath)
+                self._checkWebFile('documentation_styles.css', destdir)
+                self._checkWebFile('navtree.js', destdir)
+
             writer = getDocumentationWriter(foutinfo.formatstr)
             documenter = Documenter(ont, writer)
 
