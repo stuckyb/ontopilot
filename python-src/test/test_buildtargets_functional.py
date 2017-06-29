@@ -70,24 +70,34 @@ class TestBuildTargetsFunctional(unittest.TestCase):
         self.assertEqual(0, retval)
 
         exp_dirs = [
-            'ontology/', 'imports/', 'src/', 'src/entities/', 'src/imports/'
+            'ontology/', 'imports/', 'src/', 'src/entities/', 'src/imports/',
+            'documentation'
         ]
         exp_dirs = [os.path.join(self.tmpdir, dpath) for dpath in exp_dirs]
 
         exp_files = [
-            'project.conf', 'src/test-base.owl',
+            'project.conf',
+            'src/test-base.owl',
+            'src/doc_specification.txt',
             'src/imports/imported_ontologies.csv',
             'src/imports/bfo_test_entities.csv',
-            'src/entities/test_properties.csv', 'src/entities/test_classes.csv',
+            'src/entities/test_properties.csv',
+            'src/entities/test_classes.csv',
             'src/entities/test_individuals.csv'
         ]
         exp_files = [os.path.join(self.tmpdir, fpath) for fpath in exp_files]
 
         for exp_dir in exp_dirs:
-            self.assertTrue(os.path.isdir(exp_dir))
+            self.assertTrue(
+                os.path.isdir(exp_dir),
+                msg='Could not find expected directory: {0}'.format(exp_dir)
+            )
 
         for exp_file in exp_files:
-            self.assertTrue(os.path.isfile(exp_file))
+            self.assertTrue(
+                os.path.isfile(exp_file),
+                msg='Could not find expected file: {0}'.format(exp_file)
+            )
 
     def _test_make_imports(self, tppath):
         """
@@ -286,6 +296,34 @@ class TestBuildTargetsFunctional(unittest.TestCase):
         for exp_file in exp_files:
             self.assertTrue(os.path.isfile(exp_file))
 
+    def _test_make_documentation(self, tppath):
+        """
+        Tests the "make documentation" build task.  This mostly just verifies
+        that it runs without error and that all the expected files and
+        directories were created, since documentation output is covered by
+        other unit tests.
+
+        tppath: The path of the test OntoPilot project.
+        """
+        args = [self.execpath, 'make', 'documentation']
+        retval = subprocess.call(args, cwd=tppath)
+        self.assertEqual(0, retval)
+
+        # Check that the documentation files exist.
+        exp_files = [
+            'documentation/test.html',
+            'documentation/test.md',
+            'documentation/documentation_styles.css',
+            'documentation/navtree.js'
+        ]
+        exp_files = [os.path.join(tppath, filepath) for filepath in exp_files]
+
+        for exp_file in exp_files:
+            self.assertTrue(
+                os.path.isfile(exp_file),
+                msg='Could not find expected file: {0}'.format(exp_file)
+            )
+
     def _test_errorcheck(self, tppath):
         """
         Tests the "error_check" build task.  This just verifies that it runs
@@ -368,6 +406,8 @@ class TestBuildTargetsFunctional(unittest.TestCase):
         self._test_make_ont_merged(tppath)
         self._test_make_ont_reasoned(tppath)
         self._test_make_release(tppath)
+
+        self._test_make_documentation(tppath)
 
         self._test_errorcheck(tppath)
 
