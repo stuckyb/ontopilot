@@ -596,7 +596,7 @@ class TestOntoConfig(unittest.TestCase):
     def test_getDocsFilePath(self):
         # Test the default case.
         self.assertEqual(
-            self.td_path + '/documentation/ontname_doc',
+            self.td_path + '/documentation/ontname',
             self.oc.getDocsFilePath()
         )
 

@@ -603,7 +603,7 @@ class OntoConfig(RawConfigParser):
         documentation.  If no such value is explicitly provided in the
         configuration file, a sensible default is used.
         """
-        default = 'documentation/' + self.getOntFileBase() + '_doc'
+        default = 'documentation/' + self.getOntFileBase()
         raw_docsfpath = self.getCustom(
             'Documentation', 'docs_file_path', default
         )
