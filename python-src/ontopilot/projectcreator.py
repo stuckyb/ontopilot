@@ -256,7 +256,6 @@ class ProjectCreator:
         destpath = os.path.join(
             os.path.dirname(config.getDocSpecificationFile()), docspec_fname
         )
-        print srcpath, destpath
         self._copyAndModify(srcpath, destpath, replacements)
 
     def createProject(self):
