@@ -146,10 +146,10 @@ class DocsBuildTarget(BuildTargetWithConfig):
                 # file.
                 if mtime < os.path.getmtime(self.config.getDocSpecificationFile()):
                     return True
-    
-                return False
             else:
                 return True
+
+        return False
 
     def _checkWebFile(self, fname, destdir):
         """
