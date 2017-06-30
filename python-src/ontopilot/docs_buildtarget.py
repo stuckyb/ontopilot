@@ -151,37 +151,47 @@ class DocsBuildTarget(BuildTargetWithConfig):
 
         return False
 
-    def _checkWebFile(self, fname, destdir):
+    def _checkWebFiles(self, fnames, destdir):
         """
-        Checks whether a required Web supporting documentation file is present
-        in the project's documentation directory.  If not, copies the file from
-        the source "web" directory to the project's documentation location.
-        Checks for some common file copy error conditions and generates error
-        message that try to be helpful to end users.
+        Checks whether one or more required Web supporting documentation files
+        are present in the project's documentation directory.  If not, copies
+        any missing files from the source "web" directory to the project's
+        documentation location.  Checks for some common file copy error
+        conditions and generates error message that try to be helpful to end
+        users.
+
+        fnames: A list of file names to check.
+        destdir: The directory in which the files should be found.
         """
-        if os.path.isfile(os.path.join(destdir, fname)):
+        missing = []
+        for fname in fnames:
+            if not(os.path.isfile(os.path.join(destdir, fname))):
+                missing.append(fname)
+
+        if len(missing) == 0:
             return
 
         with self.getSourceDirectory('web') as srcdir:
-            sourcepath = os.path.join(srcdir, fname)
-            destpath = os.path.join(destdir, fname)
-
-            if not(os.path.isfile(sourcepath)):
-                raise RuntimeError(
-                    'The source documentation file "{0}" could not be found.  '
-                    'Please check that the software was installed '
-                    'correctly.'.format(sourcepath)
+            for fname in missing:
+                sourcepath = os.path.join(srcdir, fname)
+                destpath = os.path.join(destdir, fname)
+    
+                if not(os.path.isfile(sourcepath)):
+                    raise RuntimeError(
+                        'The source documentation file "{0}" could not be '
+                        'found.  Please check that the software was installed '
+                        'correctly.'.format(sourcepath)
+                    )
+    
+                try:
+                    shutil.copyfile(sourcepath, destpath)
+                except IOError:
+                    raise RuntimeError(
+                        'The file "{0}" could not be copied to the project\'s '
+                        'documentation directory.  Please make sure that you '
+                        'have permission to create new files and directories '
+                        'in the new project location.'.format(sourcepath)
                 )
-
-            try:
-                shutil.copyfile(sourcepath, destpath)
-            except IOError:
-                raise RuntimeError(
-                    'The file "{0}" could not be copied to the project\'s '
-                    'documentation directory.  Please make sure that you have '
-                    'permission to create new files and directories in the new '
-                    'project location.'.format(sourcepath)
-            )
 
     def _run(self):
         """
@@ -207,8 +217,9 @@ class DocsBuildTarget(BuildTargetWithConfig):
             # Javascript files are present.
             if foutinfo.formatstr == 'html':
                 destdir = os.path.dirname(foutinfo.destpath)
-                self._checkWebFile('documentation_styles.css', destdir)
-                self._checkWebFile('navtree.js', destdir)
+                self._checkWebFiles(
+                    ['documentation_styles.css', 'navtree.js'], destdir
+                )
 
             writer = getDocumentationWriter(foutinfo.formatstr)
             documenter = Documenter(ont, writer)
