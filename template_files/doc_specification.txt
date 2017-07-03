@@ -11,6 +11,6 @@ This is a sample documentation specification file.
 
 ## Properties and individuals
 
-- ID: FSO:'sample property'
-- ID: FSO:'sample individual'
+- ID: OPSO:'sample property'
+- ID: OPSO:'sample individual' 
 
