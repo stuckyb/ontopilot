@@ -234,12 +234,16 @@ class Test_HTMLWriter(unittest.TestCase):
         testvals = [
             # A document specification that includes two Markdown sections with
             # h2 headers, separated by an entities section, followed by another
-            # entities section.
+            # entities section.  One of the h2 headers has content that will
+            # generate an ID that conflicts with a reserved ID, to verify that
+            # reserved IDs are properly preserved.
             {
                 'docspec': """
 # Test documentation
 
 ## First h2 header
+
+## main
 
 ## Properties
 - ID: OBTO:0020
@@ -260,9 +264,11 @@ class Test_HTMLWriter(unittest.TestCase):
     <script src="navtree.js"></script>
 </head>
 <body>
-<div class="toc">
+<div id="toc">
 <ul>
 <li><a href="#first-h2-header">First h2 header</a>
+</li>
+<li><a href="#main-1">main</a>
 </li>
 <li><a href="#properties">Properties</a>
     <ul>
@@ -283,12 +289,15 @@ class Test_HTMLWriter(unittest.TestCase):
 </ul>
 </div>
 
+<div id="main">
 <h1>Test documentation</h1>
 
 <h2 id="first-h2-header">First h2 header</h2>
 
+<h2 id="main-1">main</h2>
+
 <h2 id="properties">Properties</h2>
-<ul>
+<ul class="entity_list">
 <li>
     <h3 id="test-data-property-1">test data property 1</h3>
     <p>OBO ID: OBTO:0020</p>
@@ -297,12 +306,12 @@ class Test_HTMLWriter(unittest.TestCase):
 </ul>
 
 <h2 id="classes">Classes</h2>
-<ul>
+<ul class="entity_list">
 <li>
     <h3 id="imported-test-class-1">imported test class 1</h3>
     <p>OBO ID: OBITO:0001</p>
     <p>IRI: http://purl.obolibrary.org/obo/OBITO_0001</p>
-    <ul>
+    <ul class="entity_list">
     <li>
         <h3 id="test-class-1">test class 1</h3>
         <p>OBO ID: OBTO:0010</p>
@@ -322,6 +331,7 @@ class Test_HTMLWriter(unittest.TestCase):
 </li>
 </ul>
 
+</div>
 </body>
 </html>"""
             },
@@ -341,14 +351,16 @@ class Test_HTMLWriter(unittest.TestCase):
     <script src="navtree.js"></script>
 </head>
 <body>
-<div class="toc">
+<div id="toc">
 <ul>
 <li><a href="#utf-8-greek-alpha-">UTF-8 Greek alpha: \xce\xb1</a>
 </li>
 </ul>
 </div>
 
+<div id="main">
 <h2 id="utf-8-greek-alpha-">UTF-8 Greek alpha: \xce\xb1</h2>
+</div>
 </body>
 </html>"""
             }

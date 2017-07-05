@@ -131,6 +131,10 @@ class HTMLWriter:
         # A list of _HTMLSectionDetails objects.
         self.html_sds = []
 
+        # A set of reserved HTML entity IDs (i.e. IDs that should not be
+        # assigned to user content).
+        self.RESERVED_IDS = {'toc', 'main'}
+
     def _getIDText(self, text, usedIDs):
         """
         Generates ID attribute text from the raw inner text of an HTML header.
@@ -228,7 +232,7 @@ class HTMLWriter:
         return html_sd
 
     def _assignHeaderIDs(self, document):
-        usedIDs = set()
+        usedIDs = set(self.RESERVED_IDS)
 
         for section in document.sections:
             if isinstance(section, EntitiesSection):
@@ -266,7 +270,7 @@ class HTMLWriter:
         fileout.write('{0}</ul>\n'.format(indentstr))
 
     def _writeToC(self, document, fileout):
-        fileout.write('<div class="toc">\n<ul>\n')
+        fileout.write('<div id="toc">\n<ul>\n')
 
         md_section_cnt = 0
         md_li_open = False
@@ -299,7 +303,7 @@ class HTMLWriter:
         indentstr = '    ' * indent_level
         subindentstr = '    ' * (indent_level + 1)
 
-        fileout.write('{0}<ul>\n'.format(indentstr))
+        fileout.write('{0}<ul class="entity_list">\n'.format(indentstr))
 
         for node in nodelist:
             nname = node.getName()
@@ -385,7 +389,9 @@ class HTMLWriter:
         if self.include_ToC:
             self._writeToC(document, ufileout)
 
+        ufileout.write('<div id="main">\n')
         self._writeSections(document.sections, ufileout)
+        ufileout.write('</div>\n')
 
         ufileout.write(footer)
 
