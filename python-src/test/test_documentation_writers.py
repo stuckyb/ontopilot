@@ -264,7 +264,7 @@ class Test_HTMLWriter(unittest.TestCase):
     <script src="navtree.js"></script>
 </head>
 <body>
-<div id="toc">
+<nav id="toc">
 <ul>
 <li><a href="#first-h2-header">First h2 header</a>
 </li>
@@ -287,9 +287,9 @@ class Test_HTMLWriter(unittest.TestCase):
     </ul>
 </li>
 </ul>
-</div>
+</nav>
 
-<div id="main">
+<main>
 <h1>Test documentation</h1>
 
 <h2 id="first-h2-header">First h2 header</h2>
@@ -331,7 +331,7 @@ class Test_HTMLWriter(unittest.TestCase):
 </li>
 </ul>
 
-</div>
+</main>
 </body>
 </html>"""
             },
@@ -351,16 +351,16 @@ class Test_HTMLWriter(unittest.TestCase):
     <script src="navtree.js"></script>
 </head>
 <body>
-<div id="toc">
+<nav id="toc">
 <ul>
 <li><a href="#utf-8-greek-alpha-">UTF-8 Greek alpha: \xce\xb1</a>
 </li>
 </ul>
-</div>
+</nav>
 
-<div id="main">
+<main>
 <h2 id="utf-8-greek-alpha-">UTF-8 Greek alpha: \xce\xb1</h2>
-</div>
+</main>
 </body>
 </html>"""
             }

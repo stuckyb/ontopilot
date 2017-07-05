@@ -270,7 +270,7 @@ class HTMLWriter:
         fileout.write('{0}</ul>\n'.format(indentstr))
 
     def _writeToC(self, document, fileout):
-        fileout.write('<div id="toc">\n<ul>\n')
+        fileout.write('<nav id="toc">\n<ul>\n')
 
         md_section_cnt = 0
         md_li_open = False
@@ -297,7 +297,7 @@ class HTMLWriter:
         if md_li_open:
             fileout.write('</li>\n')
 
-        fileout.write('</ul>\n</div>\n\n')
+        fileout.write('</ul>\n</nav>\n\n')
 
     def _writeNodeList(self, nodelist, fileout, indent_level):
         indentstr = '    ' * indent_level
@@ -389,9 +389,9 @@ class HTMLWriter:
         if self.include_ToC:
             self._writeToC(document, ufileout)
 
-        ufileout.write('<div id="main">\n')
+        ufileout.write('<main>\n')
         self._writeSections(document.sections, ufileout)
-        ufileout.write('</div>\n')
+        ufileout.write('</main>\n')
 
         ufileout.write(footer)
 
