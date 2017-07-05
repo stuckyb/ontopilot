@@ -14,7 +14,7 @@ body
     border-right: solid #bbb 2px
     padding: 1em 3em
     font-family: sans-serif
-    background: #eee
+    background: #fafafa
 
 a
     text-decoration: none
@@ -79,7 +79,7 @@ arrow_color = rgb(0,0,0)
 arrow_margin_left = 2px
 arrow_margin_right = 8px
  
-div.toc
+#toc
     box-sizing: border-box
     position: fixed
     left: 0
@@ -92,8 +92,9 @@ div.toc
     padding-left: 12px
     padding-right: 10px
     border-right: solid #555 2px
+    background: #eee
 
-div.toc ul
+#toc ul
     border: none
     border-radius: 0
     list-style-type: none
@@ -101,16 +102,17 @@ div.toc ul
     padding: 0
     /*font-size: 16px*/
 
-div.toc > ul ul
+#toc > ul ul
+    display: none
     margin-left: arrow_margin_left + arrow_w_coll + arrow_margin_right + 10px
 
-div.toc li
+#toc li
     margin: 0
     min-width: 14em
     position: relative
     margin: 2px 0 2px 0
 
-div.toc > ul > li
+#toc > ul > li
     margin-bottom: 0
 
 div.li_c
@@ -118,21 +120,26 @@ div.li_c
     // interactive labels for list items.
     position: relative
     padding: 0
-    border-top: solid #888 1px
-    border-bottom: solid #888 1px
+    /*border-top: solid #888 1px
+    border-bottom: solid #888 1px*/
 
-div.toc a
+nav_bg = #bbb
+#toc a
+    background: linear-gradient(to right, lighten(nav_bg, 50%), nav_bg)
+    border-radius: 4px
     display: block
     margin: 0
-    margin-left: 0
-    padding: 0.1em 0
-    /*border: solid #888 1px
-    border-radius: 4px
-    background: #ccc*/
-
-div.li_c a
     margin-left: arrow_margin_left + arrow_w_coll + arrow_margin_right
+    padding: 0.2em 0.3em
+    color: #0001a3
 
+#toc a:hover
+    background: darken(nav_bg, 4%)
+    text-decoration: none
+
+/*div.li_c a
+    margin-left: arrow_margin_left + arrow_w_coll + arrow_margin_right
+*/
 div.toc_expander
     display: block
     position: absolute

@@ -19,7 +19,7 @@
  * nested lists into an interactive tree with expandable/collapsable items.
  */
 $(document).ready(function() {
-    $('div.toc').find('li').each(function(index, domobj) {
+    $('#toc').find('li').each(function(index, domobj) {
         var li = $(domobj);
 
         if (li.children('ul').length != 0) {
