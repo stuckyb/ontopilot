@@ -8,13 +8,16 @@ toc_width = 24%
 
 body
     margin: 0
-    margin-left: toc_width
     border: none
+    padding: 0
+    font-family: sans-serif
+
+main
+    margin-left: toc_width
+    padding: 2em 3em
     border-left: solid #bbb 2px
     border-right: solid #bbb 2px
-    padding: 1em 3em
-    font-family: sans-serif
-    background: #fafafa
+    background: #eee
 
 a
     text-decoration: none
@@ -28,9 +31,10 @@ h1, h2, h3, h4
     padding: 0
 
 h1
-    font-size: 170%
+    font-size: 180%
     text-align: left
-    margin: 1em 0
+    margin: 0
+    margin-bottom: 1em
 
 h2_bg_color = rgb(#91d0ff)
 h2
@@ -46,39 +50,48 @@ h3
     font-size: 110%
     margin-top: 0.8em
 
-ul
+ul.entity_list
     list-style-type: none
     border: none
-    border-left: solid 2px #888
-    border-radius: 12px
+    /*border-left: solid 2px #888
+    border-radius: 12px*/
     margin: 0
-    padding: 1em
-    padding-top: 0
+    padding: 0
     padding-bottom: 0.8em
     margin-top: 10px
 
-ul ul
+ul.entity_list ul
     margin-left: 3em
 
-li
+ul.entity_list li
     margin: 0.4em 0
+    border: solid 1px #444
+    border-radius: 8px
+    padding: 0 1em
+    background: #f8f8f8
 
 /*
  * Styles for the table of contents, including the table of contents pane, list
  * layouts, and navigation components.
  */
 
+// ToC-wide color definitions.
+toc_bg_color = #080820
+toc_text_color = #eee
 // Expander arrow dimensions.
 arrow_w_coll = 8px
 arrow_h_coll = 11px
 arrow_w_exp = arrow_h_coll
 arrow_h_exp = arrow_w_coll
 // Arrow color.
-arrow_color = rgb(0,0,0)
+arrow_color = #ddd
 // Spaces between expander and other elements.
 arrow_margin_left = 2px
 arrow_margin_right = 8px
- 
+// Base background color for index items.
+nav_bg_color = #282828
+nav_bg_color = #212141
+
 #toc
     box-sizing: border-box
     position: fixed
@@ -89,10 +102,35 @@ arrow_margin_right = 8px
     overflow: auto
     padding: 0
     margin: 0
-    padding-left: 12px
-    padding-right: 10px
-    border-right: solid #555 2px
-    background: #eee
+    padding-left: 14px
+    padding-right: 14px
+    background: linear-gradient(to top, lighten(toc_bg_color, 8%), toc_bg_color 20%)
+    color: toc_text_color
+    box-shadow: 1px 0px 10px 3px #222
+
+#toc h1
+    font-size: 150%
+    text-align: left
+    margin-top: 1em
+
+#toc_buttons
+    margin: 0
+    margin-bottom: 1em
+    margin-left: arrow_margin_left + arrow_w_coll + arrow_margin_right + 10px
+    text-align: right
+
+.top_toc_button
+    display: inline-block
+    white-space: nowrap
+    border-radius: 3px
+    border-width: 10px
+    padding: 0.5em 0.8em
+    cursor: pointer
+    background: #555
+    box-shadow: -1px -1px 1px #444 inset, 1px 1px 1px #aaa inset;
+
+.top_toc_button:hover
+    background: blue
 
 #toc ul
     border: none
@@ -123,18 +161,17 @@ div.li_c
     /*border-top: solid #888 1px
     border-bottom: solid #888 1px*/
 
-nav_bg = #bbb
 #toc a
-    background: linear-gradient(to right, lighten(nav_bg, 50%), nav_bg)
+    background: linear-gradient(to right, lighten(nav_bg_color, 20%), nav_bg_color)
     border-radius: 4px
     display: block
     margin: 0
     margin-left: arrow_margin_left + arrow_w_coll + arrow_margin_right
-    padding: 0.2em 0.3em
-    color: #0001a3
+    padding: 0.3em 0.4em
+    color: toc_text_color
 
 #toc a:hover
-    background: darken(nav_bg, 4%)
+    background: darken(nav_bg_color, 4%)
     text-decoration: none
 
 /*div.li_c a
