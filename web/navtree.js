@@ -42,5 +42,23 @@ $(document).ready(function() {
             });
         }
     });
+
+    var expand_all = $('#expand_all').first();
+    expand_all.click(function(evt) {
+        $('#toc').find('div.toc_expander.collapsed').each(function(index, domobj) {
+            var expander = $(domobj);
+    
+            expander.trigger('click');
+        });
+    });
+
+    var collapse_all = $('#collapse_all').first();
+    collapse_all.click(function(evt) {
+        $('#toc').find('div.toc_expander.expanded').each(function(index, domobj) {
+            var expander = $(domobj);
+    
+            expander.trigger('click');
+        });
+    });
 });
 
