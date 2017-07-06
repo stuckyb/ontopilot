@@ -264,7 +264,13 @@ class Test_HTMLWriter(unittest.TestCase):
     <script src="navtree.js"></script>
 </head>
 <body>
+
 <nav id="toc">
+<h1>Table of Contents</h1>
+<div id="toc_buttons">
+    <div id="expand_all" class="top_toc_button">expand all</div>
+    <div id="collapse_all" class="top_toc_button">collapse all</div>
+</div>
 <ul>
 <li><a href="#first-h2-header">First h2 header</a>
 </li>
@@ -351,7 +357,13 @@ class Test_HTMLWriter(unittest.TestCase):
     <script src="navtree.js"></script>
 </head>
 <body>
+
 <nav id="toc">
+<h1>Table of Contents</h1>
+<div id="toc_buttons">
+    <div id="expand_all" class="top_toc_button">expand all</div>
+    <div id="collapse_all" class="top_toc_button">collapse all</div>
+</div>
 <ul>
 <li><a href="#utf-8-greek-alpha-">UTF-8 Greek alpha: \xce\xb1</a>
 </li>

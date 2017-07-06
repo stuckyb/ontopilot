@@ -270,8 +270,15 @@ class HTMLWriter:
         fileout.write('{0}</ul>\n'.format(indentstr))
 
     def _writeToC(self, document, fileout):
-        fileout.write('<nav id="toc">\n<ul>\n')
-
+        fileout.write("""
+<nav id="toc">
+<h1>Table of Contents</h1>
+<div id="toc_buttons">
+    <div id="expand_all" class="top_toc_button">expand all</div>
+    <div id="collapse_all" class="top_toc_button">collapse all</div>
+</div>
+<ul>
+""")
         md_section_cnt = 0
         md_li_open = False
 
