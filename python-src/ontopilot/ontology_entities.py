@@ -137,6 +137,12 @@ class _OntologyEntity:
 
         self.ontology.addEntityAxiom(annotaxiom)
 
+    def getComments(self):
+        """
+        Returns a list of all rdfs:comment annotation values for this entity.
+        """
+        return self.getAnnotationValues(self.df.getRDFSComment().getIRI())
+
     def addAnnotation(self, annotprop_id, annottxt):
         """
         Adds an arbitrary annotation for this entity.

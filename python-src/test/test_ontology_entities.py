@@ -82,7 +82,7 @@ class _TestOntologyEntity:
         defvals = self.t_ent.getDefinitions()
         self.assertEqual(['Definition 1.'], defvals)
 
-        # Test multiple labels.
+        # Test multiple definitions.
         self.t_ent.addDefinition('Definition 2.')
         defvals = self.t_ent.getDefinitions()
         self.assertEqual(['Definition 1.', 'Definition 2.'], sorted(defvals))
@@ -116,6 +116,20 @@ class _TestOntologyEntity:
 
         # Test that the comment annotation exists and has the correct value.
         self._checkAnnotation(self.COMMENT_IRI, commentstr)
+
+    def test_getComments(self):
+        # Test the case of no comments.
+        self.assertEqual(0, len(self.t_ent.getComments()))
+
+        # Test a single comment.
+        self.t_ent.addComment('Comment 1.')
+        vals = self.t_ent.getComments()
+        self.assertEqual(['Comment 1.'], vals)
+
+        # Test multiple comments.
+        self.t_ent.addComment('Comment 2.')
+        vals = self.t_ent.getComments()
+        self.assertEqual(['Comment 1.', 'Comment 2.'], sorted(vals))
 
     def test_addAnnotation(self):
         annotprop_iri = IRI.create('http://purl.obolibrary.org/obo/OBTO_0030')
