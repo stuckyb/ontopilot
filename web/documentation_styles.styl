@@ -7,24 +7,26 @@ toc_width = 24%
 
 // The base color to use for the overal color scheme.
 base_color = #0040ff
+
+// Color definitions for the main content pane.
 main_bg_color = lighten(desaturate(base_color, 60%), 90%)
+main_text_color = darken(base_color, 84%)
 
 body
     margin: 0
     border: none
     padding: 0
     font-family: sans-serif
+    background: main_bg_color
 
 main
     margin-left: toc_width
     padding: 2em 3em
-    border-left: solid #bbb 2px
-    border-right: solid #bbb 2px
-    background: main_bg_color
+    color: main_text_color
 
 a
     text-decoration: none
-    color: #00A
+    color: lighten(main_text_color, 36%)
 
 a:hover
     text-decoration: underline
@@ -43,11 +45,11 @@ h2_bg_color = rgb(#91d0ff)
 h2
     font-size: 140%
     margin: 1em 0
-    padding: 0.6em 0
+    padding: 0.4em 0
     /*border-radius: 8px
     border: none
     border: solid 1px darken(h2_bg_color, 50%)*/
-    border-bottom: solid 2px #888
+    border-bottom: solid 2px darken(main_bg_color, 60%)
     /*background: h2_bg_color
     background: linear-gradient(to bottom, lighten(h2_bg_color, 50%), h2_bg_color)*/
 
@@ -65,10 +67,10 @@ ul.entity_list
     padding-bottom: 0.8em
     margin-top: 10px
 
-ul.entity_list ul
+ul.entity_list ul.entity_list
     margin-left: 3em
 
-ul.entity_list li
+ul.entity_list > li
     margin: 0.8em 0
     border: solid 1px #444
     border-radius: 8px
@@ -78,7 +80,7 @@ ul.entity_list li
     background: #f8f8f8
     box-shadow: 1px 1px 4px #333
 
-ul.entity_list ul li
+ul.entity_list ul.entity_list > li
     margin-right: 0.8em
 
 enth3_bg_color = lighten(spin(base_color, -10deg), 60%)
@@ -93,7 +95,26 @@ ul.entity_list h3
     color: darken(enth3_bg_color, 90%)
 
 ul.entity_list p
-    margin-left 1em
+    margin: 1em 1em
+
+div.comments
+    margin: 0
+    margin-bottom: 1em
+
+div.comments p
+    margin-bottom: 0em
+
+div.comments ul
+    list-style: disc inside
+    border: none
+    margin: 0 1em 0 2em
+    padding: 0
+
+div.comments li
+    border: none
+    box-shadow: none
+    margin: 0
+    margin-top: 0.4em
 
 /*
  * Styles for the table of contents, including the table of contents pane, list
@@ -125,9 +146,10 @@ nav_bg_color = lighten(desaturate(toc_bg_color, 40%), 10%)
 #toc
     box-sizing: border-box
     position: fixed
-    left: 0
+    border-radius: 0 0 0 0
+    left: 0.6%
     top: 0
-    width: toc_width
+    width: toc_width - 0.6%
     height: 100%
     overflow: auto
     padding: 0 toc_side_padding
@@ -140,7 +162,8 @@ nav_bg_color = lighten(desaturate(toc_bg_color, 40%), 10%)
 #toc h1
     font-size: 150%
     text-align: left
-    margin-top: 1em
+    margin-top: 0
+    padding: 0.4em 0
 
 #toc_buttons
     margin: 0
@@ -153,7 +176,7 @@ nav_bg_color = lighten(desaturate(toc_bg_color, 40%), 10%)
     white-space: nowrap
     border-radius: 3px
     border-width: 10px
-    padding: 0.5em 0.8em
+    padding: 0.4em 0.7em
     cursor: pointer
     background: toc_button_bg_color
     box-shadow: -1px -1px 1px #444 inset, 1px 1px 1px #aaa inset;

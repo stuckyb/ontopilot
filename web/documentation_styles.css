@@ -6,17 +6,16 @@ body {
   border: none;
   padding: 0;
   font-family: sans-serif;
+  background: #edf0f7;
 }
 main {
   margin-left: 24%;
   padding: 2em 3em;
-  border-left: solid #bbb 2px;
-  border-right: solid #bbb 2px;
-  background: #edf0f7;
+  color: #000a29;
 }
 a {
   text-decoration: none;
-  color: #00a;
+  color: #0033d2;
 }
 a:hover {
   text-decoration: underline;
@@ -37,11 +36,11 @@ h1 {
 h2 {
   font-size: 140%;
   margin: 1em 0;
-  padding: 0.6em 0;
+  padding: 0.4em 0;
 /*border-radius: 8px
     border: none
     border: solid 1px darken(h2_bg_color, 50%)*/
-  border-bottom: solid 2px #888;
+  border-bottom: solid 2px #3c5286;
 /*background: h2_bg_color
     background: linear-gradient(to bottom, lighten(h2_bg_color, 50%), h2_bg_color)*/
 }
@@ -59,10 +58,10 @@ ul.entity_list {
   padding-bottom: 0.8em;
   margin-top: 10px;
 }
-ul.entity_list ul {
+ul.entity_list ul.entity_list {
   margin-left: 3em;
 }
-ul.entity_list li {
+ul.entity_list > li {
   margin: 0.8em 0;
   border: solid 1px #444;
   border-radius: 8px;
@@ -72,7 +71,7 @@ ul.entity_list li {
   background: #f8f8f8;
   box-shadow: 1px 1px 4px #333;
 }
-ul.entity_list ul li {
+ul.entity_list ul.entity_list > li {
   margin-right: 0.8em;
 }
 ul.entity_list h3 {
@@ -86,7 +85,26 @@ ul.entity_list h3 {
   color: #001129;
 }
 ul.entity_list p {
-  margin-left: 1em;
+  margin: 1em 1em;
+}
+div.comments {
+  margin: 0;
+  margin-bottom: 1em;
+}
+div.comments p {
+  margin-bottom: 0em;
+}
+div.comments ul {
+  list-style: disc inside;
+  border: none;
+  margin: 0 1em 0 2em;
+  padding: 0;
+}
+div.comments li {
+  border: none;
+  box-shadow: none;
+  margin: 0;
+  margin-top: 0.4em;
 }
 /*
  * Styles for the table of contents, including the table of contents pane, list
@@ -95,9 +113,10 @@ ul.entity_list p {
 #toc {
   box-sizing: border-box;
   position: fixed;
-  left: 0;
+  border-radius: 0 0 0 0;
+  left: 0.6%;
   top: 0;
-  width: 24%;
+  width: 23.4%;
   height: 100%;
   overflow: auto;
   padding: 0 20px;
@@ -110,7 +129,8 @@ ul.entity_list p {
 #toc h1 {
   font-size: 150%;
   text-align: left;
-  margin-top: 1em;
+  margin-top: 0;
+  padding: 0.4em 0;
 }
 #toc_buttons {
   margin: 0;
@@ -123,7 +143,7 @@ ul.entity_list p {
   white-space: nowrap;
   border-radius: 3px;
   border-width: 10px;
-  padding: 0.5em 0.8em;
+  padding: 0.4em 0.7em;
   cursor: pointer;
   background: #555;
   box-shadow: -1px -1px 1px #444 inset, 1px 1px 1px #aaa inset;
