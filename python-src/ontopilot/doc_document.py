@@ -116,6 +116,8 @@ class DocumentNode:
         else:
             self.entdef = ''
 
+        self.comments = entity.getComments()
+
         self.custom_id = ''
         self.children = []
 

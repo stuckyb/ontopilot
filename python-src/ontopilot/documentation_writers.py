@@ -65,22 +65,25 @@ class MarkdownWriter:
             nname = node.getName()
             indentstr = '    ' * indent_level
     
-            fileout.write('{0}* ### {1}\n'.format(indentstr, nname))
+            fileout.write('{0}* ### {1}\n\n'.format(indentstr, nname))
     
             if node.entOBO_ID != nname and node.entOBO_ID != '':
                 fileout.write(
-                    '{0}  OBO ID: {1}  \n'.format(indentstr, node.entOBO_ID)
+                    '{0}  OBO ID: {1}\n\n'.format(indentstr, node.entOBO_ID)
                 )
 
-            fileout.write('{0}  IRI: {1}'.format(indentstr, node.entIRI))
+            fileout.write('{0}  IRI: {1}\n\n'.format(indentstr, node.entIRI))
     
             if node.entdef != '':
                 fileout.write(
-                    '  \n{0}  Definition: {1}\n\n'.format(indentstr, node.entdef)
+                    '{0}  Definition: {1}\n\n'.format(indentstr, node.entdef)
                 )
-            else:
-                fileout.write('\n\n')
-    
+            
+            for comment in node.comments:
+                fileout.write(
+                    '{0}  Comment: {1}\n\n'.format(indentstr, comment)
+                )
+  
             if len(node.children) > 0:
                 self._writeNodeList(node.children, fileout, indent_level + 1)
 
@@ -306,6 +309,29 @@ class HTMLWriter:
 
         fileout.write('</ul>\n</nav>\n\n')
 
+    def _writeCommentsDiv(self, fileout, comments, indentstr):
+        fileout.write('{0}<div class="comments">\n'.format(indentstr))
+
+        if len(comments) == 1:
+            fileout.write('{0}  <p>Comment: {1}</p>\n'.format(
+                indentstr, comments[0]
+            ))
+
+        elif len(comments) > 1:
+            fileout.write(
+                '{0}  <p>Comments:</p>\n'.format(indentstr)
+            )
+            fileout.write('{0}  <ul>\n'.format(indentstr))
+
+            for comment in comments:
+                fileout.write('{0}    <li>{1}</li>\n'.format(
+                        indentstr, comment
+                ))
+
+            fileout.write('{0}  </ul>\n'.format(indentstr))
+
+        fileout.write('{0}</div>\n'.format(indentstr))
+
     def _writeNodeList(self, nodelist, fileout, indent_level):
         indentstr = '    ' * indent_level
         subindentstr = '    ' * (indent_level + 1)
@@ -333,7 +359,10 @@ class HTMLWriter:
                 fileout.write('{0}<p>Definition: {1}</p>\n'.format(
                         subindentstr, node.entdef
                 ))
-    
+
+            if len(node.comments) > 0:
+                self._writeCommentsDiv(fileout, node.comments, subindentstr)
+
             if len(node.children) > 0:
                 self._writeNodeList(node.children, fileout, indent_level + 1)
 
