@@ -55,15 +55,20 @@ class _TestOntologyEntity:
         self.t_owlapiobj = self.t_ent.getOWLAPIObj()
         self.t_entIRI = self.t_ent.getIRI()
 
-    def _checkAnnotation(self, annot_propIRI, valuestr):
+    def _checkAnnotation(self, annot_propIRI, valuestrs):
         """
         Checks that the test entity is the subject of an annotation axiom with
-        the specified property and value.
+        the specified property and value(s).
         """
+        if isinstance(valuestrs, basestring):
+            strlist = [valuestrs]
+        else:
+            strlist = valuestrs
+
         # Check that the entity has the required annotation and that the text
         # value is correct.
         annotvals = self.t_ent.getAnnotationValues(annot_propIRI)
-        self.assertEqual([valuestr], annotvals)
+        self.assertEqual(sorted(strlist), sorted(annotvals))
 
     def test_addDefinition(self):
         defstr = 'A new definition.'
@@ -94,6 +99,10 @@ class _TestOntologyEntity:
 
         # Test that the label annotation exists and has the correct value.
         self._checkAnnotation(self.LABEL_IRI, labelstr)
+
+        # Check a label string enclosed in single quotes.
+        self.t_ent.addLabel("'another label'")
+        self._checkAnnotation(self.LABEL_IRI, ['another label', labelstr])
 
     def test_getLabels(self):
         # Test the case of no labels.

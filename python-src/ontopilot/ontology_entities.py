@@ -111,6 +111,9 @@ class _OntologyEntity:
         """
         labeltxt = labeltxt.strip()
 
+        if labeltxt[0] == "'" and labeltxt[-1] == "'":
+            labeltxt = labeltxt[1:-1]
+
         labelannot = self.df.getOWLAnnotation(
             self.df.getRDFSLabel(), self.df.getOWLLiteral(labeltxt, 'en')
         )
