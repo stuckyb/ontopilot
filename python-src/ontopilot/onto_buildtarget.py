@@ -41,7 +41,7 @@ OPTIONAL_COLS = (
     'Comments', 'Text definition', 'Parent', 'Subclass of', 'Superclass of',
     'Equivalent to', 'Disjoint with', 'Inverse', 'Characteristics',
     'Relations', 'Data facts', 'Annotations', 'Ignore', 'Subproperty of',
-    'Superproperty of'
+    'Superproperty of', 'Domain', 'Range'
 )
         
 class OntoBuildTarget(BuildTargetWithConfig):
