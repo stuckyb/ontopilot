@@ -338,11 +338,18 @@ Other text.
             }
         ]
 
-        # Add some extra classes to the test ontology hierarchy.
+        # Add some extra classes to the test ontology hierarchy.  After the
+        # additions, the class structure should now be as follows:
+        #
+        # OBTO:0090
+        # OBITO:0001
+        # |--- OBTO:0010
+        # |    |--- OBTO:0091
+        # |--- OBTO:0011
+        # |--- OBTO:0012
         newclass = self.ont.createNewClass('OBTO:0090')
-        classent = self.ont.getExistingClass('OBTO:0010')
         newclass = self.ont.createNewClass('OBTO:0091')
-        classent.addSubclass('OBTO:0091')
+        newclass.addSuperclass('OBTO:0010')
 
         for testval in testvals:
             result = unicode(self.doc._parseDocSpec(testval['docspec']))
@@ -354,11 +361,78 @@ Other text.
                 msg='Input specification:"""{0}"""'.format(testval['docspec'])
             )
 
-        # Create a cycle in the descendant relationships, then run the last
-        # test again to make sure the cycle doesn't "trap" the algorithm.
-        newclass.addSubclass('OBTO:0010')
-        testval = testvals[-1]
+        # Create a cycle in the descendant relationships by making OBITO:0001 a
+        # subclass of OBTO:0091, and make a polyhierarchy by making OBTO:0010 a
+        # subclass of OBTO:0011.  The class structure should look like this:
+        #
+        # OBTO:0090
+        # OBITO:0001
+        # |--- OBTO:0010
+        # |    |--- OBTO:0091
+        # |         |--- OBITO:0001
+        # |--- OBTO:0011
+        # |    |--- OBTO:0010
+        # |         |--- OBTO:0091
+        # |              |--- OBITO:0001
+        # |--- OBTO:0012
+        newclass.addSubclass('OBITO:0001')
+        ent = self.ont.getExistingClass('OBTO:0011')
+        ent.addSubclass('OBTO:0010')
+
+        # Run the multi-level descendants test again to make sure the cycle
+        # doesn't "trap" the algorithm and that the polyhierarchy is handled
+        # correctly.
+        testval = {
+                'docspec':
+"""
+## Classes
+- ID: OBITO:0001
+  descendants: all
+""",
+                'expected':
+"""
+## Classes
+Entities:
+    IRI: http://purl.obolibrary.org/obo/OBITO_0001
+    OBO ID: OBITO:0001
+    Label: imported test class 1
+    Children:
+        IRI: http://purl.obolibrary.org/obo/OBTO_0010
+        OBO ID: OBTO:0010
+        Label: test class 1
+        Children:
+            IRI: http://purl.obolibrary.org/obo/OBTO_0091
+            OBO ID: OBTO:0091
+            Label: 
+            Children:
+                IRI: http://purl.obolibrary.org/obo/OBITO_0001
+                OBO ID: OBITO:0001
+                Label: imported test class 1
+
+        IRI: http://purl.obolibrary.org/obo/OBTO_0011
+        OBO ID: OBTO:0011
+        Label: test class 2
+        Children:
+            IRI: http://purl.obolibrary.org/obo/OBTO_0010
+            OBO ID: OBTO:0010
+            Label: test class 1
+            Children:
+                IRI: http://purl.obolibrary.org/obo/OBTO_0091
+                OBO ID: OBTO:0091
+                Label: 
+                Children:
+                    IRI: http://purl.obolibrary.org/obo/OBITO_0001
+                    OBO ID: OBITO:0001
+                    Label: imported test class 1
+
+        IRI: http://purl.obolibrary.org/obo/OBTO_0012
+        OBO ID: OBTO:0012
+        Label: test class 3
+
+"""
+        }
         result = unicode(self.doc._parseDocSpec(testval['docspec']))
+        print result
         self.assertEqual(testval['expected'], result)
 
         # Test error conditions to make sure they are handled correctly.

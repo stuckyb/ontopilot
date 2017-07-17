@@ -132,10 +132,11 @@ class DocumentNode:
         that include cycles in their descendant relationships.
         """
         if entset is None:
-            # Initialize a set to track all entities that are seen during the
-            # recursion.  This is necessary to avoid getting stuck in circular
-            # descendant relationships.
-            entset = set(self.entIRI)
+            # Initialize a dictionary to track all entities that are seen
+            # during the recursion.  This is necessary to avoid getting stuck
+            # in circular descendant relationships.  Entity IRIs are the set of
+            # dictionary keys, and they map to DocumentNode objects.
+            entset = {self.entIRI: self}
 
         me = ModuleExtractor(self.ont)
 
@@ -147,9 +148,10 @@ class DocumentNode:
 
         for child in children:
             iristr = child.getIRI().toString()
-            if iristr not in entset:
-                entset.add(iristr)
 
+            if iristr in entset:
+                self.children.append(entset[iristr])
+            else:
                 centity = self.ont.getExistingEntity(iristr)
                 if centity is None:
                     raise RuntimeError(
@@ -160,6 +162,8 @@ class DocumentNode:
 
                 childnode = DocumentNode(centity, self.ont)
                 self.children.append(childnode)
+
+                entset[iristr] = childnode
                 if curdepth < maxdepth or maxdepth == -1:
                     childnode.getDescendants(maxdepth, curdepth + 1, entset)
 
@@ -188,29 +192,44 @@ class DocumentNode:
         else:
             return self.entIRI
 
-    def _toIndentedStr(self, indentlevel):
+    def _toIndentedStr(self, indentlevel, entset=None):
         """
         Generates and returns a string representation of this DocumentNode,
         indented according to the specified indentlevel.
         """
+        if entset is None:
+            # Initialize a set to track all entities that are in the midst of a
+            # descendant traversal operation.  This is necessary to avoid
+            # getting stuck in circular descendant relationships.  Once all
+            # children of an entity are processed, the entity is removed from
+            # the set, which ensures that polyhierarchies are properly
+            # traversed (for output purposes; that is, a single node might be
+            # visited multiple times).
+            entset = set()
+
         indent = '    ' * indentlevel
         strs = [
             'IRI: ' + self.entIRI,
             'OBO ID: ' + self.entOBO_ID,
             'Label: ' + self.entlabel
         ]
-        if len(self.children) > 0:
-            strs.append('Children:')
-
         retstr = '\n'.join([indent + strval for strval in strs])
         retstr += '\n'
 
-        childcnt = 0
-        for child in self.children:
-            childcnt += 1
-            retstr += child._toIndentedStr(indentlevel + 1)
-            if childcnt < len(self.children):
-                retstr += '\n'
+        if self.entIRI not in entset:
+            entset.add(self.entIRI)
+
+            if len(self.children) > 0:
+                retstr += indent + 'Children:\n'
+
+            childcnt = 0
+            for child in self.children:
+                childcnt += 1
+                retstr += child._toIndentedStr(indentlevel + 1, entset)
+                if childcnt < len(self.children):
+                    retstr += '\n'
+
+            entset.remove(self.entIRI)
 
         return retstr
 
