@@ -26,7 +26,7 @@ import codecs
 import re
 from xml.etree import ElementTree as ET
 import markdown
-from doc_document import MarkdownSection, EntitiesSection
+from doc_document import MarkdownSection, EntitiesSection, NodeStrGenerator
 
 
 # Java imports.
@@ -56,57 +56,117 @@ def getDocumentationWriter(docformat):
         )
 
 
-class MarkdownWriter:
+class _BaseWriter(NodeStrGenerator):
+    """
+    A base class for all writers that implements a generic algorithm for
+    generating a text representation of a Document object.  This is not an
+    abstract base class because all of the writer methods are implemented (most
+    of which do nothing).  Thus, subclasses can choose which writer methods
+    they need to implement without having to worry about the others.  It is
+    thus similar to Java's adapter classes.
+    """
     def __init__(self):
         pass
 
-    def _writeNodeList(self, nodelist, fileout, indent_level):
-        for node in nodelist:
-            nname = node.getName()
-            indentstr = '    ' * indent_level
-    
-            fileout.write('{0}* ### {1}\n\n'.format(indentstr, nname))
-    
-            if node.entOBO_ID != nname and node.entOBO_ID != '':
-                fileout.write(
-                    '{0}  OBO ID: {1}\n\n'.format(indentstr, node.entOBO_ID)
-                )
-
-            fileout.write('{0}  IRI: {1}\n\n'.format(indentstr, node.entIRI))
-    
-            if node.entdef != '':
-                fileout.write(
-                    '{0}  Definition: {1}\n\n'.format(indentstr, node.entdef)
-                )
-            
-            for comment in node.comments:
-                fileout.write(
-                    '{0}  Comment: {1}\n\n'.format(indentstr, comment)
-                )
+    def _getNodeOpeningText(self, node, depth, will_traverse):
+        """
+        This method is from NodeStrGenerator.
+        """
+        return ''
   
-            if len(node.children) > 0:
-                self._writeNodeList(node.children, fileout, indent_level + 1)
+    def _getNodeClosingText(self, node, depth, traversed):
+        """
+        This method is from NodeStrGenerator.
+        """
+        return ''
+  
+    def _writeHeader(self, document, fileout):
+        pass
 
-    def _writeSection(self, section, fileout):
-        if isinstance(section, MarkdownSection):
-            fileout.write(section.content)
-        else:
-            if len(section.docnodes) > 0:
-                self._writeNodeList(section.docnodes, fileout, 0)
-    
-            fileout.write('\n')
-        
+    def _writeMarkdownSection(self, section, sectioncnt, fileout):
+        """
+        Writes a MarkdownSection of a Document object.
+
+        section: A MarkdownSection object.
+        sectioncnt: The 0-based count of MarkdownSections that have been seen.
+        fileout: An output file stream.
+        """
+        pass
+
+    def _writeEntitiesSection(self, section, sectioncnt, fileout):
+        """
+        Writes an EntitiesSection of a Document object.
+
+        section: An EntitiesSection object.
+        sectioncnt: The 0-based count of EntitiesSections that have been seen.
+        fileout: An output file stream.
+        """
+        pass
+
+    def _writeFooter(self, document, fileout):
+        pass
+
     def write(self, document, fileout):
         """
-        Generates a UTF-8 markdown representation of a Document data structure.
+        Generates a UTF-8 representation of a Document data structure.
 
         document: A Document instance.
         fileout: A writable file object.
         """
         ufileout = codecs.getwriter('utf-8')(fileout)
 
+        self._writeHeader(document, ufileout)
+
+        mdsection_cnt = entsection_cnt = 0
+
         for section in document.sections:
-            self._writeSection(section, ufileout)
+            if isinstance(section, MarkdownSection):
+                self._writeMarkdownSection(section, mdsection_cnt, ufileout)
+                mdsection_cnt += 1
+            elif isinstance(section, EntitiesSection):
+                self._writeEntitiesSection(section, entsection_cnt, ufileout)
+                entsection_cnt += 1
+            else:
+                raise RuntimeError(
+                    'Unrecognized document section type: {0}.'.format(
+                        type(section)
+                    )
+                )
+
+        self._writeFooter(document, ufileout)
+
+
+class MarkdownWriter(_BaseWriter):
+    def __init__(self):
+        pass
+
+    def _getNodeOpeningText(self, node, depth, will_traverse):
+        nname = node.getName()
+        indentstr = '    ' * depth
+
+        retstr = '{0}* ### {1}\n\n'.format(indentstr, nname)
+
+        if node.entOBO_ID != nname and node.entOBO_ID != '':
+            retstr += '{0}  OBO ID: {1}\n\n'.format(indentstr, node.entOBO_ID)
+
+        retstr += '{0}  IRI: {1}\n\n'.format(indentstr, node.entIRI)
+
+        if node.entdef != '':
+            retstr += '{0}  Definition: {1}\n\n'.format(indentstr, node.entdef)
+        
+        for comment in node.comments:
+            retstr += '{0}  Comment: {1}\n\n'.format(indentstr, comment)
+
+        return retstr
+  
+    def _writeMarkdownSection(self, section, sectioncnt, fileout):
+        fileout.write(section.content)
+
+    def _writeEntitiesSection(self, section, sectioncnt, fileout):
+        for node in section.docnodes:
+            fileout.write(self.getNodeString(node))
+    
+        fileout.write('\n')
 
 
 class _HTMLSectionDetails:
