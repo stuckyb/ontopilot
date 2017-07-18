@@ -432,7 +432,7 @@ Entities:
 """
         }
         result = unicode(self.doc._parseDocSpec(testval['docspec']))
-        print result
+        #print result
         self.assertEqual(testval['expected'], result)
 
         # Test error conditions to make sure they are handled correctly.

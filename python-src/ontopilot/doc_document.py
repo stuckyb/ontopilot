@@ -19,6 +19,7 @@
 
 # Python imports.
 from __future__ import unicode_literals
+import abc
 from module_extractor import ModuleExtractor, rel_axiom_types
 from obohelper import termIRIToOboID, OBOIdentifierError
 
@@ -73,16 +74,16 @@ class EntitiesSection:
         self.docnodes = []
 
     def __str__(self):
-        docnodes_str = 'Entities:'
+        docnodes_str = 'Entities:\n'
 
         for docnode in self.docnodes:
-            docnodes_str += '\n' + unicode(docnode)
+            docnodes_str += unicode(docnode)
 
         # Handle the case where docnodes is empty.
         if docnodes_str[-1] != '\n':
             docnodes_str += '\n'
 
-        return docnodes_str + '\n'
+        return docnodes_str
 
 
 class DocumentNode:
@@ -192,47 +193,130 @@ class DocumentNode:
         else:
             return self.entIRI
 
-    def _toIndentedStr(self, indentlevel, entset=None):
+    def __str__(self):
+        text_nsg = TextNodeStrGenerator()
+
+        return text_nsg.getNodeString(self)
+
+
+class NodeStrGenerator:
+    """
+    An abstract base class that defines a traversal algorithm and interface for
+    converting a DocumentNode object into a string representation.  This ABC is
+    also suitable for use as a "mixin" class with multiple inheritance.
+    """
+    def __init__(self):
+        # This is an abstract base class.
+        __metaclass__ = abc.ABCMeta
+
+    def getNodeString(self, docnode):
         """
-        Generates and returns a string representation of this DocumentNode,
-        indented according to the specified indentlevel.
+        Returns a string representation of this DocumentNode object.
+        """
+        return self._processNode(docnode, 0, None)
+
+    def _processNode(self, node, depth, entset=None):
+        """
+        Recursively traverses the current DocumentNode and its children,
+        building up a string representation of the top-level DocumentNode along
+        the way.  This method traverses polyhierarchies as fully as possible
+        while avoiding circular descendant relationships (i.e., graph cycles).
+        This method implements the traversal algorithm and calls
+        _getNodeOpeningText() and _getNodeClosingText() to actually produce the
+        string representations.
         """
         if entset is None:
-            # Initialize a set to track all entities that are in the midst of a
+            # Initialize a set to track all nodes that are in the midst of a
             # descendant traversal operation.  This is necessary to avoid
             # getting stuck in circular descendant relationships.  Once all
-            # children of an entity are processed, the entity is removed from
-            # the set, which ensures that polyhierarchies are properly
-            # traversed (for output purposes; that is, a single node might be
-            # visited multiple times).
+            # children of a node are processed, the node is removed from the
+            # set, which ensures that polyhierarchies are properly traversed
+            # (note that a single node might be visited multiple times).
             entset = set()
 
-        indent = '    ' * indentlevel
+        will_traverse = node.entIRI not in entset
+
+        retstr = self._getNodeOpeningText(node, depth, will_traverse)
+
+        if will_traverse:
+            entset.add(node.entIRI)
+
+            childcnt = 0
+            for child in node.children:
+                childcnt += 1
+                retstr += self._processNode(child, depth + 1, entset)
+
+            entset.remove(node.entIRI)
+
+        retstr += self._getNodeClosingText(node, depth, will_traverse)
+
+        return retstr
+
+    @abc.abstractmethod
+    def _getNodeOpeningText(self, node, depth, will_traverse):
+        """
+        Returns the text that should appear before any children of the current
+        node in the traversal.
+
+        node: A DocumentNode object.
+        depth: The current traversal depth.
+        will_traverse: Whether the children of this node will be visited.
+        """
+        pass
+
+    @abc.abstractmethod
+    def _getNodeClosingText(self, node, depth, traversed):
+        """
+        Returns the text that should appear after any children of the current
+        node in the traversal.
+
+        node: A DocumentNode object.
+        depth: The current traversal depth.
+        traversed: Whether the children of this node were visited.
+        """
+        pass
+
+
+class TextNodeStrGenerator(NodeStrGenerator):
+    """
+    A NodeStrGenerator that produces a basic text representation of a
+    DocumentNode.
+    """
+    def _getNodeOpeningText(self, node, depth, will_traverse):
+        """
+        Returns the text that should appear before any children of the current
+        node in the traversal.
+
+        node: A DocumentNode object.
+        depth: The current traversal depth.
+        will_traverse: Whether the children of this node will be visited.
+        """
+        indent = '    ' * (depth + 1)
+
         strs = [
-            'IRI: ' + self.entIRI,
-            'OBO ID: ' + self.entOBO_ID,
-            'Label: ' + self.entlabel
+            'IRI: ' + node.entIRI,
+            'OBO ID: ' + node.entOBO_ID,
+            'Label: ' + node.entlabel
         ]
         retstr = '\n'.join([indent + strval for strval in strs])
         retstr += '\n'
 
-        if self.entIRI not in entset:
-            entset.add(self.entIRI)
-
-            if len(self.children) > 0:
-                retstr += indent + 'Children:\n'
-
-            childcnt = 0
-            for child in self.children:
-                childcnt += 1
-                retstr += child._toIndentedStr(indentlevel + 1, entset)
-                if childcnt < len(self.children):
-                    retstr += '\n'
-
-            entset.remove(self.entIRI)
+        if will_traverse and len(node.children) > 0:
+            retstr += indent + 'Children:\n'
 
         return retstr
 
-    def __str__(self):
-        return self._toIndentedStr(1)
+    def _getNodeClosingText(self, node, depth, traversed):
+        """
+        Returns the text that should appear after any children of the current
+        node in the traversal.
+
+        node: A DocumentNode object.
+        depth: The current traversal depth.
+        traversed: Whether the children of this node were visited.
+        """
+        if traversed and len(node.children) > 0:
+            return ''
+        else:
+            return '\n'
 
