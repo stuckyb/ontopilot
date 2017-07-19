@@ -235,6 +235,12 @@ class HTMLWriter(_BaseWriter):
         # assigned to user content).
         self.RESERVED_IDS = {'toc', 'main'}
 
+        # A set to keep track of HTML entity IDs that have already been written
+        # to the output file.  This is so we can avoid assigning the same ID to
+        # nodes that are visited more than once in a hierarchy of ontology
+        # entities.
+        self.printed_IDs = set()
+
     def _getIDText(self, text, usedIDs):
         """
         Generates ID attribute text from the raw inner text of an HTML header.
@@ -429,9 +435,17 @@ class HTMLWriter(_BaseWriter):
         nname = node.getName()
 
         retstr = '{0}<li>\n'.format(li_indentstr)
-        retstr += '{0}<h3 id="{1}">{2}</h3>\n'.format(
-            indentstr, node.custom_id, nname
-        )
+
+        # Check if this entity (and its ID) has already been "printed" in the
+        # output document.  If so, do not repeat the ID.
+        if node.custom_id not in self.printed_IDs:
+            self.printed_IDs.add(node.custom_id)
+
+            retstr += '{0}<h3 id="{1}">{2}</h3>\n'.format(
+                indentstr, node.custom_id, nname
+            )
+        else:
+            retstr += '{0}<h3>{1}</h3>\n'.format(indentstr, nname)
 
         if node.entOBO_ID != nname and node.entOBO_ID != '':
             retstr += '{0}<p>OBO ID: {1}</p>\n'.format(
@@ -505,6 +519,7 @@ class HTMLWriter(_BaseWriter):
 """
 
         self.html_sds = []
+        self.printed_IDs.clear()
         self._assignHeadingIDs(document)
 
         # If the first document section is a MarkdownSection with a level 1
