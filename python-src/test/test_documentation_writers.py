@@ -238,6 +238,18 @@ class Test_HTMLWriter(unittest.TestCase):
                 self.hw._getIDText(testval['text'], usedIDs)
             )
 
+    def _printResultsComparison(self, expected, result):
+        """
+        Prints a line-by-line comparison of an expected text string and a
+        result text string.
+        """
+        for e_line, r_line in zip(
+            expected.splitlines(), result.splitlines()
+        ):
+            if e_line != r_line:
+                print 'MISMATCH:'
+            print 'exp: "{0}"\nres: "{1}"'.format(e_line, r_line)
+
     def test_write(self):
         testvals = [
             # A document specification that includes two Markdown sections with
@@ -397,14 +409,125 @@ class Test_HTMLWriter(unittest.TestCase):
             result = strbuf.getvalue()
             strbuf.close()
 
-            # Uncomment these lines to do a line-by-line comparison of the
-            # expected and result strings.
-            #for e_line, r_line in zip(
-            #    expected[1:].splitlines(), result.splitlines()
-            #):
-            #    if e_line != r_line:
-            #        print 'MISMATCH:'
-            #    print 'exp: "{0}"\nres: "{1}"'.format(e_line, r_line)
+            #self._printResultsComparison(expected[1:], result)
     
             self.assertEqual(expected[1:], result)
+
+        # Create a cycle in the descendant relationships by making OBITO:0001 a
+        # subclass of OBTO:0010, and make a polyhierarchy by making OBTO:0012 a
+        # subclass of OBTO:0011.  The class structure should look like this:
+        #
+        # OBTO:0090
+        # OBITO:0001
+        # |--- OBTO:0010
+        # |    |--- OBITO:0001
+        # |--- OBTO:0011
+        # |    |--- OBTO:0012
+        # |--- OBTO:0012
+        ent = self.ont.getExistingClass('OBTO:0010')
+        ent.addSubclass('OBITO:0001')
+        ent = self.ont.getExistingClass('OBTO:0011')
+        ent.addSubclass('OBTO:0012')
+
+        # Make sure the cycle doesn't "trap" the documentation generating
+        # algorithms and that the polyhierarchy is handled correctly.
+        docspec = """
+## Classes
+- ID: OBITO:0001
+  descendants: all
+"""
+        expected = """
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="documentation_styles.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="navtree.js"></script>
+</head>
+<body>
+
+<nav id="toc">
+<h1>Table of Contents</h1>
+<div id="toc_buttons">
+    <div id="expand_all" class="top_toc_button">expand all</div>
+    <div id="collapse_all" class="top_toc_button">collapse all</div>
+</div>
+<ul>
+<li><a href="#classes">Classes</a>
+    <ul>
+    <li><a href="#imported-test-class-1">imported test class 1</a>
+        <ul>
+        <li><a href="#test-class-1">test class 1</a>
+            <ul>
+            <li><a href="#imported-test-class-1">imported test class 1</a></li>
+            </ul>
+        </li>
+        <li><a href="#test-class-2">test class 2</a>
+            <ul>
+            <li><a href="#test-class-3">test class 3</a></li>
+            </ul>
+        </li>
+        <li><a href="#test-class-3">test class 3</a></li>
+        </ul>
+    </li>
+    </ul>
+</li>
+</ul>
+</nav>
+
+<main>
+<h2 id="classes">Classes</h2>
+<ul class="entity_list">
+<li>
+    <h3 id="imported-test-class-1">imported test class 1</h3>
+    <p>OBO ID: OBITO:0001</p>
+    <p>IRI: http://purl.obolibrary.org/obo/OBITO_0001</p>
+    <ul class="entity_list">
+    <li>
+        <h3 id="test-class-1">test class 1</h3>
+        <p>OBO ID: OBTO:0010</p>
+        <p>IRI: http://purl.obolibrary.org/obo/OBTO_0010</p>
+        <ul class="entity_list">
+        <li>
+            <h3>imported test class 1</h3>
+            <p>OBO ID: OBITO:0001</p>
+            <p>IRI: http://purl.obolibrary.org/obo/OBITO_0001</p>
+        </li>
+        </ul>
+    </li>
+    <li>
+        <h3 id="test-class-2">test class 2</h3>
+        <p>OBO ID: OBTO:0011</p>
+        <p>IRI: http://purl.obolibrary.org/obo/OBTO_0011</p>
+        <ul class="entity_list">
+        <li>
+            <h3 id="test-class-3">test class 3</h3>
+            <p>OBO ID: OBTO:0012</p>
+            <p>IRI: http://purl.obolibrary.org/obo/OBTO_0012</p>
+        </li>
+        </ul>
+    </li>
+    <li>
+        <h3>test class 3</h3>
+        <p>OBO ID: OBTO:0012</p>
+        <p>IRI: http://purl.obolibrary.org/obo/OBTO_0012</p>
+    </li>
+    </ul>
+</li>
+</ul>
+
+</main>
+</body>
+</html>"""
+
+        strbuf = StringIO.StringIO()
+        self.doc.document(docspec, strbuf)
+        result = strbuf.getvalue()
+        strbuf.close()
+
+        #self._printResultsComparison(expected[1:], result)
+
+        self.assertEqual(expected[1:], result)
 

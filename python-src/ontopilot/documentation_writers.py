@@ -183,6 +183,41 @@ class _HTMLSectionDetails:
         self.headers = []
 
 
+class _HTMLToCNodeStrGenerator(NodeStrGenerator):
+    """
+    A NodeStrGenerator that produces HTML text for the table of contents entry
+    for a DocumentNode in an HTML documentation file.
+    """
+    def _getNodeOpeningText(self, node, depth, will_traverse):
+        indentstr = '    ' * (depth + 1)
+        subindentstr = '    ' * (depth + 2)
+
+        nname = node.getName()
+
+        retstr = '{0}<li><a href="#{1}">{2}</a>'.format(
+            indentstr, node.custom_id, nname
+        )
+    
+        if will_traverse and len(node.children) > 0:
+            retstr += '\n'
+            retstr += '{0}<ul>\n'.format(subindentstr)
+
+        return retstr
+
+    def _getNodeClosingText(self, node, depth, traversed):
+        indentstr = '    ' * (depth + 1)
+        subindentstr = '    ' * (depth + 2)
+        retstr = ''
+
+        if traversed and len(node.children) > 0:
+            retstr += '{0}</ul>\n'.format(subindentstr)
+            retstr += '{0}</li>\n'.format(indentstr)
+        else:
+            retstr += '</li>\n'
+
+        return retstr
+
+
 class HTMLWriter(_BaseWriter):
     def __init__(self, include_ToC=True):
         """
@@ -240,15 +275,25 @@ class HTMLWriter(_BaseWriter):
 
         return finalstr
 
-    def _assignHeaderIDsToNodeList(self, nodelist, usedIDs):
+    def _assignHeadingIDsToNodeList(self, nodelist, usedIDs, entset=None):
+        if entset is None:
+            # Initialize a set to track all DocumentNodes that are seen
+            # during the recursion.  This is necessary to avoid getting stuck
+            # in circular descendant relationships.
+            entset = set()
+
         for node in nodelist:
-            nname = node.getName()
+            if node.entIRI not in entset:
+                entset.add(node.entIRI)
 
-            node.custom_id = self._getIDText(nname, usedIDs)
+                nname = node.getName()
+                node.custom_id = self._getIDText(nname, usedIDs)
 
-            self._assignHeaderIDsToNodeList(node.children, usedIDs)
+                self._assignHeadingIDsToNodeList(
+                    node.children, usedIDs, entset
+                )
 
-    def _assignHeaderIDsToMarkdown(self, mdtext, usedIDs):
+    def _assignHeadingIDsToMarkdown(self, mdtext, usedIDs):
         """
         Assigns header IDs to a Markdown document section.  Returns an
         _HTMLSectionDetails object that contain the resulting HTML with ID
@@ -288,8 +333,8 @@ class HTMLWriter(_BaseWriter):
             # Serialize the XML as UTF-8, but then convert it back to Python's
             # internal unicode representation.  This is necessary because the
             # string will automatically be serialized again as UTF-8 when
-            # writing to the output destination.  It also avoids problems cause
-            # by concatenating 8-bit strings and unicode strings.
+            # writing to the output destination.  It also avoids problems
+            # caused by concatenating 8-bit strings and unicode strings.
             xhtmlstr = ET.tostring(child, encoding='utf-8', method='html')
             html_sd.htmltext += xhtmlstr.decode('utf-8')
             html_sd.htmltext += '\n'
@@ -301,38 +346,13 @@ class HTMLWriter(_BaseWriter):
 
         for section in document.sections:
             if isinstance(section, EntitiesSection):
-                self._assignHeaderIDsToNodeList(section.docnodes, usedIDs)
+                self._assignHeadingIDsToNodeList(section.docnodes, usedIDs)
             elif isinstance(section, MarkdownSection):
-                html_sd = self._assignHeaderIDsToMarkdown(
+                html_sd = self._assignHeadingIDsToMarkdown(
                     section.content, usedIDs
                 )
 
                 self.html_sds.append(html_sd)
-
-    def _writeToCNodeList(self, nodelist, fileout, indent_level):
-        indentstr = '    ' * indent_level
-
-        fileout.write('{0}<ul>\n'.format(indentstr))
-
-        for node in nodelist:
-            nname = node.getName()
-    
-            fileout.write('{0}<li><a href="#{1}">{2}</a>'.format(
-                indentstr, node.custom_id, nname
-            ))
-        
-            if len(node.children) > 0:
-                fileout.write('\n')
-
-                self._writeToCNodeList(
-                    node.children, fileout, indent_level + 1
-                )
-
-                fileout.write('{0}</li>\n'.format(indentstr))
-            else:
-                fileout.write('</li>\n')
-
-        fileout.write('{0}</ul>\n'.format(indentstr))
 
     def _writeToC(self, document, fileout):
         fileout.write("""
@@ -344,6 +364,8 @@ class HTMLWriter(_BaseWriter):
 </div>
 <ul>
 """)
+        ht_nsg = _HTMLToCNodeStrGenerator()
+
         md_section_cnt = 0
         md_li_open = False
 
@@ -359,12 +381,20 @@ class HTMLWriter(_BaseWriter):
                 md_section_cnt += 1
 
             elif isinstance(section, EntitiesSection):
-                if len(section.docnodes) > 0:
-                    self._writeToCNodeList(section.docnodes, fileout, 1)
+                if not(md_li_open):
+                    fileout.write('<li>\n')
+                    md_li_open = True
 
-                if md_li_open:
-                    fileout.write('</li>\n')
-                    md_li_open = False
+                if len(section.docnodes) > 0:
+                    fileout.write('    <ul>\n')
+
+                    for node in section.docnodes:
+                        fileout.write(ht_nsg.getNodeString(node))
+
+                    fileout.write('    </ul>\n')
+
+                fileout.write('</li>\n')
+                md_li_open = False
 
         if md_li_open:
             fileout.write('</li>\n')
