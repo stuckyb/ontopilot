@@ -138,7 +138,7 @@ class _BaseWriter(NodeStrGenerator):
 
 class MarkdownWriter(_BaseWriter):
     def __init__(self):
-        pass
+        super(MarkdownWriter, self).__init__()
 
     def _getNodeOpeningText(self, node, depth, will_traverse):
         nname = node.getName()
@@ -183,18 +183,20 @@ class _HTMLSectionDetails:
         self.headers = []
 
 
-class HTMLWriter:
+class HTMLWriter(_BaseWriter):
     def __init__(self, include_ToC=True):
         """
         include_ToC (boolean): Whether to generate a table of contents for the
             documentation.
         """
+        super(HTMLWriter, self).__init__()
+
         self.include_ToC = include_ToC
 
         # A list of _HTMLSectionDetails objects.
         self.html_sds = []
 
-        # A set of reserved HTML entity IDs (i.e. IDs that should not be
+        # A set of reserved HTML entity IDs (i.e., IDs that should not be
         # assigned to user content).
         self.RESERVED_IDS = {'toc', 'main'}
 
@@ -294,7 +296,7 @@ class HTMLWriter:
 
         return html_sd
 
-    def _assignHeaderIDs(self, document):
+    def _assignHeadingIDs(self, document):
         usedIDs = set(self.RESERVED_IDS)
 
         for section in document.sections:
@@ -369,87 +371,97 @@ class HTMLWriter:
 
         fileout.write('</ul>\n</nav>\n\n')
 
-    def _writeCommentsDiv(self, fileout, comments, indentstr):
-        fileout.write('{0}<div class="comments">\n'.format(indentstr))
+    def _getCommentsDiv(self, comments, indentstr):
+        retstr = '{0}<div class="comments">\n'.format(indentstr)
 
         if len(comments) == 1:
-            fileout.write('{0}  <p>Comment: {1}</p>\n'.format(
+            retstr += '{0}  <p>Comment: {1}</p>\n'.format(
                 indentstr, comments[0]
-            ))
+            )
 
         elif len(comments) > 1:
-            fileout.write(
-                '{0}  <p>Comments:</p>\n'.format(indentstr)
-            )
-            fileout.write('{0}  <ul>\n'.format(indentstr))
+            retstr += '{0}  <p>Comments:</p>\n'.format(indentstr)
+            retstr += '{0}  <ul>\n'.format(indentstr)
 
             for comment in comments:
-                fileout.write('{0}    <li>{1}</li>\n'.format(
-                        indentstr, comment
-                ))
+                retstr += '{0}    <li>{1}</li>\n'.format(indentstr, comment)
 
-            fileout.write('{0}  </ul>\n'.format(indentstr))
+            retstr += '{0}  </ul>\n'.format(indentstr)
 
-        fileout.write('{0}</div>\n'.format(indentstr))
+        retstr += '{0}</div>\n'.format(indentstr)
 
-    def _writeNodeList(self, nodelist, fileout, indent_level):
-        indentstr = '    ' * indent_level
-        subindentstr = '    ' * (indent_level + 1)
+        return retstr
 
-        fileout.write('{0}<ul class="entity_list">\n'.format(indentstr))
+    def _getNodeOpeningText(self, node, depth, will_traverse):
+        li_indentstr = '    ' * (depth)
+        indentstr = '    ' * (depth + 1)
 
-        for node in nodelist:
-            nname = node.getName()
+        nname = node.getName()
+
+        retstr = '{0}<li>\n'.format(li_indentstr)
+        retstr += '{0}<h3 id="{1}">{2}</h3>\n'.format(
+            indentstr, node.custom_id, nname
+        )
+
+        if node.entOBO_ID != nname and node.entOBO_ID != '':
+            retstr += '{0}<p>OBO ID: {1}</p>\n'.format(
+                    indentstr, node.entOBO_ID
+            )
+
+        retstr += '{0}<p>IRI: {1}</p>\n'.format(indentstr, node.entIRI)
+
+        if node.entdef != '':
+            retstr += '{0}<p>Definition: {1}</p>\n'.format(
+                    indentstr, node.entdef
+            )
+
+        if len(node.comments) > 0:
+            retstr += self._getCommentsDiv(node.comments, indentstr)
+
+        if will_traverse and len(node.children) > 0:
+            retstr += '{0}<ul class="entity_list">\n'.format(indentstr)
     
-            fileout.write('{0}<li>\n'.format(indentstr))
-            fileout.write('{0}<h3 id="{1}">{2}</h3>\n'.format(
-                subindentstr, node.custom_id, nname
-            ))
-    
-            if node.entOBO_ID != nname and node.entOBO_ID != '':
-                fileout.write('{0}<p>OBO ID: {1}</p>\n'.format(
-                        subindentstr, node.entOBO_ID
-                ))
+        return retstr
 
-            fileout.write('{0}<p>IRI: {1}</p>\n'.format(
-                subindentstr, node.entIRI
-            ))
+    def _getNodeClosingText(self, node, depth, traversed):
+        li_indentstr = '    ' * (depth)
+        indentstr = '    ' * (depth + 1)
+        retstr = ''
 
-            if node.entdef != '':
-                fileout.write('{0}<p>Definition: {1}</p>\n'.format(
-                        subindentstr, node.entdef
-                ))
+        if traversed and len(node.children) > 0:
+            retstr = '{0}</ul>\n'.format(indentstr)
 
-            if len(node.comments) > 0:
-                self._writeCommentsDiv(fileout, node.comments, subindentstr)
+        retstr += '{0}</li>\n'.format(li_indentstr)
 
-            if len(node.children) > 0:
-                self._writeNodeList(node.children, fileout, indent_level + 1)
-
-            fileout.write('{0}</li>\n'.format(indentstr))
-
-        fileout.write('{0}</ul>\n'.format(indentstr))
-
-    def _writeSections(self, sections, fileout):
-        md_section_cnt = 0
-
-        for section in sections:
-            if isinstance(section, MarkdownSection):
-                fileout.write(self.html_sds[md_section_cnt].htmltext)
-                md_section_cnt += 1
-            else:
-                if len(section.docnodes) > 0:
-                    self._writeNodeList(section.docnodes, fileout, 0)
-        
-                fileout.write('\n')
-        
-    def write(self, document, fileout):
+        return retstr
+  
+    def _writeMarkdownSection(self, section, sectioncnt, fileout):
         """
-        Generates a UTF-8 XHTML5 representation of a Document data structure.
+        Writes a MarkdownSection of a Document object.
 
-        document: A Document instance.
-        fileout: A writable file object.
+        section: A MarkdownSection object.
+        sectioncnt: The 0-based count of MarkdownSections that have been seen.
+        fileout: An output file stream.
         """
+        fileout.write(self.html_sds[sectioncnt].htmltext)
+
+    def _writeEntitiesSection(self, section, sectioncnt, fileout):
+        """
+        Writes an EntitiesSection of a Document object.
+
+        section: An EntitiesSection object.
+        sectioncnt: The 0-based count of EntitiesSections that have been seen.
+        fileout: An output file stream.
+        """
+        if len(section.docnodes) > 0:
+            fileout.write('<ul class="entity_list">\n')
+
+            for node in section.docnodes:
+                fileout.write(self.getNodeString(node))
+
+            fileout.write('</ul>\n\n')
+
+    def _writeHeader(self, document, fileout):
         header = """<!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
@@ -462,15 +474,11 @@ class HTMLWriter:
 <body>
 """
 
-        footer = '</body>\n</html>'
-
-        ufileout = codecs.getwriter('utf-8')(fileout)
-
         self.html_sds = []
-        self._assignHeaderIDs(document)
+        self._assignHeadingIDs(document)
 
         # If the first document section is a MarkdownSection with a level 1
-        # header, use it as the document's title.
+        # heading, use it as the document's title.
         titlestr = ''
         if (
             (len(document.sections) > 0) and
@@ -480,14 +488,13 @@ class HTMLWriter:
                 if line.startswith('# ') and len(line) > 2:
                     titlestr = line[2:]
 
-        ufileout.write(header.format(titlestr))
+        fileout.write(header.format(titlestr))
 
         if self.include_ToC:
-            self._writeToC(document, ufileout)
+            self._writeToC(document, fileout)
 
-        ufileout.write('<main>\n')
-        self._writeSections(document.sections, ufileout)
-        ufileout.write('</main>\n')
+        fileout.write('<main>\n')
 
-        ufileout.write(footer)
+    def _writeFooter(self, document, fileout):
+        fileout.write('</main>\n</body>\n</html>')
 

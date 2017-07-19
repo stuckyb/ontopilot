@@ -199,7 +199,7 @@ class DocumentNode:
         return text_nsg.getNodeString(self)
 
 
-class NodeStrGenerator:
+class NodeStrGenerator(object):
     """
     An abstract base class that defines a traversal algorithm and interface for
     converting a DocumentNode object into a string representation.  This ABC is
