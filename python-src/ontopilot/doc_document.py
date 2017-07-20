@@ -202,7 +202,26 @@ class DocumentNode:
                     child.filterByLabel(filtertxt, entset)
                 )
 
-            self.children = filtered_children
+            # Remove any duplicate nodes.
+            childIRIs = set()
+            deduped_filtered = []
+
+            for node in filtered_children:
+                if node.entIRI not in childIRIs:
+                    deduped_filtered.append(node)
+                    childIRIs.add(node.entIRI)
+
+            # Sort the filtered child nodes.  Nodes are sorted in the following
+            # order: entity label, OBO ID, IRI.
+            deduped_filtered.sort(
+                key=lambda node:
+                    (
+                        node.entlabel.lower(), node.entOBO_ID.lower(),
+                        node.entIRI.lower()
+                    )
+            )
+
+            self.children = deduped_filtered                   
 
         if filtertxt in self.entlabel:
             return [self]

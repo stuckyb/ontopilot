@@ -456,7 +456,8 @@ Entities:
 
 """
             },
-            # Multi-level automatic descendants retrieval with filtering.
+            # Multi-level automatic descendants retrieval with filtering.  This
+            # also tests duplicate deletion.
             {
                 'docspec':
 """
@@ -482,12 +483,12 @@ Entities:
             Label: imported test class 1
 
 """
-            },
+            }
         ]
 
         for testval in testvals:
             result = unicode(self.doc._parseDocSpec(testval['docspec']))
-            print result
+            #print result
             self.assertEqual(testval['expected'], result)
 
         # Test error conditions to make sure they are handled correctly.
