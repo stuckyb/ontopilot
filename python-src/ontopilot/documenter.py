@@ -62,8 +62,8 @@ class Documenter:
 
     def _buildDocumentNode(self, rawdocnode):
         """
-        Builds a DocumentNode objects that corresponds with the raw data
-        structure parsed from a strict YAML documentation specification.
+        Builds a list of DocumentNode objects that corresponds with the raw
+        data structure parsed from a strict YAML documentation specification.
         """
         if ('ID' not in rawdocnode) or not(isinstance(rawdocnode, dict)):
             raise DocumentationSpecificationError(
@@ -86,8 +86,8 @@ class Documenter:
 
         if 'children' in rawdocnode:
             for child in rawdocnode['children']:
-                childnode = self._buildDocumentNode(child)
-                docnode.children.append(childnode)
+                childnodes = self._buildDocumentNode(child)
+                docnode.children.extend(childnodes)
         elif 'descendants' in rawdocnode:
             desc_str = unicode(rawdocnode['descendants']).lower()
             if desc_str != 'none':
@@ -114,7 +114,11 @@ class Documenter:
                 if maxdepth != 0:
                     docnode.getDescendants(maxdepth)
 
-        return docnode
+        if 'filter_by_label' in rawdocnode:
+            filtertxt = unicode(rawdocnode['filter_by_label'])
+            return docnode.filterByLabel(filtertxt)
+        else:
+            return [docnode]
 
     def _buildEntitiesSection(self, rawsection):
         """
@@ -124,8 +128,8 @@ class Documenter:
         new_section = EntitiesSection()
 
         for rawdocnode in rawsection:
-            docnode = self._buildDocumentNode(rawdocnode)
-            new_section.docnodes.append(docnode)
+            new_docnodes = self._buildDocumentNode(rawdocnode)
+            new_section.docnodes.extend(new_docnodes)
 
         return new_section
 

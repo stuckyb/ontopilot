@@ -244,6 +244,29 @@ Entities:
 
 """
             },
+            # Multi-level automatic descendants retrieval with filtering.
+            {
+                'docspec':
+"""
+## Classes
+- ID: OBITO:0001
+  descendants: all
+  filter_by_label: " 1"
+""",
+                'expected':
+"""
+## Classes
+Entities:
+    IRI: http://purl.obolibrary.org/obo/OBITO_0001
+    OBO ID: OBITO:0001
+    Label: imported test class 1
+    Children:
+        IRI: http://purl.obolibrary.org/obo/OBTO_0010
+        OBO ID: OBTO:0010
+        Label: test class 1
+
+"""
+            },
             # Multiple mixed Markdown and entities sections.
             {
                 'docspec':
@@ -379,10 +402,12 @@ Other text.
         ent = self.ont.getExistingClass('OBTO:0011')
         ent.addSubclass('OBTO:0010')
 
-        # Run the multi-level descendants test again to make sure the cycle
-        # doesn't "trap" the algorithm and that the polyhierarchy is handled
+        # Run new multi-level descendants tests to make sure the cycle doesn't
+        # "trap" the algorithms and that the polyhierarchy is handled
         # correctly.
-        testval = {
+        testvals = [
+            # Multi-level automatic descendants retrieval.
+            {
                 'docspec':
 """
 ## Classes
@@ -430,10 +455,40 @@ Entities:
         Label: test class 3
 
 """
-        }
-        result = unicode(self.doc._parseDocSpec(testval['docspec']))
-        #print result
-        self.assertEqual(testval['expected'], result)
+            },
+            # Multi-level automatic descendants retrieval with filtering.
+            {
+                'docspec':
+"""
+## Classes
+- ID: OBITO:0001
+  descendants: all
+  filter_by_label: " 1"
+""",
+                'expected':
+"""
+## Classes
+Entities:
+    IRI: http://purl.obolibrary.org/obo/OBITO_0001
+    OBO ID: OBITO:0001
+    Label: imported test class 1
+    Children:
+        IRI: http://purl.obolibrary.org/obo/OBTO_0010
+        OBO ID: OBTO:0010
+        Label: test class 1
+        Children:
+            IRI: http://purl.obolibrary.org/obo/OBITO_0001
+            OBO ID: OBITO:0001
+            Label: imported test class 1
+
+"""
+            },
+        ]
+
+        for testval in testvals:
+            result = unicode(self.doc._parseDocSpec(testval['docspec']))
+            print result
+            self.assertEqual(testval['expected'], result)
 
         # Test error conditions to make sure they are handled correctly.
         testvals = [

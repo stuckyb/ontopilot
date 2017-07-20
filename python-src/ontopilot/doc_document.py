@@ -179,11 +179,41 @@ class DocumentNode:
                 )
         )
 
+    def filterByLabel(self, filtertxt, entset=None):
+        """
+        Filters this node and all of its descendants by label text.  Any nodes
+        with labels that do not include filtertxt will be removed from the
+        hierarchy, including the root node.  Returns a list of nodes.  If the
+        root node (i.e., this node) matches the search text, then the returned
+        list will only contain the root node.
+        """
+        if entset is None:
+            # Create a set to keep track of which nodes we've seen so that we
+            # can avoid getting stuck in graph cycles.
+            entset = set()
+
+        if self.entIRI not in entset:
+            entset.add(self.entIRI)
+
+            filtered_children = []
+
+            for child in self.children:
+                filtered_children.extend(
+                    child.filterByLabel(filtertxt, entset)
+                )
+
+            self.children = filtered_children
+
+        if filtertxt in self.entlabel:
+            return [self]
+        else:
+            return self.children
+
     def getName(self):
         """
         Returns a string that can be used as the text name for this node.  The
         string will be one of the contained element's label, OBO ID, or IRI.
-        Components will be evaluated in that order, and the forst non-empty
+        Components will be evaluated in that order, and the first non-empty
         value will be returned.
         """
         if self.entlabel != '':
