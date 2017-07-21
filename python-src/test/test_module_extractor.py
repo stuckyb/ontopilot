@@ -161,7 +161,6 @@ class Test_ModuleExtractor(unittest.TestCase):
         entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, relatives
         )
-
         self._compareEntitySets(
             ['OBTO:9999', 'OBTO:0010', 'OBTO:0011', 'OBTO:0012'], entset
         )
@@ -453,8 +452,43 @@ class Test_ModuleExtractor(unittest.TestCase):
             )
             self.assertTrue(axiom.getSubject().equals(owlent))
 
-        # Test a negative data property assertion.
+        # Test a negative object property assertion.
         ent = self.ont.createNewIndividual('OBTO:0044')
+        self.ont.createNewIndividual('OBTO:0045')
+        owlent = ent.getOWLAPIObj()
+        ent.addObjectPropertyFact('OBTO:0001', 'OBTO:0045', is_negative=True)
+
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.PROPERTY_ASSERTIONS}
+        )
+
+        self._compareEntitySets(['OBTO:0001', 'OBTO:0045'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.NEGATIVE_OBJECT_PROPERTY_ASSERTION)
+            )
+            self.assertTrue(axiom.getSubject().equals(owlent))
+
+        # Test a data property assertion.
+        ent = self.ont.createNewIndividual('OBTO:0046')
+        owlent = ent.getOWLAPIObj()
+        ent.addDataPropertyFact('OBTO:0020', '"literal"^^xsd:string')
+
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.PROPERTY_ASSERTIONS}
+        )
+
+        self._compareEntitySets(['OBTO:0020'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.DATA_PROPERTY_ASSERTION)
+            )
+            self.assertTrue(axiom.getSubject().equals(owlent))
+
+        # Test a negative data property assertion.
+        ent = self.ont.createNewIndividual('OBTO:0047')
         owlent = ent.getOWLAPIObj()
         ent.addDataPropertyFact(
             'OBTO:0020', '"literal"^^xsd:string', is_negative=True
