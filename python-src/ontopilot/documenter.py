@@ -114,9 +114,14 @@ class Documenter:
                 if maxdepth != 0:
                     docnode.getDescendants(maxdepth)
 
+        label_filter = IRI_filter = ''
         if 'filter_by_label' in rawdocnode:
-            filtertxt = unicode(rawdocnode['filter_by_label'])
-            return docnode.filterByLabel(filtertxt)
+            label_filter = unicode(rawdocnode['filter_by_label'])
+        if 'filter_by_IRI' in rawdocnode:
+            IRI_filter = unicode(rawdocnode['filter_by_IRI'])
+
+        if label_filter != '' or IRI_filter != '':
+            return docnode.filterNode(label_filter, IRI_filter)
         else:
             return [docnode]
 

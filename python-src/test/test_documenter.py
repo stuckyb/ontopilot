@@ -267,6 +267,27 @@ Entities:
 
 """
             },
+            # Multi-level automatic descendants retrieval with both label and
+            # IRI filtering.
+            {
+                'docspec':
+"""
+## Classes
+- ID: OBITO:0001
+  descendants: all
+  filter_by_label: " 1"
+  filter_by_IRI: "OBITO_"
+""",
+                'expected':
+"""
+## Classes
+Entities:
+    IRI: http://purl.obolibrary.org/obo/OBITO_0001
+    OBO ID: OBITO:0001
+    Label: imported test class 1
+
+"""
+            },
             # Multiple mixed Markdown and entities sections.
             {
                 'docspec':

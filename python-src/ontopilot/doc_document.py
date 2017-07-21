@@ -179,13 +179,16 @@ class DocumentNode:
                 )
         )
 
-    def filterByLabel(self, filtertxt, entset=None):
+    def filterNode(self, label_filter, IRI_filter, entset=None):
         """
-        Filters this node and all of its descendants by label text.  Any nodes
-        with labels that do not include filtertxt will be removed from the
-        hierarchy, including the root node.  Returns a list of nodes.  If the
-        root node (i.e., this node) matches the search text, then the returned
-        list will only contain the root node.
+        Filters this node and all of its descendants by label text and/or IRI
+        string.  Any nodes that do not match the filter(s) will be removed from
+        the hierarchy, including the root node.  Returns a list of nodes.  If
+        the root node (i.e., this node) matches the filter(s), then the
+        returned list will only contain the root node.
+
+        label_filter: Label filter string.
+        IRI_filter: IRI filter string.
         """
         if entset is None:
             # Create a set to keep track of which nodes we've seen so that we
@@ -199,7 +202,7 @@ class DocumentNode:
 
             for child in self.children:
                 filtered_children.extend(
-                    child.filterByLabel(filtertxt, entset)
+                    child.filterNode(label_filter, IRI_filter, entset)
                 )
 
             # Remove any duplicate nodes.
@@ -223,7 +226,7 @@ class DocumentNode:
 
             self.children = deduped_filtered                   
 
-        if filtertxt in self.entlabel:
+        if (label_filter in self.entlabel) and (IRI_filter in self.entIRI):
             return [self]
         else:
             return self.children
