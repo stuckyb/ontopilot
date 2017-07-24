@@ -5,12 +5,16 @@
 // The width of the table of contents pane.
 toc_width = 24%
 
-// The base color to use for the overal color scheme.
-base_color = #0040ff
-
-// Color definitions for the main content pane.
-main_bg_color = lighten(desaturate(base_color, 60%), 90%)
+// The base colors to use for the overal color scheme.
+base_color = #0040ff	// Blue color scheme.
+main_bg_color = lighten(desaturate(base_color, 60%), 86%)
 main_text_color = darken(base_color, 84%)
+enth3_bg_color = lighten(spin(base_color, -10deg), 40%)
+
+base_color = #52ee1c	// Green color scheme.
+main_bg_color = lighten(desaturate(base_color, 30%), 80%)
+main_text_color = darken(base_color, 84%)
+enth3_bg_color = lighten(spin(base_color, 0deg), 40%)
 
 body
     margin: 0
@@ -26,7 +30,7 @@ main
 
 a
     text-decoration: none
-    color: lighten(main_text_color, 36%)
+    color: lighten(main_text_color, 30%)
 
 a:hover
     text-decoration: underline
@@ -41,7 +45,6 @@ h1
     margin: 0
     margin-bottom: 1em
 
-h2_bg_color = rgb(#91d0ff)
 h2
     font-size: 140%
     margin: 1em 0
@@ -83,7 +86,6 @@ ul.entity_list > li
 ul.entity_list ul.entity_list > li
     margin-right: 0.8em
 
-enth3_bg_color = lighten(spin(base_color, -10deg), 60%)
 ul.entity_list h3
     margin: 0
     background: enth3_bg_color
