@@ -111,6 +111,9 @@ class _OntologyEntity:
         """
         labeltxt = labeltxt.strip()
 
+        if labeltxt[0] == "'" and labeltxt[-1] == "'":
+            labeltxt = labeltxt[1:-1]
+
         labelannot = self.df.getOWLAnnotation(
             self.df.getRDFSLabel(), self.df.getOWLLiteral(labeltxt, 'en')
         )
@@ -136,6 +139,12 @@ class _OntologyEntity:
         annotaxiom = self.df.getOWLAnnotationAssertionAxiom(self.entityIRI, commentannot)
 
         self.ontology.addEntityAxiom(annotaxiom)
+
+    def getComments(self):
+        """
+        Returns a list of all rdfs:comment annotation values for this entity.
+        """
+        return self.getAnnotationValues(self.df.getRDFSComment().getIRI())
 
     def addAnnotation(self, annotprop_id, annottxt):
         """

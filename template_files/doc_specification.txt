@@ -1,0 +1,16 @@
+# ontname Documentation
+
+This is a sample documentation specification file.
+
+
+## Classes
+
+- ID: BFO:'continuant'
+  descendants: all
+
+
+## Properties and individuals
+
+- ID: OPSO:'sample property'
+- ID: OPSO:'sample individual' 
+

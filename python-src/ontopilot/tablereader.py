@@ -110,6 +110,8 @@ class TableRow:
                     self
                 )
             else:
+                # If self.optional == [0], it means that all non-required
+                # columns are optional (i.e., will not trigger a warning).
                 if (self.optional != [0]) and (colname not in self.optional):
                     logger.warning(
                         'The column "' + colname
@@ -175,6 +177,7 @@ class BaseTable:
         self.defaultvals = default_vals
 
         self.rowcnt = 0
+        self.colnames = []
 
     def getTableReader(self):
         return self.tablereader
@@ -184,6 +187,13 @@ class BaseTable:
 
     def getTableName(self):
         return self.name
+
+    def getColumnNames(self):
+        """
+        Returns a list of the column names in the table, in the order in which
+        they were defined in the original document.
+        """
+        return self.colnames
 
     def setRequiredColumns(self, colnames):
         """
@@ -217,7 +227,10 @@ class BaseTable:
         # are not case sensitive.  From a modularity standpoint, this should be
         # done in _TableRow, but it is more efficient to do it here, since the
         # conversion need be done only once.
-        self.optional_cols = [colname.lower() for colname in colnames]
+        if colnames == [0]:
+            self.optional_cols = colnames
+        else:
+            self.optional_cols = [colname.lower() for colname in colnames]
 
     def setDefaultValues(self, defaultvals):
         """

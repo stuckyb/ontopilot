@@ -683,6 +683,19 @@ class Test_OWLOntologyBuilder(unittest.TestCase):
             expstr, self.oob._expandDefinition(sourcestr)
         )
 
+        # Test an expansion with an empty set of braces.
+        self.assertEqual(
+            "An {} example definition.",
+            self.oob._expandDefinition('An {} example definition.')
+        )
+
+        # Test an expansion with an empty set of braces followed by a label
+        # element.
+        self.assertEqual(
+            "An {} example 'test class 1' (OBTO:0010).",
+            self.oob._expandDefinition('An {} example {test class 1}.')
+        )
+
         # Test an expansion where the definition does not contain any label
         # text elements.
         self.assertEqual(

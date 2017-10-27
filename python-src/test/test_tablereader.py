@@ -268,6 +268,13 @@ class _TestTableReader:
             'The column "column 7" was missing in the table row.'
         ))
 
+        # Now test making all non-required columns optional.
+        table.setOptionalColumns([0])
+        row = table.next()
+
+        # This should no longer trigger a warning.
+        row['column 7']
+
     def test_defaults(self):
         """
         Tests setting and using default column values.

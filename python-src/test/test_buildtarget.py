@@ -15,6 +15,7 @@
 
 
 # Python imports.
+import os
 from ontopilot.buildtarget import BuildTarget, BuildTargetWithConfig
 import unittest
 
@@ -89,6 +90,27 @@ class TestBuildTarget(unittest.TestCase):
         target2.build_required = False
         target1.addDependency(target2)
         self.assertFalse(target1.isBuildRequired())
+
+    def test_getSourceDirectory(self):
+        """
+        Note that this method does not test the JAR/temporary directory
+        functionality.
+        """
+        target = Target1()
+
+        testdir = os.path.dirname(os.path.realpath(__file__))
+
+        if '.jar' not in testdir:
+            root_srcdir = os.path.abspath(os.path.join(testdir, '../..'))
+
+            with target.getSourceDirectory('') as sourcedir:
+                self.assertEqual(root_srcdir, sourcedir)
+
+            with target.getSourceDirectory('web') as sourcedir:
+                self.assertEqual(root_srcdir + '/web', sourcedir)
+
+            with target.getSourceDirectory('web/') as sourcedir:
+                self.assertEqual(root_srcdir + '/web', sourcedir)
 
     def test_run(self):
         # Test a single target with no dependencies.

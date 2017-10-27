@@ -156,7 +156,7 @@ class ProjectCreator:
         dirnames = [
             config.getEntitySourceDir(), config.getImportsSrcDir(),
             os.path.dirname(config.getOntologyFilePath()),
-            config.getImportsDir()
+            config.getImportsDir(), os.path.dirname(config.getDocsFilePath())
         ]
 
         # Create the project directories.
@@ -249,6 +249,14 @@ class ProjectCreator:
         srcpath = os.path.join(self.templatedir, 'sample-base.owl')
         destpath = config.getBaseOntologyPath()
         self._robustCopy(srcpath, destpath)
+
+        # Copy and customize the documentation specification file.
+        docspec_fname = 'doc_specification.txt'
+        srcpath = os.path.join(self.templatedir, docspec_fname)
+        destpath = os.path.join(
+            os.path.dirname(config.getDocSpecificationFile()), docspec_fname
+        )
+        self._copyAndModify(srcpath, destpath, replacements)
 
     def createProject(self):
         """

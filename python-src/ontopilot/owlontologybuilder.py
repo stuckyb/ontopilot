@@ -692,15 +692,16 @@ class OWLOntologyBuilder:
         # expression, the '?' after the '+' qualifier specifies a non-greedy
         # match; this is required for definitions that contain multiple label
         # elements.
-        label_split_re = re.compile(r'(\{.+?\})')
+        label_split_re = re.compile(r'(\{.*?\})')
 
         # Define a regular expression for parsing labels with or without a
-        # prefix, with or without enclosing single quotes.  Used named groups
+        # prefix, with or without enclosing single quotes.  Use named groups
         # to reference the parts of the regular expression match that we need
         # to work with.
         labelre = re.compile(
             r"\{(?P<idonly>\$)?(?P<prefix>[A-Za-z]+(_[A-Za-z]+)?:)?(?P<labeltxt>.+)\}$"
         )
+
         defparts = label_split_re.split(deftext)
 
         newdef = ''

@@ -20,7 +20,13 @@ import unicodedata
 from ontology import Ontology
 
 # Java imports.
-from org.semanticweb.owlapi.model import AxiomType
+from org.semanticweb.owlapi.model import AxiomType, OWLClass, OWLSubClassOfAxiom, OWLEquivalentClassesAxiom, OWLDisjointClassesAxiom, OWLObjectPropertyExpression, OWLSubObjectPropertyOfAxiom, OWLObjectPropertyDomainAxiom, OWLObjectPropertyRangeAxiom, OWLInverseObjectPropertiesAxiom, OWLEquivalentObjectPropertiesAxiom, OWLDisjointObjectPropertiesAxiom, OWLDataPropertyExpression, OWLSubDataPropertyOfAxiom, OWLDataPropertyDomainAxiom, OWLDataPropertyRangeAxiom, OWLEquivalentDataPropertiesAxiom, OWLDisjointDataPropertiesAxiom, OWLIndividual, OWLClassAssertionAxiom, OWLDataPropertyAssertionAxiom, OWLObjectPropertyAssertionAxiom, OWLNegativeObjectPropertyAssertionAxiom, OWLNegativeDataPropertyAssertionAxiom, OWLSymmetricObjectPropertyAxiom, OWLAsymmetricObjectPropertyAxiom, OWLReflexiveObjectPropertyAxiom, OWLIrreflexiveObjectPropertyAxiom, OWLTransitiveObjectPropertyAxiom, OWLFunctionalObjectPropertyAxiom, OWLInverseFunctionalObjectPropertyAxiom, OWLFunctionalDataPropertyAxiom
+
+from org.semanticweb.owlapi.model.parameters import Imports
+from org.semanticweb.owlapi.model.parameters.Navigation import (
+    IN_SUB_POSITION, IN_SUPER_POSITION
+)
+from org.semanticweb.owlapi.search import Filters
 from uk.ac.manchester.cs.owlapi.modularity import SyntacticLocalityModuleExtractor
 from uk.ac.manchester.cs.owlapi.modularity import ModuleType
 from org.semanticweb.owlapi.model import EntityType
@@ -206,7 +212,7 @@ class ModuleExtractor:
 
         owlent = entity.getOWLAPIObj()
 
-        entset, axiomset = self.getRelatedComponents(owlent, rel_types)
+        entset, axiomset = self.getRelatedComponents(owlent, rel_types, True)
 
         self.saved_axioms.update(axiomset)
         self.signatures[method].update(entset)
@@ -235,7 +241,7 @@ class ModuleExtractor:
 
         owlent = entity.getOWLAPIObj()
 
-        entset, axiomset = self.getRelatedComponents(owlent, rel_types)
+        entset, axiomset = self.getRelatedComponents(owlent, rel_types, True)
 
         self.excluded_entities.update(entset)
 
@@ -314,7 +320,7 @@ class ModuleExtractor:
             # preserve its characteristics.
             proptypes = (EntityType.OBJECT_PROPERTY, EntityType.DATA_PROPERTY)
             if owlent.getEntityType() in proptypes:
-                axioms = self._getPropertyCharacteristicsAxioms(owlent)
+                axioms = self._getPropertyCharacteristicsAxioms(owlent, True)
                 for axiom in axioms:
                     target.addEntityAxiom(axiom)
 
@@ -344,45 +350,93 @@ class ModuleExtractor:
                         if annot_ent is not None:
                             signature.add(annot_ent.getOWLAPIObj())
 
-    def _getPropertyCharacteristicsAxioms(self, entity):
+    def _getAxioms(
+        self, axiom_type, entity_type, entity, include_imports,
+        position=IN_SUB_POSITION
+    ):
+        """
+        This is an alternative (partial) implementation of the corresponding
+        getAxioms() method in OWLAxiomIndex.  The OWL API implementation is
+        buggy when searches include the imports closure, at least up to version
+        4.3.1.  For example, when "subclass of" axioms are retrieved using
+        Imports.INCLUDED, the OWL API implementation ends up searching for
+        entities of type OWLClassImpl rather than OWLClass, which causes the
+        search method in the Internals instance to fail, and ends up returning
+        invalid results.  This implementation avoids those problems.
+
+        axiom_type: The type of axiom to search for (should be an OWL API class
+            object).
+        entity_type: The type of entity referenced in the axioms (should be an
+            OWL API class object, and should be the type (or supertype) of
+            "entity").
+        include_imports: Whether to search the imports closure.
+        position: Whether "entity" should be the sub- or super-entity in the
+            returned axioms.  Ignored for axioms that don't have sub/super
+            positions.
+        """
+        if include_imports:
+            axioms = set()
+
+            for ont in self.owlont.getImportsClosure():
+                new_axioms = ont.getAxioms(
+                    axiom_type, entity_type, entity, Imports.EXCLUDED, position
+                )
+                axioms.update(new_axioms)
+        else:
+            axioms = self.owlont.getAxioms(
+                axiom_type, entity_type, entity, Imports.EXCLUDED, position
+            )
+
+        return axioms
+
+    def _getPropertyCharacteristicsAxioms(self, entity, include_imports=True):
         """
         Gets all axioms that define the characteristics of the target property.
 
         entity: An OWL API OWLEntity object for an object or data property.
+        include_imports: Whether to search the ontology's imports closure.
         """
         axiomset = set()
 
         if entity.getEntityType() == EntityType.OBJECT_PROPERTY:
-            axiomset.update(
-                self.owlont.getSymmetricObjectPropertyAxioms(entity)
-            )
-            axiomset.update(
-                self.owlont.getTransitiveObjectPropertyAxioms(entity)
-            )
-            axiomset.update(
-                self.owlont.getReflexiveObjectPropertyAxioms(entity)
-            )
-            axiomset.update(
-                self.owlont.getIrreflexiveObjectPropertyAxioms(entity)
-            )
-            axiomset.update(
-                self.owlont.getFunctionalObjectPropertyAxioms(entity)
-            )
-            axiomset.update(
-                self.owlont.getInverseFunctionalObjectPropertyAxioms(entity)
-            )
-            axiomset.update(
-                self.owlont.getAsymmetricObjectPropertyAxioms(entity)
-            )
+            axiomset.update(self._getAxioms(
+                OWLSymmetricObjectPropertyAxiom, OWLObjectPropertyExpression,
+                entity, include_imports
+            ))
+            axiomset.update(self._getAxioms(
+                OWLAsymmetricObjectPropertyAxiom, OWLObjectPropertyExpression,
+                entity, include_imports
+            ))
+            axiomset.update(self._getAxioms(
+                OWLTransitiveObjectPropertyAxiom, OWLObjectPropertyExpression,
+                entity, include_imports
+            ))
+            axiomset.update(self._getAxioms(
+                OWLReflexiveObjectPropertyAxiom, OWLObjectPropertyExpression,
+                entity, include_imports
+            ))
+            axiomset.update(self._getAxioms(
+                OWLIrreflexiveObjectPropertyAxiom, OWLObjectPropertyExpression,
+                entity, include_imports
+            ))
+            axiomset.update(self._getAxioms(
+                OWLFunctionalObjectPropertyAxiom, OWLObjectPropertyExpression,
+                entity, include_imports
+            ))
+            axiomset.update(self._getAxioms(
+                OWLInverseFunctionalObjectPropertyAxiom, OWLObjectPropertyExpression,
+                entity, include_imports
+            ))
 
         elif entity.getEntityType() == EntityType.DATA_PROPERTY:
-            axiomset.update(
-                self.owlont.getFunctionalDataPropertyAxioms(entity)
-            )
+            axiomset.update(self._getAxioms(
+                OWLFunctionalDataPropertyAxiom, OWLDataPropertyExpression,
+                entity, include_imports
+            ))
 
         return axiomset
 
-    def getRelatedComponents(self, target_entity, rel_types):
+    def getRelatedComponents(self, target_entity, rel_types, include_imports=True):
         """
         Gets all entities and axioms that are recursively (i.e., either
         directly or indirectly) related to the target entity by the specified
@@ -393,6 +447,7 @@ class ModuleExtractor:
 
         target_entity: An OWL API OWLEntity object.
         rel_types: A set of related axiom type constants.
+        include_imports: Whether to search the ontology's imports closure.
         """
         entset = set()
         axiomset = set()
@@ -406,7 +461,9 @@ class ModuleExtractor:
 
             entset.add(entity)
 
-            new_sets = self.getDirectlyRelatedComponents(entity, rel_types)
+            new_sets = self.getDirectlyRelatedComponents(
+                entity, rel_types, include_imports
+            )
             new_entset, new_axiomset = new_sets
 
             axiomset.update(new_axiomset)
@@ -419,7 +476,7 @@ class ModuleExtractor:
 
         return (entset, axiomset)
 
-    def getDirectlyRelatedComponents(self, entity, rel_types):
+    def getDirectlyRelatedComponents(self, entity, rel_types, include_imports=True):
         """
         Gets all entities and axioms that are directly related to the target
         entity by the specified axiom types.  Returns a tuple containing two
@@ -428,23 +485,34 @@ class ModuleExtractor:
 
         entity: An OWL API OWLEntity object.
         rel_types: A set of related axiom type constants.
+        include_imports: Whether to search the ontology's imports closure.
         """
         if entity.getEntityType() == EntityType.CLASS:
-            return self._getRelComponentsForClass(entity, rel_types)
+            return self._getRelComponentsForClass(
+                entity, rel_types, include_imports
+            )
 
         elif entity.getEntityType() == EntityType.OBJECT_PROPERTY:
-            return self._getRelComponentsForObjectProp(entity, rel_types)
+            return self._getRelComponentsForObjectProp(
+                entity, rel_types, include_imports
+            )
 
         elif entity.getEntityType() == EntityType.DATA_PROPERTY:
-            return self._getRelComponentsForDataProp(entity, rel_types)
+            return self._getRelComponentsForDataProp(
+                entity, rel_types, include_imports
+            )
 
         elif entity.getEntityType() == EntityType.ANNOTATION_PROPERTY:
-            return self._getRelComponentsForAnnotProp(entity, rel_types)
+            return self._getRelComponentsForAnnotProp(
+                entity, rel_types, include_imports
+            )
 
         elif entity.getEntityType() == EntityType.NAMED_INDIVIDUAL:
-            return self._getRelComponentsForIndividual(entity, rel_types)
+            return self._getRelComponentsForIndividual(
+                entity, rel_types, include_imports
+            )
 
-    def _getRelComponentsForClass(self, entity, rel_types):
+    def _getRelComponentsForClass(self, entity, rel_types, include_imports):
         """
         Gets all entities and axioms that are directly related to a class by
         the specified axiom types.  Returns a tuple containing two sets: 1) A
@@ -453,12 +521,29 @@ class ModuleExtractor:
 
         entity: An OWL API OWLEntity object for a class.
         rel_types: A set of related axiom type constants.
+        include_imports: Whether to search the ontology's imports closure.
         """
         entset = set()
         axiomset = set()
 
+        # As a general comment, note that we use the generic getAxioms() search
+        # method of OWLAxiomIndex, because it allows searching the imports
+        # closure, rather than the more specialized search methods (e.g.,
+        # getSubClassAxiomsForSubClass()), which do not allow searching the
+        # imports closure.  This should not incur any performance penalty,
+        # because an examination of the OWL API source code reveals that the
+        # specialized search methods just call getAxioms() anyway.
+        # Unfortunately, the OWL API implementation of getAxioms() is buggy
+        # when the search includes the imports closure, so we actually have to
+        # use the alternative implementation _getAxioms(), defined above in
+        # this class.  See the comments for _getAxioms() for more details.
+
+        from uk.ac.manchester.cs.owl.owlapi import OWLClassImpl
         if rel_axiom_types.ANCESTORS in rel_types:
-            axioms = self.owlont.getSubClassAxiomsForSubClass(entity)
+            axioms = self._getAxioms(
+                OWLSubClassOfAxiom, OWLClass, entity, include_imports,
+                IN_SUB_POSITION
+            )
             for axiom in axioms:
                 super_ce = axiom.getSuperClass()
                 if not(super_ce.isAnonymous()):
@@ -466,7 +551,10 @@ class ModuleExtractor:
                     axiomset.add(axiom)
 
         if rel_axiom_types.DESCENDANTS in rel_types:
-            axioms = self.owlont.getSubClassAxiomsForSuperClass(entity)
+            axioms = self._getAxioms(
+                OWLSubClassOfAxiom, OWLClass, entity, include_imports,
+                IN_SUPER_POSITION
+            )
             for axiom in axioms:
                 sub_ce = axiom.getSubClass()
                 if not(sub_ce.isAnonymous()):
@@ -474,7 +562,9 @@ class ModuleExtractor:
                     axiomset.add(axiom)
 
         if rel_axiom_types.EQUIVALENTS in rel_types:
-            rawaxioms = self.owlont.getEquivalentClassesAxioms(entity)
+            rawaxioms = self._getAxioms(
+                OWLEquivalentClassesAxiom, OWLClass, entity, include_imports
+            )
             for rawaxiom in rawaxioms:
                 # Only examine pairwise axioms so we don't add axioms with
                 # unnamed class expressions.
@@ -492,7 +582,9 @@ class ModuleExtractor:
                             axiomset.add(axiom)
 
         if rel_axiom_types.DISJOINTS in rel_types:
-            rawaxioms = self.owlont.getDisjointClassesAxioms(entity)
+            rawaxioms = self._getAxioms(
+                OWLDisjointClassesAxiom, OWLClass, entity, include_imports
+            )
             for rawaxiom in rawaxioms:
                 # Only examine pairwise axioms so we don't add axioms with
                 # unnamed class expressions.
@@ -513,7 +605,7 @@ class ModuleExtractor:
 
         return (entset, axiomset)
 
-    def _getRelComponentsForObjectProp(self, entity, rel_types):
+    def _getRelComponentsForObjectProp(self, entity, rel_types, include_imports):
         """
         Gets all entities and axioms that are directly related to an object
         property by the specified axiom types.  Returns a tuple containing two
@@ -522,13 +614,15 @@ class ModuleExtractor:
 
         entity: An OWL API OWLEntity object for an object property.
         rel_types: A set of related axiom type constants.
+        include_imports: Whether to search the ontology's imports closure.
         """
         entset = set()
         axiomset = set()
 
         if rel_axiom_types.ANCESTORS in rel_types:
-            axioms = self.owlont.getObjectSubPropertyAxiomsForSubProperty(
-                entity
+            axioms = self._getAxioms(
+                OWLSubObjectPropertyOfAxiom, OWLObjectPropertyExpression,
+                entity, include_imports, IN_SUB_POSITION
             )
             for axiom in axioms:
                 super_pe = axiom.getSuperProperty()
@@ -537,8 +631,9 @@ class ModuleExtractor:
                     axiomset.add(axiom)
 
         if rel_axiom_types.DESCENDANTS in rel_types:
-            axioms = self.owlont.getObjectSubPropertyAxiomsForSuperProperty(
-                entity
+            axioms = self._getAxioms(
+                OWLSubObjectPropertyOfAxiom, OWLObjectPropertyExpression,
+                entity, include_imports, IN_SUPER_POSITION
             )
             for axiom in axioms:
                 sub_pe = axiom.getSubProperty()
@@ -547,7 +642,10 @@ class ModuleExtractor:
                     axiomset.add(axiom)
 
         if rel_axiom_types.DOMAINS in rel_types:
-            axioms = self.owlont.getObjectPropertyDomainAxioms(entity)
+            axioms = self._getAxioms(
+                OWLObjectPropertyDomainAxiom, OWLObjectPropertyExpression,
+                entity, include_imports
+            )
             for axiom in axioms:
                 cexp = axiom.getDomain()
                 if not(cexp.isAnonymous()):
@@ -555,7 +653,10 @@ class ModuleExtractor:
                     axiomset.add(axiom)
 
         if rel_axiom_types.RANGES in rel_types:
-            axioms = self.owlont.getObjectPropertyRangeAxioms(entity)
+            axioms = self._getAxioms(
+                OWLObjectPropertyRangeAxiom, OWLObjectPropertyExpression,
+                entity, include_imports
+            )
             for axiom in axioms:
                 cexp = axiom.getRange()
                 if not(cexp.isAnonymous()):
@@ -563,7 +664,10 @@ class ModuleExtractor:
                     axiomset.add(axiom)
 
         if rel_axiom_types.INVERSES in rel_types:
-            axioms = self.owlont.getInverseObjectPropertyAxioms(entity)
+            axioms = self._getAxioms(
+                OWLInverseObjectPropertiesAxiom, OWLObjectPropertyExpression,
+                entity, include_imports
+            )
             for axiom in axioms:
                 for pexp in axiom.getPropertiesMinus(entity):
                     if not(pexp.isAnonymous()):
@@ -571,7 +675,10 @@ class ModuleExtractor:
                         axiomset.add(axiom)
 
         if rel_axiom_types.EQUIVALENTS in rel_types:
-            rawaxioms = self.owlont.getEquivalentObjectPropertiesAxioms(entity)
+            rawaxioms = self._getAxioms(
+                OWLEquivalentObjectPropertiesAxiom,
+                OWLObjectPropertyExpression, entity, include_imports
+            )
             for rawaxiom in rawaxioms:
                 # Only examine pairwise axioms so we don't add axioms with
                 # unnamed property expressions.
@@ -588,7 +695,10 @@ class ModuleExtractor:
                             axiomset.add(axiom)
 
         if rel_axiom_types.DISJOINTS in rel_types:
-            rawaxioms = self.owlont.getDisjointObjectPropertiesAxioms(entity)
+            rawaxioms = self._getAxioms(
+                OWLDisjointObjectPropertiesAxiom, OWLObjectPropertyExpression,
+                entity, include_imports
+            )
             for rawaxiom in rawaxioms:
                 # Only examine pairwise axioms so we don't add axioms with
                 # unnamed property expressions.
@@ -606,7 +716,7 @@ class ModuleExtractor:
 
         return (entset, axiomset)
 
-    def _getRelComponentsForDataProp(self, entity, rel_types):
+    def _getRelComponentsForDataProp(self, entity, rel_types, include_imports):
         """
         Gets all entities and axioms that are directly related to a data
         property by the specified axiom types.  Returns a tuple containing two
@@ -615,13 +725,15 @@ class ModuleExtractor:
 
         entity: An OWL API OWLEntity object for a data property.
         rel_types: A set of related axiom type constants.
+        include_imports: Whether to search the ontology's imports closure.
         """
         entset = set()
         axiomset = set()
 
         if rel_axiom_types.ANCESTORS in rel_types:
-            axioms = self.owlont.getDataSubPropertyAxiomsForSubProperty(
-                entity
+            axioms = self._getAxioms(
+                OWLSubDataPropertyOfAxiom, OWLDataPropertyExpression,
+                entity, include_imports, IN_SUB_POSITION
             )
             for axiom in axioms:
                 super_pe = axiom.getSuperProperty()
@@ -630,8 +742,9 @@ class ModuleExtractor:
                     axiomset.add(axiom)
 
         if rel_axiom_types.DESCENDANTS in rel_types:
-            axioms = self.owlont.getDataSubPropertyAxiomsForSuperProperty(
-                entity
+            axioms = self._getAxioms(
+                OWLSubDataPropertyOfAxiom, OWLDataPropertyExpression,
+                entity, include_imports, IN_SUPER_POSITION
             )
             for axiom in axioms:
                 sub_pe = axiom.getSubProperty()
@@ -640,7 +753,10 @@ class ModuleExtractor:
                     axiomset.add(axiom)
 
         if rel_axiom_types.DOMAINS in rel_types:
-            axioms = self.owlont.getDataPropertyDomainAxioms(entity)
+            axioms = self._getAxioms(
+                OWLDataPropertyDomainAxiom, OWLDataPropertyExpression, entity,
+                include_imports
+            )
             for axiom in axioms:
                 cexp = axiom.getDomain()
                 if not(cexp.isAnonymous()):
@@ -648,12 +764,18 @@ class ModuleExtractor:
                     axiomset.add(axiom)
 
         if rel_axiom_types.RANGES in rel_types:
-            axioms = self.owlont.getDataPropertyRangeAxioms(entity)
+            axioms = self._getAxioms(
+                OWLDataPropertyRangeAxiom, OWLDataPropertyExpression, entity,
+                include_imports
+            )
             for axiom in axioms:
                 axiomset.add(axiom)
 
         if rel_axiom_types.EQUIVALENTS in rel_types:
-            rawaxioms = self.owlont.getEquivalentDataPropertiesAxioms(entity)
+            rawaxioms = self._getAxioms(
+                OWLEquivalentDataPropertiesAxiom, OWLDataPropertyExpression,
+                entity, include_imports
+            )
             for rawaxiom in rawaxioms:
                 # Only examine pairwise axioms so we don't add axioms with
                 # unnamed property expressions.
@@ -670,7 +792,10 @@ class ModuleExtractor:
                             axiomset.add(axiom)
 
         if rel_axiom_types.DISJOINTS in rel_types:
-            rawaxioms = self.owlont.getDisjointDataPropertiesAxioms(entity)
+            rawaxioms = self._getAxioms(
+                OWLDisjointDataPropertiesAxiom, OWLDataPropertyExpression,
+                entity, include_imports
+            )
             for rawaxiom in rawaxioms:
                 # Only examine pairwise axioms so we don't add axioms with
                 # unnamed property expressions.
@@ -688,7 +813,7 @@ class ModuleExtractor:
 
         return (entset, axiomset)
 
-    def _getRelComponentsForAnnotProp(self, entity, rel_types):
+    def _getRelComponentsForAnnotProp(self, entity, rel_types, include_imports):
         """
         Gets all entities and axioms that are directly related to an annotation
         property by the specified axiom types.  Returns a tuple containing two
@@ -697,32 +822,41 @@ class ModuleExtractor:
 
         entity: An OWL API OWLEntity object for an annotation property.
         rel_types: A set of related axiom type constants.
+        include_imports: Whether to search the ontology's imports closure.
         """
         entset = set()
         axiomset = set()
 
-        if rel_axiom_types.ANCESTORS in rel_types:
-            axioms = self.owlont.getSubAnnotationPropertyOfAxioms(entity)
-            for axiom in axioms:
-                    entset.add(axiom.getSuperProperty())
-                    axiomset.add(axiom)
+        # The get() method in the OWL API Internals object does not handle
+        # annotation property sub/super relationships, so we cannot use the
+        # _getAxioms() method implemented above.  Instead, we implement the
+        # searches directly using the filterAxioms() method of OWLAxiomIndex,
+        # which in turn calls filterAxioms() in Internals.
 
-        if rel_axiom_types.DESCENDANTS in rel_types:
-            # The OWL API does not include a method to retrieve annotation
-            # subproperty axioms by the parent property, so we instead examine
-            # all annotation subproperty axioms to see which ones have the
-            # current entity as a superproperty.
-            axioms = self.owlont.getAxioms(
-                AxiomType.SUB_ANNOTATION_PROPERTY_OF, True
+        if include_imports:
+            importsval = Imports.INCLUDED
+        else:
+            importsval = Imports.EXCLUDED
+        
+        if rel_axiom_types.ANCESTORS in rel_types:
+            axioms = self.owlont.filterAxioms(
+                Filters.subAnnotationWithSub, entity, importsval
             )
             for axiom in axioms:
-                if axiom.getSuperProperty().equals(entity):
-                    entset.add(axiom.getSubProperty())
-                    axiomset.add(axiom)
+                entset.add(axiom.getSuperProperty())
+                axiomset.add(axiom)
+
+        if rel_axiom_types.DESCENDANTS in rel_types:
+            axioms = self.owlont.filterAxioms(
+                Filters.subAnnotationWithSuper, entity, importsval
+            )
+            for axiom in axioms:
+                entset.add(axiom.getSubProperty())
+                axiomset.add(axiom)
 
         return (entset, axiomset)
 
-    def _getRelComponentsForIndividual(self, entity, rel_types):
+    def _getRelComponentsForIndividual(self, entity, rel_types, include_imports):
         """
         Gets all entities and axioms that are directly related to a named
         individual.  Returns a tuple containing two sets: 1) A set of all
@@ -730,12 +864,15 @@ class ModuleExtractor:
 
         entity: An OWL API OWLEntity object for a named individual.
         rel_types: A set of related axiom type constants.
+        include_imports: Whether to search the ontology's imports closure.
         """
         entset = set()
         axiomset = set()
 
         if rel_axiom_types.TYPES in rel_types:
-            axioms = self.owlont.getClassAssertionAxioms(entity)
+            axioms = self._getAxioms(
+                OWLClassAssertionAxiom, OWLIndividual, entity, include_imports
+            )
             for axiom in axioms:
                 cexp = axiom.getClassExpression()
                 if not(cexp.isAnonymous()):
@@ -743,10 +880,14 @@ class ModuleExtractor:
                     axiomset.add(axiom)
 
         if rel_axiom_types.PROPERTY_ASSERTIONS in rel_types:
-            axioms = self.owlont.getObjectPropertyAssertionAxioms(entity)
-            axioms.update(
-                self.owlont.getNegativeObjectPropertyAssertionAxioms(entity)
+            axioms = self._getAxioms(
+                OWLObjectPropertyAssertionAxiom, OWLIndividual, entity,
+                include_imports
             )
+            axioms.update(self._getAxioms(
+                OWLNegativeObjectPropertyAssertionAxiom, OWLIndividual, entity,
+                include_imports
+            ))
             for axiom in axioms:
                 pexp = axiom.getProperty()
                 indv = axiom.getObject()
@@ -755,10 +896,14 @@ class ModuleExtractor:
                     entset.add(indv.asOWLNamedIndividual())
                     axiomset.add(axiom)
 
-            axioms = self.owlont.getDataPropertyAssertionAxioms(entity)
-            axioms.update(
-                self.owlont.getNegativeDataPropertyAssertionAxioms(entity)
+            axioms = self._getAxioms(
+                OWLDataPropertyAssertionAxiom, OWLIndividual, entity,
+                include_imports
             )
+            axioms.update(self._getAxioms(
+                OWLNegativeDataPropertyAssertionAxiom, OWLIndividual, entity,
+                include_imports
+            ))
             for axiom in axioms:
                 pexp = axiom.getProperty()
                 if not(pexp.isAnonymous()):

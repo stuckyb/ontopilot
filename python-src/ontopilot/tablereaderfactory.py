@@ -38,6 +38,10 @@ class TableReaderFactory:
         """
         Enter portion of the context manager interface.
         """
+        if not(os.path.isfile(self.filepath)):
+            raise RuntimeError('The input file "' + self.filepath
+                    + '" does not exist or is not a regular file.')
+
         # Determine the type of the input file.  This is currently done by
         # looking at the file extension.  We could add more robust checks of
         # file type at some point, but it might not be worth the trouble.

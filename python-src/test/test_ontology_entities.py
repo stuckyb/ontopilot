@@ -55,15 +55,20 @@ class _TestOntologyEntity:
         self.t_owlapiobj = self.t_ent.getOWLAPIObj()
         self.t_entIRI = self.t_ent.getIRI()
 
-    def _checkAnnotation(self, annot_propIRI, valuestr):
+    def _checkAnnotation(self, annot_propIRI, valuestrs):
         """
         Checks that the test entity is the subject of an annotation axiom with
-        the specified property and value.
+        the specified property and value(s).
         """
+        if isinstance(valuestrs, basestring):
+            strlist = [valuestrs]
+        else:
+            strlist = valuestrs
+
         # Check that the entity has the required annotation and that the text
         # value is correct.
         annotvals = self.t_ent.getAnnotationValues(annot_propIRI)
-        self.assertEqual([valuestr], annotvals)
+        self.assertEqual(sorted(strlist), sorted(annotvals))
 
     def test_addDefinition(self):
         defstr = 'A new definition.'
@@ -82,7 +87,7 @@ class _TestOntologyEntity:
         defvals = self.t_ent.getDefinitions()
         self.assertEqual(['Definition 1.'], defvals)
 
-        # Test multiple labels.
+        # Test multiple definitions.
         self.t_ent.addDefinition('Definition 2.')
         defvals = self.t_ent.getDefinitions()
         self.assertEqual(['Definition 1.', 'Definition 2.'], sorted(defvals))
@@ -94,6 +99,10 @@ class _TestOntologyEntity:
 
         # Test that the label annotation exists and has the correct value.
         self._checkAnnotation(self.LABEL_IRI, labelstr)
+
+        # Check a label string enclosed in single quotes.
+        self.t_ent.addLabel("'another label'")
+        self._checkAnnotation(self.LABEL_IRI, ['another label', labelstr])
 
     def test_getLabels(self):
         # Test the case of no labels.
@@ -116,6 +125,20 @@ class _TestOntologyEntity:
 
         # Test that the comment annotation exists and has the correct value.
         self._checkAnnotation(self.COMMENT_IRI, commentstr)
+
+    def test_getComments(self):
+        # Test the case of no comments.
+        self.assertEqual(0, len(self.t_ent.getComments()))
+
+        # Test a single comment.
+        self.t_ent.addComment('Comment 1.')
+        vals = self.t_ent.getComments()
+        self.assertEqual(['Comment 1.'], vals)
+
+        # Test multiple comments.
+        self.t_ent.addComment('Comment 2.')
+        vals = self.t_ent.getComments()
+        self.assertEqual(['Comment 1.', 'Comment 2.'], sorted(vals))
 
     def test_addAnnotation(self):
         annotprop_iri = IRI.create('http://purl.obolibrary.org/obo/OBTO_0030')

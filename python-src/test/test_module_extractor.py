@@ -161,7 +161,6 @@ class Test_ModuleExtractor(unittest.TestCase):
         entset, axiomset = self.me.getDirectlyRelatedComponents(
             owlent, relatives
         )
-
         self._compareEntitySets(
             ['OBTO:9999', 'OBTO:0010', 'OBTO:0011', 'OBTO:0012'], entset
         )
@@ -453,8 +452,43 @@ class Test_ModuleExtractor(unittest.TestCase):
             )
             self.assertTrue(axiom.getSubject().equals(owlent))
 
-        # Test a negative data property assertion.
+        # Test a negative object property assertion.
         ent = self.ont.createNewIndividual('OBTO:0044')
+        self.ont.createNewIndividual('OBTO:0045')
+        owlent = ent.getOWLAPIObj()
+        ent.addObjectPropertyFact('OBTO:0001', 'OBTO:0045', is_negative=True)
+
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.PROPERTY_ASSERTIONS}
+        )
+
+        self._compareEntitySets(['OBTO:0001', 'OBTO:0045'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.NEGATIVE_OBJECT_PROPERTY_ASSERTION)
+            )
+            self.assertTrue(axiom.getSubject().equals(owlent))
+
+        # Test a data property assertion.
+        ent = self.ont.createNewIndividual('OBTO:0046')
+        owlent = ent.getOWLAPIObj()
+        ent.addDataPropertyFact('OBTO:0020', '"literal"^^xsd:string')
+
+        entset, axiomset = self.me.getDirectlyRelatedComponents(
+            owlent, {rel_axiom_types.PROPERTY_ASSERTIONS}
+        )
+
+        self._compareEntitySets(['OBTO:0020'], entset)
+        self.assertEqual(1, len(axiomset))
+        for axiom in axiomset:
+            self.assertTrue(
+                axiom.isOfType(AxiomType.DATA_PROPERTY_ASSERTION)
+            )
+            self.assertTrue(axiom.getSubject().equals(owlent))
+
+        # Test a negative data property assertion.
+        ent = self.ont.createNewIndividual('OBTO:0047')
         owlent = ent.getOWLAPIObj()
         ent.addDataPropertyFact(
             'OBTO:0020', '"literal"^^xsd:string', is_negative=True
@@ -476,7 +510,14 @@ class Test_ModuleExtractor(unittest.TestCase):
         # Create a subclass for 'test class 2'.  This results in an explicit
         # class hierarchy that is 3 levels deep and includes a node with
         # multiple child classes, all of which should provide a good test case
-        # for the traversal algorithm.
+        # for the traversal algorithm.  The class structure should be as
+        # follows:
+        #
+        # OBITO:0001
+        # |--- OBTO:0010
+        # |--- OBTO:0011
+        # |    |--- OBTO:9999
+        # |--- OBTO:0012
         newent = self.ont.createNewClass('OBTO:9999')
         newent.addSuperclass('OBTO:0011')
 
@@ -492,19 +533,52 @@ class Test_ModuleExtractor(unittest.TestCase):
         )
         self.assertEqual(4, len(axiomset))
 
-        # Make a cyclic parent/child relationship for 'test class 2'.
+        # Make a cyclic parent/child relationship for 'test class 2'.  The
+        # class structure should be as follows:
+        #
+        # OBITO:0001
+        # |--- OBTO:0010
+        # |--- OBTO:0011
+        # |    |--- OBTO:9999
+        # |         |--- OBTO:0011
+        # |--- OBTO:0012
         ent = self.ont.getExistingClass('OBTO:0011')
         ent.addSuperclass('OBTO:9999')
 
         # Verify that the cycle is correctly handled.
         ent = self.ont.getExistingClass('OBTO:0011').getOWLAPIObj()
-
         entset, axiomset = self.me.getRelatedComponents(
             ent, {rel_axiom_types.DESCENDANTS}
         )
 
         self._compareEntitySets(['OBTO:0011', 'OBTO:9999'], entset)
         self.assertEqual(2, len(axiomset))
+
+        # Create a polyhierarchy by making OBITO:0010 a parent class of
+        # OBTO:0011.  The class structure should now be as follows:
+        #
+        # OBITO:0001
+        # |--- OBTO:0010
+        # |    |--- OBTO:0011
+        # |         |--- OBTO:9999
+        # |              |--- OBTO:0011
+        # |--- OBTO:0011
+        # |    |-- OBTO:9999
+        # |        |--- OBTO:0011
+        # |--- OBTO:0012
+        ent = self.ont.getExistingClass('OBTO:0011')
+        ent.addSuperclass('OBTO:0010')
+
+        ent = self.ont.getExistingClass('OBITO:0001').getOWLAPIObj()
+        entset, axiomset = self.me.getRelatedComponents(
+            ent, {rel_axiom_types.DESCENDANTS}
+        )
+
+        self._compareEntitySets(
+            ['OBITO:0001', 'OBTO:0010', 'OBTO:0011', 'OBTO:0012', 'OBTO:9999'],
+            entset
+        )
+        self.assertEqual(6, len(axiomset))
 
     def test_extractSingleTerms(self):
         """

@@ -1,0 +1,260 @@
+/*
+ * Document-wide styles.
+ */
+
+// The width of the table of contents pane.
+toc_width = 24%
+
+// The base colors to use for the overal color scheme.
+base_color = #0040ff	// Blue color scheme.
+main_bg_color = lighten(desaturate(base_color, 60%), 86%)
+main_text_color = darken(base_color, 84%)
+enth3_bg_color = lighten(spin(base_color, -10deg), 40%)
+
+base_color = #52ee1c	// Green color scheme.
+main_bg_color = lighten(desaturate(base_color, 30%), 80%)
+main_text_color = darken(base_color, 84%)
+enth3_bg_color = lighten(spin(base_color, 0deg), 40%)
+
+body
+    margin: 0
+    border: none
+    padding: 0
+    font-family: sans-serif
+    background: main_bg_color
+
+main
+    margin-left: toc_width
+    padding: 2em 3em
+    color: main_text_color
+
+a
+    text-decoration: none
+    color: lighten(main_text_color, 30%)
+
+a:hover
+    text-decoration: underline
+
+h1, h2, h3, h4
+    margin: 0
+    padding: 0
+
+h1
+    font-size: 180%
+    text-align: left
+    margin: 0
+    margin-bottom: 1em
+
+h2
+    font-size: 140%
+    margin: 1em 0
+    padding: 0.4em 0
+    /*border-radius: 8px
+    border: none
+    border: solid 1px darken(h2_bg_color, 50%)*/
+    border-bottom: solid 2px darken(main_bg_color, 60%)
+    /*background: h2_bg_color
+    background: linear-gradient(to bottom, lighten(h2_bg_color, 50%), h2_bg_color)*/
+
+h3
+    font-size: 110%
+    margin-top: 0.8em
+
+ul.entity_list
+    list-style-type: none
+    border: none
+    /*border-left: solid 2px #888
+    border-radius: 12px*/
+    margin: 0
+    padding: 0
+    padding-bottom: 0.8em
+    margin-top: 10px
+
+ul.entity_list ul.entity_list
+    margin-left: 3em
+
+ul.entity_list > li
+    margin: 0.8em 0
+    border: solid 1px #444
+    border-radius: 8px
+    overflow: hidden
+    padding: 0 1em
+    padding: 0
+    background: #f8f8f8
+    box-shadow: 1px 1px 4px #333
+
+ul.entity_list ul.entity_list > li
+    margin-right: 0.8em
+
+ul.entity_list h3
+    margin: 0
+    background: enth3_bg_color
+    background: linear-gradient(to bottom, lighten(enth3_bg_color, 60%), enth3_bg_color)
+    border-radius: 8px 7px 0px 0px
+    border-radius: 0px
+    border-bottom: solid 1px darken(enth3_bg_color, 20%)
+    padding: 0.3em 1em
+    color: darken(enth3_bg_color, 90%)
+
+ul.entity_list p
+    margin: 1em 1em
+
+div.comments
+    margin: 0
+    margin-bottom: 1em
+
+div.comments p
+    margin-bottom: 0em
+
+div.comments ul
+    list-style: disc inside
+    border: none
+    margin: 0 1em 0 2em
+    padding: 0
+
+div.comments li
+    border: none
+    box-shadow: none
+    margin: 0
+    margin-top: 0.4em
+
+/*
+ * Styles for the table of contents, including the table of contents pane, list
+ * layouts, and navigation components.
+ */
+
+// ToC-wide color definitions.
+toc_bg_color = darken(base_color, 90%)
+toc_text_color = #eee
+// Base ToC side padding.
+toc_side_padding = 20px
+// Background color for top nav buttons.
+toc_button_bg_color = #555
+// Expander arrow dimensions.
+arrow_w_coll = 8px
+arrow_h_coll = 11px
+arrow_w_exp = arrow_h_coll
+arrow_h_exp = arrow_w_coll
+// Arrow color.
+arrow_color = #ddd
+// Spaces between expander and other elements.
+arrow_margin_left = 2px
+arrow_margin_right = 8px
+// Base background color for index items.
+nav_bg_color = #282828
+nav_bg_color = #212141
+nav_bg_color = lighten(desaturate(toc_bg_color, 40%), 10%)
+
+#toc
+    box-sizing: border-box
+    position: fixed
+    border-radius: 0 0 0 0
+    left: 0.6%
+    top: 0
+    width: toc_width - 0.6%
+    height: 100%
+    overflow: auto
+    padding: 0 toc_side_padding
+    padding-left: toc_side_padding - 4px
+    margin: 0
+    background: linear-gradient(to top, lighten(toc_bg_color, 8%), toc_bg_color 20%)
+    color: toc_text_color
+    box-shadow: 1px 0px 8px 2px #222
+
+#toc h1
+    font-size: 150%
+    text-align: left
+    margin-top: 0
+    padding: 0.4em 0
+
+#toc_buttons
+    margin: 0
+    margin-bottom: 1em
+    margin-left: arrow_margin_left + arrow_w_coll + arrow_margin_right + 10px
+    text-align: right
+
+.top_toc_button
+    display: inline-block
+    white-space: nowrap
+    border-radius: 3px
+    border-width: 10px
+    padding: 0.4em 0.7em
+    cursor: pointer
+    background: toc_button_bg_color
+    box-shadow: -1px -1px 1px #444 inset, 1px 1px 1px #aaa inset;
+
+.top_toc_button:hover
+    background: lighten(toc_button_bg_color, 28%)
+
+#toc ul
+    border: none
+    border-radius: 0
+    list-style-type: none
+    margin: 0
+    padding: 0
+    /*font-size: 16px*/
+
+#toc > ul ul
+    display: none
+    margin-left: arrow_margin_left + arrow_w_coll + arrow_margin_right + 10px
+
+#toc li
+    margin: 0
+    min-width: 14em
+    position: relative
+    margin: 2px 0 2px 0
+
+#toc > ul > li
+    margin-bottom: 0
+
+div.li_c
+    // This is a container for toc_expander and <a> elements that form the
+    // interactive labels for list items.
+    position: relative
+    padding: 0
+    /*border-top: solid #888 1px
+    border-bottom: solid #888 1px*/
+
+#toc a
+    background: linear-gradient(to right, lighten(nav_bg_color, 20%), nav_bg_color)
+    border-radius: 4px
+    display: block
+    margin: 0
+    margin-left: arrow_margin_left + arrow_w_coll + arrow_margin_right
+    padding: 0.3em 0.4em
+    color: toc_text_color
+
+#toc a:hover
+    background: lighten(nav_bg_color, 30%)
+    text-decoration: none
+
+/*div.li_c a
+    margin-left: arrow_margin_left + arrow_w_coll + arrow_margin_right
+*/
+div.toc_expander
+    display: block
+    position: absolute
+    cursor: pointer
+    top: 50%
+
+div.toc_expander::before
+    content: ""
+    position: absolute
+
+div.toc_expander.collapsed::before
+    border-left: solid arrow_color arrow_w_coll
+    border-top: solid transparent (arrow_h_coll / 2)
+    border-bottom: solid transparent (arrow_h_coll / 2)
+    border-right: none
+    margin-top: -(arrow_h_coll / 2)
+    left: arrow_margin_left
+
+div.toc_expander.expanded::before
+    border-left: solid transparent (arrow_w_exp / 2)
+    border-top: solid arrow_color arrow_h_exp
+    border-right: solid transparent (arrow_w_exp / 2)
+    border-bottom: none
+    top: auto
+    margin-top: -(arrow_h_exp / 2)
+    left: arrow_margin_left + (arrow_w_coll / 2) - (arrow_w_exp / 2)
+

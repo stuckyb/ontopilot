@@ -144,6 +144,7 @@ from imports_buildtarget import ImportsBuildTarget
 from onto_buildtarget import OntoBuildTarget
 from modified_onto_buildtarget import ModifiedOntoBuildTarget
 from release_buildtarget import ReleaseBuildTarget
+from docs_buildtarget import DocsBuildTarget
 from errorcheck_buildtarget import ErrorCheckBuildTarget
 from update_base_imports_buildtarget import UpdateBaseImportsBuildTarget
 from inferencepipeline_buildtarget import InferencePipelineBuildTarget
