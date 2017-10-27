@@ -177,6 +177,7 @@ class BaseTable:
         self.defaultvals = default_vals
 
         self.rowcnt = 0
+        self.colnames = []
 
     def getTableReader(self):
         return self.tablereader
@@ -186,6 +187,13 @@ class BaseTable:
 
     def getTableName(self):
         return self.name
+
+    def getColumnNames(self):
+        """
+        Returns a list of the column names in the table, in the order in which
+        they were defined in the original document.
+        """
+        return self.colnames
 
     def setRequiredColumns(self, colnames):
         """
