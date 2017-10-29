@@ -27,6 +27,7 @@ from ontopilot.tablereaderfactory import TableReaderFactory
 
 # Define the command-line arguments.
 argp = ArgumentParser(
+    prog='tables2txt',
     description='Converts a spreadsheet document to plain text, CSV output.'
 )
 argp.add_argument(
