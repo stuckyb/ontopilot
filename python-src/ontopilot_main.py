@@ -54,7 +54,9 @@ buildtm.addBuildTarget(InferencePipelineBuildTarget, task='inferencepipeline')
 buildtm.addBuildTarget(InferencePipelineBuildTarget, task='ipl')
 
 # Define the command-line arguments.
-argp = ArgumentParser(description='Manages an OWL ontology project.')
+argp = ArgumentParser(
+    prog='ontopilot', description='Manages an OWL ontology project.'
+)
 argp.add_argument(
     '-c', '--config_file', type=str, required=False, default='',
     help='The path to a configuration file for the ontology build process.'
