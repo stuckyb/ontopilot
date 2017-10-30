@@ -46,6 +46,7 @@ try:
             rowout = {}
 
             print 'Table:', table.getTableName()
+            writer.writeheader()
 
             for row in table:
                 for colname in colnames:
