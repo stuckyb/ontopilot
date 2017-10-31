@@ -159,17 +159,18 @@ def checkForContentLength(sourceIRI):
     sourceIRI: A fully expanded IRI as an OWL API IRI object or a string.
     """
     # Retrieve the final path of the sourceIRI.
-    redir_iri = nethelper.checkForRedirect(sourceIRI)
+    parts = urlparse.urlsplit(sourceIRI)
+
+    if not parts.scheme.lower() in ('http', 'https'):
+        # Filesystem IRI, cannot check Content-Length
+        return None
+    else:
+        redir_iri = checkForRedirect(sourceIRI)
         if redir_iri != '':
             sourceIRI = redir_iri
 
-    curr_iri = unicode(sourceIRI)
+        curr_iri = unicode(sourceIRI)
 
-    parts = urlparse.urlsplit(curr_iri)
-    if parts.scheme.lower() in ('http', 'https'):
         response = httpHEAD(curr_iri)
-
-        return response.getheader('Content-Length') # Is currently returning 'None' even though it exists
-    else:
-        return None
+        return response.getheader('Content-Length')
 
