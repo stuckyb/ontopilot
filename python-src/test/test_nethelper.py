@@ -97,3 +97,33 @@ class Test_nethelper(unittest.TestCase):
             nethelper.checkForRedirect('http://httpbin.org/redirect/4')
         )
 
+    def test_checkForContentLength(self):
+        # Check an IRI that does not use HTTP or HTTPS.
+        self.assertEqual(None, nethelper.checkForContentLength('file:/local/path'))
+
+        # Check an HTTP IRI that does not trigger a redirect.
+        self.assertEqual(
+            3741, nethelper.checkForRedirect('http://httpbin.org/html')
+        )
+
+        # Check an HTTPS IRI that does not trigger a redirect.  See comments
+        # above for testing an HTTPS connection in test_httpHEAD().
+        self.assertEqual(
+            None, nethelper.checkForRedirect('https://github.com/')
+        )
+
+        # Check a one-hop redirect.
+        self.assertEqual(
+            195,
+            nethelper.checkForRedirect('http://httpbin.org/redirect/1')
+        )
+
+        # Check a multi-hop redirect.
+        self.assertEqual(
+            195,
+            nethelper.checkForRedirect('http://httpbin.org/redirect/4')
+        )
+
+        # Check for lost connection.
+
+        # Check for method without Content-Length header.
