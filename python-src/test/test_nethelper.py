@@ -98,32 +98,15 @@ class Test_nethelper(unittest.TestCase):
         )
 
     def test_checkForContentLength(self):
-        # Check an IRI that does not use HTTP or HTTPS.
-        self.assertEqual(None, nethelper.checkForContentLength('file:/local/path'))
-
-        # Check an HTTP IRI that does not trigger a redirect.
+        # Check an HTTP IRI that returns a Content-Length header.
         self.assertEqual(
-            3741, nethelper.checkForRedirect('http://httpbin.org/html')
+            '3741', nethelper.checkForContentLength('http://httpbin.org/html')
         )
 
-        # Check an HTTPS IRI that does not trigger a redirect.  See comments
-        # above for testing an HTTPS connection in test_httpHEAD().
+        # Check an HTTP IRI that does not return a Content-Length header.
         self.assertEqual(
-            None, nethelper.checkForRedirect('https://github.com/')
+            None, nethelper.checkForContentLength('https://github.com/')
         )
 
-        # Check a one-hop redirect.
-        self.assertEqual(
-            195,
-            nethelper.checkForRedirect('http://httpbin.org/redirect/1')
-        )
-
-        # Check a multi-hop redirect.
-        self.assertEqual(
-            195,
-            nethelper.checkForRedirect('http://httpbin.org/redirect/4')
-        )
-
-        # Check for lost connection.
-
-        # Check for method without Content-Length header.
+        # Check a local filesystem URI.
+        self.assertEqual(None, nethelper.checkForContentLength('test_data/ontology.owl'))
