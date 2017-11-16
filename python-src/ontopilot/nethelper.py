@@ -23,6 +23,7 @@ import urlparse, httplib
 from ssl import SSLError
 import time
 import socket
+import os
 
 # Java imports.
 
@@ -162,8 +163,9 @@ def checkForContentLength(sourceIRI):
     parts = urlparse.urlsplit(sourceIRI)
 
     if not parts.scheme.lower() in ('http', 'https'):
-        # Filesystem IRI, cannot check Content-Length
-        return None
+        # Filesystem IRI, try finding size
+        return os.path.getsize(sourceIRI)
+        # return None
     else:
         redir_iri = checkForRedirect(sourceIRI)
         if redir_iri != '':
@@ -172,5 +174,8 @@ def checkForContentLength(sourceIRI):
         curr_iri = unicode(sourceIRI)
 
         response = httpHEAD(curr_iri)
-        return response.getheader('Content-Length')
-
+        length = str(response.getheader('Content-Length'))
+        if length != 'None':
+            return float(length)
+        
+        return None

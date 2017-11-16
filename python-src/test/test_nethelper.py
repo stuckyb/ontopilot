@@ -100,7 +100,7 @@ class Test_nethelper(unittest.TestCase):
     def test_checkForContentLength(self):
         # Check an HTTP IRI that returns a Content-Length header.
         self.assertEqual(
-            '3741', nethelper.checkForContentLength('http://httpbin.org/html')
+            3741, nethelper.checkForContentLength('http://httpbin.org/html')
         )
 
         # Check an HTTP IRI that does not return a Content-Length header.
@@ -109,4 +109,6 @@ class Test_nethelper(unittest.TestCase):
         )
 
         # Check a local filesystem URI.
-        self.assertEqual(None, nethelper.checkForContentLength('test_data/ontology.owl'))
+        self.assertEqual(
+            5566, nethelper.checkForContentLength('test_data/ontology.owl')
+        )
