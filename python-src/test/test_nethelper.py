@@ -17,6 +17,8 @@
 # Python imports.
 import ontopilot.nethelper as nethelper
 from ontopilot.nethelper import NotFoundError, ConnectionFailError
+import os.path
+import urlparse, urllib
 import unittest
 #from testfixtures import LogCapture
 
@@ -108,7 +110,39 @@ class Test_nethelper(unittest.TestCase):
             None, nethelper.checkForContentLength('https://github.com/')
         )
 
-        # Check a local filesystem URI.
+        # Build local filesystem IRIs for testing.
+        fsprefix = 'file://localhost'
+        file_iri = urlparse.urljoin(fsprefix, urllib.pathname2url(
+            os.path.abspath('test_data/ontology.owl')
+        ))
+        nohost_file_iri = urlparse.urljoin('file:///', urllib.pathname2url(
+            os.path.abspath('test_data/ontology.owl')
+        ))
+        dir_iri = urlparse.urljoin(fsprefix, urllib.pathname2url(
+            os.path.abspath('test_data/')
+        ))
+        invalid_iri = urlparse.urljoin(fsprefix, urllib.pathname2url(
+            os.path.abspath('test_data/invalid.owl')
+        ))
+
+        # Check valid local filesystem IRIs.
         self.assertEqual(
-            5566, nethelper.checkForContentLength('test_data/ontology.owl')
+            5566, nethelper.checkForContentLength(file_iri)
         )
+        self.assertEqual(
+            5566, nethelper.checkForContentLength(nohost_file_iri)
+        )
+
+        # Check local IRIs for a non-existent object and a non-file object.
+        self.assertEqual(
+            None, nethelper.checkForContentLength(dir_iri)
+        )
+        self.assertEqual(
+            None, nethelper.checkForContentLength(invalid_iri)
+        )
+
+        # Test an unsupported scheme.
+        self.assertEqual(
+            None, nethelper.checkForContentLength('mailto:someaddress@somewhere')
+        )
+
