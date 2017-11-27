@@ -162,11 +162,16 @@ def checkForContentLength(sourceIRI):
     # Retrieve the final path of the sourceIRI.
     parts = urlparse.urlsplit(sourceIRI)
 
-    if not parts.scheme.lower() in ('http', 'https'):
+    if parts.scheme.lower() in ('file'):
+        # Fix IRI to replace %20 with spaces
+        path = parts.path[1:].replace("%20", " ")
+
         # Filesystem IRI, try finding size
-        return os.path.getsize(sourceIRI)
-        # return None
-    else:
+        if os.path.isfile(path):
+            return os.path.getsize(path)
+
+        return None
+    elif parts.scheme.lower() in ('http', 'https'):
         redir_iri = checkForRedirect(sourceIRI)
         if redir_iri != '':
             sourceIRI = redir_iri
@@ -178,4 +183,7 @@ def checkForContentLength(sourceIRI):
         if length != 'None':
             return float(length)
         
+        return None
+    else:
+        # Unsupported scheme
         return None
