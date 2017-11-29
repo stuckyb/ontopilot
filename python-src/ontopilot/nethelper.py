@@ -19,7 +19,7 @@
 
 # Python imports.
 from __future__ import unicode_literals
-import urlparse, httplib
+import urlparse, urllib, httplib
 from ssl import SSLError
 import time
 import socket
@@ -154,8 +154,10 @@ def checkForRedirect(sourceIRI):
 
 def checkForContentLength(sourceIRI):
     """
-    Given a source IRI, checks if the IRI contains a content length header.
-    Returns the content length if it exists, otherwise None.
+    Given a source IRI, checks if the IRI returns a content length header.
+    Returns the content length if it exists, otherwise None.  This function
+    also works for local file system IRIs, for which the actual file size (in
+    bytes) is returned.
 
     sourceIRI: A fully expanded IRI as an OWL API IRI object or a string.
     """
@@ -163,14 +165,16 @@ def checkForContentLength(sourceIRI):
     parts = urlparse.urlsplit(sourceIRI)
 
     if parts.scheme.lower() in ('file'):
-        # Fix IRI to replace %20 with spaces
-        path = parts.path[1:].replace("%20", " ")
+        # Replace "%xx" escape sequences with their single-character
+        # equivalents (e.g., "%20" becomes " ").
+        path = urllib.unquote(parts.path)
 
         # Filesystem IRI, try finding size
         if os.path.isfile(path):
             return os.path.getsize(path)
 
         return None
+
     elif parts.scheme.lower() in ('http', 'https'):
         redir_iri = checkForRedirect(sourceIRI)
         if redir_iri != '':
@@ -184,6 +188,8 @@ def checkForContentLength(sourceIRI):
             return float(length)
         
         return None
+
     else:
         # Unsupported scheme
         return None
+
