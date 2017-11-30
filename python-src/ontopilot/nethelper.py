@@ -173,6 +173,10 @@ def checkForContentLength(sourceIRI):
         if os.path.isfile(path):
             return os.path.getsize(path)
 
+        # Check for Windows system to remove beginning slash
+        if os.path.isfile(path[1:]):
+            return os.path.getsize(path[1:])
+
         return None
 
     elif parts.scheme.lower() in ('http', 'https'):
