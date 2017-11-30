@@ -125,12 +125,18 @@ class Test_nethelper(unittest.TestCase):
             os.path.abspath('test_data/invalid.owl')
         ))
 
+        # Get the target size of the test file (this might not be the same on
+        # *nix and Windows systems, so it should not be hard coded).
+        targetsize = os.path.getsize(
+            os.path.abspath('test_data/file_size_test.txt')
+        )
+
         # Check valid local filesystem IRIs.
         self.assertEqual(
-            142, nethelper.checkForContentLength(file_iri)
+            targetsize, nethelper.checkForContentLength(file_iri)
         )
         self.assertEqual(
-            142, nethelper.checkForContentLength(nohost_file_iri)
+            targetsize, nethelper.checkForContentLength(nohost_file_iri)
         )
 
         # Check local IRIs for a non-existent object and a non-file object.
