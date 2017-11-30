@@ -113,10 +113,10 @@ class Test_nethelper(unittest.TestCase):
         # Build local filesystem IRIs for testing.
         fsprefix = 'file://localhost'
         file_iri = urlparse.urljoin(fsprefix, urllib.pathname2url(
-            os.path.abspath('test_data/ontology.owl')
+            os.path.abspath('test_data/file_size_test.txt')
         ))
         nohost_file_iri = urlparse.urljoin('file:///', urllib.pathname2url(
-            os.path.abspath('test_data/ontology.owl')
+            os.path.abspath('test_data/file_size_test.txt')
         ))
         dir_iri = urlparse.urljoin(fsprefix, urllib.pathname2url(
             os.path.abspath('test_data/')
@@ -127,10 +127,10 @@ class Test_nethelper(unittest.TestCase):
 
         # Check valid local filesystem IRIs.
         self.assertEqual(
-            5566, nethelper.checkForContentLength(file_iri)
+            142, nethelper.checkForContentLength(file_iri)
         )
         self.assertEqual(
-            5566, nethelper.checkForContentLength(nohost_file_iri)
+            142, nethelper.checkForContentLength(nohost_file_iri)
         )
 
         # Check local IRIs for a non-existent object and a non-file object.
