@@ -193,10 +193,16 @@ class OntoConfig(RawConfigParser):
                 )
         else:
             # No development base IRI was provided, so try to generate one from
-            # the local file system.
-            iristr = urlparse.urljoin(
-                'file://localhost', urllib.pathname2url(self.confdir)
-            )
+            # the local file system.  If the IRI path starts with '///', we
+            # have a Windows path that starts with a drive letter, and the
+            # "localhost" authority should be omitted.
+            urlpath = urllib.pathname2url(self.confdir)
+            if urlpath.startswith('///'):
+                urlstart = 'file:'
+            else:
+                urlstart = 'file://localhost'
+
+            iristr = urlparse.urljoin(urlstart, urlpath)
 
         return iristr
 
@@ -251,10 +257,16 @@ class OntoConfig(RawConfigParser):
 
         # Parse the development base IRI and add the relative path.
         parts = rfc3987.parse(baseIRI, rule='absolute_IRI')
-        iripath = os.path.join(parts['path'], relpath)
+        iripath = os.path.join(urllib.url2pathname(parts['path']), relpath)
 
-        # Generate the complete IRI.
-        parts['path'] = iripath
+        parts['path'] = urllib.pathname2url(iripath)
+
+        # If the IRI path starts with '///', then we have a Windows path that
+        # starts with a drive letter, and the final IRI should not include any
+        # host/authority string.
+        if parts['path'].startswith('///'):
+            parts['authority'] = None
+
         iristr = rfc3987.compose(**parts)
 
         return iristr

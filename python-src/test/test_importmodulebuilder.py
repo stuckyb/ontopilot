@@ -43,8 +43,8 @@ class TestImportModuleBuilder(unittest.TestCase):
         """
         Tests the constructor.
         """
-        builddir = self.td_path + '/build'
-        outputdir = self.td_path + '/imports'
+        builddir = os.path.join(self.td_path, 'build')
+        outputdir = os.path.join(self.td_path, 'imports')
 
         imb = ImportModuleBuilder(self.baseIRI, self.mod_suffix, builddir)
         self.assertEqual(builddir, imb.builddir)
@@ -69,21 +69,21 @@ class TestImportModuleBuilder(unittest.TestCase):
             )
 
     def test_getModulePath(self):
-        outputdir = self.td_path + '/imports'
+        outputdir = os.path.join(self.td_path, 'imports')
 
         # Define the list of test values.  Each tuple is in the order
         # (expected_path, import_IRI).
         testvals = [
             (
-                outputdir + '/ontfile_import_module.owl',
+                os.path.join(outputdir, 'ontfile_import_module.owl'),
                 'http://import.ontology/iri/ontfile.owl'
             ),
             (
-                outputdir + '/ontfile_import_module.owl',
+                os.path.join(outputdir, 'ontfile_import_module.owl'),
                 'http://import.ontology/iri/ontfile'
             ),
             (
-                outputdir + '/_import_module.owl',
+                os.path.join(outputdir, '_import_module.owl'),
                 'http://import.ontology/iri/ontfile/'
             )
         ]

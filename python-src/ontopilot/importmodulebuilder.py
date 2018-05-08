@@ -206,9 +206,15 @@ class ImportModuleBuilder:
                 'IRIs.'.format(self.base_IRI)
             )
 
-        newpath = os.path.join(parts['path'], outputfile)
-        parts['path'] = newpath
-        
+        newpath = os.path.join(urllib.url2pathname(parts['path']), outputfile)
+        parts['path'] = urllib.pathname2url(newpath)
+
+        # If the IRI path starts with '///', then we have a Windows path that
+        # starts with a drive letter, and the final IRI should not include any
+        # host/authority string.
+        if parts['path'].startswith('///'):
+            parts['authority'] = None
+
         return rfc3987.compose(**parts)
 
     def isBuildNeeded(self, ontologyIRI, termsfile_path):
