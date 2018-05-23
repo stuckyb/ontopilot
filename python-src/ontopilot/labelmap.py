@@ -17,7 +17,7 @@
 # Provides a single class, LabelMap, that implements methods for mapping term
 # labels to term IRIs in a given ontology.  A major challenge with using labels
 # to identify terms is deciding how to deal with label collisions, which are
-# nearly inevitable given a large enough imports closure.  LableMap takes the
+# nearly inevitable given a large enough imports closure.  LabelMap takes the
 # approach of issuing non-fatal warnings when collisions are encountered while
 # building the label lookup table.  However, LabelMap keeps track of all known
 # ambiguous labels, and if client code attempts to look up the IRI for an

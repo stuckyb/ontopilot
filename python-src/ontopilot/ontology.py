@@ -156,13 +156,12 @@ class Ontology(Observable):
         """
         Converts an object representing an identifier into a fully expanded
         IRI.  The argument id_obj can be either an OWL API IRI object or a
-        string containing: a label (with or without a prefix), a prefix IRI
-        (i.e., a curie, such as "owl:Thing"), a relative IRI, a full IRI, a
-        label (either with or without an OBO or IRI prefix), or an OBO ID
-        (e.g., a string of the form "PO:0000003").  Returns an OWL API IRI
-        object.  Labels, except for their prefix, must be enclosed in single
-        quotes (e.g., 'some label' or prefix:'some label').  This method
-        delegates to an IDResolver instance.
+        string containing: a prefix IRI (i.e., a curie, such as "owl:Thing"), a
+        relative IRI, a full IRI, a label (either with or without an OBO or IRI
+        prefix), or an OBO ID (e.g., a string of the form "PO:0000003").
+        Returns an OWL API IRI object.  Labels, except for their prefix, must
+        be enclosed in single quotes (e.g., 'some label' or prefix:'some
+        label').  This method delegates to an IDResolver instance.
 
         id_obj: The identifier to resolve to an absolute IRI.
         Returns: An OWL API IRI object.
