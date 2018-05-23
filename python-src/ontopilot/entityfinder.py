@@ -22,6 +22,7 @@
 
 # Python imports.
 from __future__ import unicode_literals
+from nltk.stem import PorterStemmer
 from ontopilot import logger
 
 # Java imports.
