@@ -36,10 +36,6 @@ class InferencePipelineBuildTarget(BuildTargetWithConfig):
     def __init__(self, args, cfgfile_required=False, config=None):
         """
         args: A "struct" of configuration options (typically, parsed
-        command-line arguments).  The only required member is 'config_file'
-        (string), and this is only required if cgfile_required is True.
-
-        args: A "struct" of configuration options (typically, parsed
             command-line arguments).  The only required member is
             'config_file', which should provide the path to a configuration
             file (although this is only used if the config argument is None).
