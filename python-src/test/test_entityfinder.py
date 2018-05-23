@@ -35,67 +35,68 @@ class TestEntityFinder(unittest.TestCase):
 
     def test_findEntities(self):
         # Define all test search strings and results.
+        PRE = 'http://purl.obolibrary.org/obo/'
         testpairs = [
             {
                 'searchstr': 'has object',
                 'matches': [
-                    ('http://purl.obolibrary.org/obo/TOEF_0001', 'rdfs:label')
+                    (PRE + 'TOEF_0001', 'rdfs:label', 'has object')
                 ]
             },
             {
                 'searchstr': 'has datum',
                 'matches': [
-                    ('http://purl.obolibrary.org/obo/TOEF_0020', 'rdfs:label')
+                    (PRE + 'TOEF_0020', 'rdfs:label', 'has datum')
                 ]
             },
             {
                 'searchstr': 'has annotation',
                 'matches': [
-                    ('http://purl.obolibrary.org/obo/TOEF_0030', 'rdfs:label')
+                    (PRE + 'TOEF_0030', 'rdfs:label', 'has annotation')
                 ]
             },
             {
                 'searchstr': 'something else',
                 'matches': [
-                    ('http://purl.obolibrary.org/obo/TOEF_0011', 'rdfs:label')
+                    (PRE + 'TOEF_0011', 'rdfs:label', 'something else')
                 ]
             },
             {
                 'searchstr': 'an individual',
                 'matches': [
-                    ('http://purl.obolibrary.org/obo/TOEF_8000', 'rdfs:label')
+                    (PRE + 'TOEF_8000', 'rdfs:label', 'an individual')
                 ]
             },
             # TOEF_0010 has synonyms specified in various ways.
             {
                 'searchstr': 'something',
                 'matches': [
-                    ('http://purl.obolibrary.org/obo/TOEF_0010', 'rdfs:label')
+                    (PRE + 'TOEF_0010', 'rdfs:label', 'something')
                 ]
             },
             {
                 'searchstr': 'alternative name',
                 'matches': [
-                    ('http://purl.obolibrary.org/obo/TOEF_0010', 'rdfs:label')
+                    (PRE + 'TOEF_0010', 'rdfs:label', 'alternative name')
                 ]
             },
             {
                 'searchstr': 'another name',
                 'matches': [
-                    ('http://purl.obolibrary.org/obo/TOEF_0010', 'skos:altLabel')
+                    (PRE + 'TOEF_0010', 'skos:altLabel', 'another name')
                 ]
             },
             {
                 'searchstr': 'synonymous name',
                 'matches': [
-                    ('http://purl.obolibrary.org/obo/TOEF_0010', 'oboInOwl:hasSynonym')
+                    (PRE + 'TOEF_0010', 'oboInOwl:hasSynonym', 'synonymous name')
                 ]
             },
             # The single imported entity.
             {
                 'searchstr': 'imported test class 1',
                 'matches': [
-                    ('http://purl.obolibrary.org/obo/OBITO_0001', 'rdfs:label')
+                    (PRE + 'OBITO_0001', 'rdfs:label', 'imported test class 1')
                 ]
             },
             # A search term with no matches that does not correspond with an
@@ -125,7 +126,9 @@ class TestEntityFinder(unittest.TestCase):
 
             # Convert all of the results _OntologyEntity objects to IRI
             # strings and sort by IRI.
-            results = [(str(result[0].getIRI()), result[1]) for result in results]
+            results = [
+                (str(result[0].getIRI()), result[1], result[2]) for result in results
+            ]
             results.sort(key=operator.itemgetter(0))
 
             self.assertEqual(testpair['matches'], results)

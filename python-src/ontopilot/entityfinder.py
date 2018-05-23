@@ -71,9 +71,10 @@ class EntityFinder:
         """
         # Dictionary for the entities lookup table.  Each key in the dictionary
         # is a term (either a label or synonym, possibly stemmed), and each
-        # value is a set of (_OntologyEntity object, IRI) pairs, where IRI is
-        # the IRI of the annotation property that linked the ontology entity to
-        # the term name.
+        # value is a set of (_OntologyEntity object, IRI, label text) triples,
+        # where "IRI" is the IRI of the annotation property that linked the
+        # ontology entity to the term name and "label text" is the text literal
+        # for the annotation.
         self.emap = {}
 
     def addOntologyEntities(self, ontology):
@@ -107,15 +108,16 @@ class EntityFinder:
 
                     if literalval not in self.emap:
                         self.emap[literalval] = set()
-                    self.emap[literalval].add((entity, propiri))
+                    self.emap[literalval].add((entity, propiri, literalval))
 
         print self.emap
     def findEntities(self, searchstr):
         """
         Searches for entities that match the given search string.  Returns a
-        list of matching (_OntologyEntity object, IRI string) pairs, where "IRI
-        string" is the IRI of the annotation property that connects the label
-        text to the ontology entity.
+        list of matching (_OntologyEntity object, IRI string, label text)
+        pairs, where "IRI string" is the IRI of the annotation property that
+        connects the label text to the ontology entity and "label text" is the
+        text literal for the matching annotation.
 
         searchstr: A string to match to entities.
         """
