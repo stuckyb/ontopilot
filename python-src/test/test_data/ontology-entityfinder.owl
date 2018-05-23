@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<!--
+#
+# This is a simple ontology for testing the ontology entity search
+# functionality as implemented by EntityFinder.  It includes at least one
+# entity of each OWL type and a single, simple import.  It also includes a
+# class with multiple labels, and entities with alternative label/synonym
+# annotations.  It also includes a non-relevant annotation to verify that these
+# are ignored.
+#
+-->
+<rdf:RDF xmlns="https://github.com/stuckyb/ontopilot/raw/master/python-src/test/test_data/ontology-entityfinder.owl#"
+     xml:base="https://github.com/stuckyb/ontopilot/raw/master/python-src/test/test_data/ontology-entityfinder.owl"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:oboInOwl="http://www.geneontology.org/formats/oboInOwl#"
+     xmlns:skos="http://www.w3.org/2004/02/skos/core#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:obo="http://purl.obolibrary.org/obo/">
+    <owl:Ontology rdf:about="https://github.com/stuckyb/ontopilot/raw/master/test/test_data/ontology-entityfinder.owl">
+        <owl:imports rdf:resource="https://github.com/stuckyb/ontopilot/raw/master/python-src/test/test_data/ontology-import.owl"/>
+        <rdfs:label xml:lang="en">Simple Test Ontology</rdfs:label>
+    </owl:Ontology>
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <!-- http://purl.obolibrary.org/obo/TOEF_0001 -->
+
+    <owl:ObjectProperty rdf:about="http://purl.obolibrary.org/obo/TOEF_0001">
+        <rdfs:label xml:lang="en">has object</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Datatype Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <!-- http://purl.obolibrary.org/obo/TOEF_0020 -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.obolibrary.org/obo/TOEF_0020">
+        <rdfs:label xml:lang="en">has datum</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Annotation Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <!-- http://purl.obolibrary.org/obo/TOEF_0030 -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.obolibrary.org/obo/TOEF_0030">
+        <rdfs:label xml:lang="en">has annotation</rdfs:label>
+    </owl:AnnotationProperty>
+    
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <!-- http://purl.obolibrary.org/obo/TOEF_0010 -->
+
+    <owl:Class rdf:about="http://purl.obolibrary.org/obo/TOEF_0010">
+        <rdfs:label xml:lang="en">something</rdfs:label>
+        <rdfs:label xml:lang="en">alternative name</rdfs:label>
+	<skos:altLabel>another name</skos:altLabel>
+	<oboInOwl:hasSynonym>synonymous name</oboInOwl:hasSynonym>
+    </owl:Class>
+
+    <!-- http://purl.obolibrary.org/obo/TOEF_0011 -->
+
+    <owl:Class rdf:about="http://purl.obolibrary.org/obo/TOEF_0011">
+        <rdfs:label xml:lang="en">something else</rdfs:label>
+        <skos:scopeNote>Should be ignored</skos:scopeNote>
+    </owl:Class>
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <!-- test individual 1 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/TOEF_8000">
+        <rdf:type rdf:resource="http://purl.obolibrary.org/obo/TOEF_0011"/>
+        <rdfs:label xml:lang="en">an individual</rdfs:label>
+    </owl:NamedIndividual>
+
+</rdf:RDF>
