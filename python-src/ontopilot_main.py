@@ -29,6 +29,7 @@ from ontopilot import ReleaseBuildTarget, DocsBuildTarget
 from ontopilot import ErrorCheckBuildTarget
 from ontopilot import UpdateBaseImportsBuildTarget
 from ontopilot import InferencePipelineBuildTarget
+from ontopilot import FindEntitiesBuildTarget
 from ontopilot import BuildTargetManager
 
 # Java imports.
@@ -52,6 +53,9 @@ buildtm.addBuildTarget(ErrorCheckBuildTarget, task='errorcheck')
 buildtm.addBuildTarget(InferencePipelineBuildTarget, task='inference_pipeline')
 buildtm.addBuildTarget(InferencePipelineBuildTarget, task='inferencepipeline')
 buildtm.addBuildTarget(InferencePipelineBuildTarget, task='ipl')
+buildtm.addBuildTarget(FindEntitiesBuildTarget, task='find_entities')
+buildtm.addBuildTarget(FindEntitiesBuildTarget, task='findentities')
+buildtm.addBuildTarget(FindEntitiesBuildTarget, task='fe')
 
 # Define the command-line arguments.
 argp = ArgumentParser(
@@ -89,13 +93,21 @@ argp.add_argument(
 argp.add_argument(
     '-i', '--input_data', type=str, required=False, default='', help='The '
     'path to a source ontology/data set to use when running in inference '
-    'pipeline mode.  If no source path is provided, the input data will be '
-    'read from standard in.'
+    'pipeline mode, or a file of search terms when running in entity finding '
+    'mode.  If no source path is provided, the input will be read from '
+    'standard in.'
 )
 argp.add_argument(
     '-o', '--fileout', type=str, required=False, default='', help='The path '
-    'to an output file to use when running in inference pipeline mode.  If no '
-    'output path is provided, results will be written to standard out.'
+    'to an output file to use when running in inference pipeline mode or '
+    'entity finding mode.  If no output path is provided, results will be '
+    'written to standard out.'
+)
+argp.add_argument(
+    '-s', '--search_ont', type=str, required=False, default=[],
+    action='append', help='The path to a source ontology file to search when '
+    'running in entity finding mode.  This option can be repeated to specify '
+    'multiple search ontologies.'
 )
 argp.add_argument(
     'task', type=str, nargs='?', default='make', help='The build task to '

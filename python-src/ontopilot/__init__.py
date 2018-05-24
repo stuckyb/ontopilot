@@ -19,7 +19,7 @@
 #   1. Set the logging level for SLF4J's SimpleLogger.
 #   2. Adds all required java library jar files to the classpath.
 #   3. Initializes a Python logger object for printing status messages.
-#   4. Define strings for recognizing yes/true values in input tables.
+#   4. Defines strings for recognizing yes/true values in input tables.
 #   5. Adds classes in package modules to the package's top-level scope.
 #
 # The directory "../../javalib" contains all of the java libraries on which the
@@ -148,5 +148,6 @@ from docs_buildtarget import DocsBuildTarget
 from errorcheck_buildtarget import ErrorCheckBuildTarget
 from update_base_imports_buildtarget import UpdateBaseImportsBuildTarget
 from inferencepipeline_buildtarget import InferencePipelineBuildTarget
+from findentities_buildtarget import FindEntitiesBuildTarget
 from buildtarget_manager import BuildTargetManager
 
