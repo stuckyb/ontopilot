@@ -6,7 +6,8 @@
 # entity of each OWL type and a single, simple import.  It also includes a
 # class with multiple labels, and entities with alternative label/synonym
 # annotations.  It also includes a non-relevant annotation to verify that these
-# are ignored.
+# are ignored.  Finally, it includes two classes with labels that resolve to 
+# the same stem phrase under Porter's stemming algorithm.
 #
 -->
 <rdf:RDF xmlns="https://github.com/stuckyb/ontopilot/raw/master/python-src/test/test_data/ontology-entityfinder.owl#"
@@ -91,7 +92,18 @@
 
     <owl:Class rdf:about="http://purl.obolibrary.org/obo/TOEF_0011">
         <rdfs:label xml:lang="en">something else</rdfs:label>
-        <skos:scopeNote>Should be ignored</skos:scopeNote>
+        <skos:scopeNote>should be ignored</skos:scopeNote>
+    </owl:Class>
+
+    <!-- The next two classes, TOEF_0012 and TOEF_0013, have labels that resolve
+	 to the same stems phrases. -->
+
+    <owl:Class rdf:about="http://purl.obolibrary.org/obo/TOEF_0012">
+        <rdfs:label xml:lang="en">testing labels</rdfs:label>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://purl.obolibrary.org/obo/TOEF_0013">
+        <rdfs:label xml:lang="en">test label</rdfs:label>
     </owl:Class>
 
 

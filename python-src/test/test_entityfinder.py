@@ -33,6 +33,20 @@ class TestEntityFinder(unittest.TestCase):
         self.ont = Ontology('test_data/ontology-entityfinder.owl')
         self.ef = EntityFinder()
 
+    def test_stemPhrase(self):
+        # Define the test values.  Each is a (test value, expected value) pair.
+        testvals = [
+            ('', ''),
+            ('  ', ''),
+            ('  phrase  ', 'phrase'),
+            ('  phrases  ', 'phrase'),
+            ('phrases', 'phrase'),
+            ('testing phrases', 'test phrase'),
+        ]
+
+        for testval in testvals:
+            self.assertEqual(testval[1], self.ef._stemPhrase(testval[0]))
+
     def test_findEntities(self):
         # Define all test search strings and results.
         PRE = 'http://purl.obolibrary.org/obo/'
@@ -90,6 +104,30 @@ class TestEntityFinder(unittest.TestCase):
                 'searchstr': 'synonymous name',
                 'matches': [
                     (PRE + 'TOEF_0010', 'oboInOwl:hasSynonym', 'synonymous name')
+                ]
+            },
+            # TOEF_0012 and TOEF_0013 have labels that resolve to the same
+            # stem.  Verify we can find both classes using either label and a
+            # search string that does not exactly match either label.
+            {
+                'searchstr': 'testing labels',
+                'matches': [
+                    (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels'),
+                    (PRE + 'TOEF_0013', 'rdfs:label', 'test label')
+                ]
+            },
+            {
+                'searchstr': 'test label',
+                'matches': [
+                    (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels'),
+                    (PRE + 'TOEF_0013', 'rdfs:label', 'test label')
+                ]
+            },
+            {
+                'searchstr': 'tests labeling',
+                'matches': [
+                    (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels'),
+                    (PRE + 'TOEF_0013', 'rdfs:label', 'test label')
                 ]
             },
             # The single imported entity.

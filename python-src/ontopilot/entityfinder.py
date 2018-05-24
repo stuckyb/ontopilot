@@ -78,6 +78,19 @@ class EntityFinder:
         # for the annotation.
         self.emap = {}
 
+        self.pstemmer = PorterStemmer()
+
+    def _stemPhrase(self, phrase):
+        """
+        Given a string of one or more space-separated words, returns a string
+        in which each word has been reduced to its stem.
+        """
+        result = []
+        for word in phrase.split():
+            result.append(self.pstemmer.stem(word))
+
+        return ' '.join(result)
+
     def addOntologyEntities(self, ontology):
         """
         Adds entities from an ontology, including its imports closure, to this
@@ -105,13 +118,13 @@ class EntityFinder:
             if irimatch:
                 if isinstance(avalue, OWLLiteral) and isinstance(asubject, IRI):
                     literalval = avalue.getLiteral()
+                    stemval = self._stemPhrase(literalval)
                     entity = ontology.getExistingEntity(asubject)
 
-                    if literalval not in self.emap:
-                        self.emap[literalval] = set()
-                    self.emap[literalval].add((entity, propiri, literalval))
+                    if stemval not in self.emap:
+                        self.emap[stemval] = set()
+                    self.emap[stemval].add((entity, propiri, literalval))
 
-        print self.emap
     def findEntities(self, searchstr):
         """
         Searches for entities that match the given search string.  Returns a
@@ -122,9 +135,11 @@ class EntityFinder:
 
         searchstr: A string to match to entities.
         """
+        stemval = self._stemPhrase(searchstr)
+
         res = []
-        if searchstr in self.emap:
-            res = list(self.emap[searchstr])
+        if stemval in self.emap:
+            res = list(self.emap[stemval])
 
         return res
 
