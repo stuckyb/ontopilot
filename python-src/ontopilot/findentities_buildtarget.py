@@ -22,7 +22,7 @@ import csv
 from ontopilot import logger
 from ontology import Ontology
 from buildtarget import BuildTarget
-from entityfinder import EntityFinder
+from entityfinder import MATCH_FULL, MATCH_SUBPHRASE, EntityFinder
 
 # Java imports.
 from java.lang import System as JavaSystem
@@ -112,7 +112,7 @@ class FindEntitiesBuildTarget(BuildTarget):
         writer = csv.DictWriter(
             fout,
             fieldnames=[
-                'Search', 'Entity', 'Label(s)', 'Annotation', 'Value', 'Exact',
+                'Search term', 'Matching entity', 'Label(s)', 'Annotation', 'Value', 'Match type',
                 'Definition(s)'
             ]
         )
@@ -126,17 +126,17 @@ class FindEntitiesBuildTarget(BuildTarget):
             for result in results:
                 entity = result[0]
 
-                row['Search'] = searchterm
-                row['Entity'] = str(entity.getIRI())
+                row['Search term'] = searchterm
+                row['Matching entity'] = str(entity.getIRI())
                 row['Label(s)'] = ','.join(entity.getLabels())
                 row['Annotation'] = result[1]
                 row['Value'] = result[2]
                 row['Definition(s)'] = ','.join(entity.getDefinitions())
 
-                if searchterm == result[2]:
-                    row['Exact'] = 'T'
+                if result[3] == MATCH_FULL:
+                    row['Match type'] = 'Full'
                 else:
-                    row['Exact'] = 'F'
+                    row['Match type'] = 'Partial'
 
                 writer.writerow(row)
 
