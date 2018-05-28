@@ -112,9 +112,11 @@ class TestEntityFinder(unittest.TestCase):
                     (PRE + 'TOEF_0030', 'rdfs:label', 'has annotation', MATCH_FULL)
                 ]
             },
+            # The next search string will also generate a sub-phrase match.
             {
                 'searchstr': 'something else',
                 'matches': [
+                    (PRE + 'TOEF_0010', 'rdfs:label', 'something', MATCH_SUBPHRASE),
                     (PRE + 'TOEF_0011', 'rdfs:label', 'something else', MATCH_FULL)
                 ]
             },
@@ -131,24 +133,31 @@ class TestEntityFinder(unittest.TestCase):
                 'searchstr': 'something',
                 'matches': [
                     (PRE + 'TOEF_0010', 'rdfs:label', 'something', MATCH_FULL),
-                    (PRE + 'TOEF_0011', 'rdfs:label', 'something else', MATCH_SUBPHRASE),
+                    (PRE + 'TOEF_0011', 'rdfs:label', 'something else', MATCH_SUBPHRASE)
                 ]
             },
+            # The next search string will generate multiple sub-phrase matches.
             {
                 'searchstr': 'alternative name',
                 'matches': [
-                    (PRE + 'TOEF_0010', 'rdfs:label', 'alternative name', MATCH_FULL)
+                    (PRE + 'TOEF_0010', 'rdfs:label', 'alternative name', MATCH_FULL),
+                    (PRE + 'TOEF_0010', 'skos:altLabel', 'another name', MATCH_SUBPHRASE),
+                    (PRE + 'TOEF_0010', 'oboInOwl:hasSynonym', 'synonymous name', MATCH_SUBPHRASE)
                 ]
             },
             {
                 'searchstr': 'another name',
                 'matches': [
-                    (PRE + 'TOEF_0010', 'skos:altLabel', 'another name', MATCH_FULL)
+                    (PRE + 'TOEF_0010', 'rdfs:label', 'alternative name', MATCH_SUBPHRASE),
+                    (PRE + 'TOEF_0010', 'skos:altLabel', 'another name', MATCH_FULL),
+                    (PRE + 'TOEF_0010', 'oboInOwl:hasSynonym', 'synonymous name', MATCH_SUBPHRASE)
                 ]
             },
             {
                 'searchstr': 'synonymous name',
                 'matches': [
+                    (PRE + 'TOEF_0010', 'rdfs:label', 'alternative name', MATCH_SUBPHRASE),
+                    (PRE + 'TOEF_0010', 'skos:altLabel', 'another name', MATCH_SUBPHRASE),
                     (PRE + 'TOEF_0010', 'oboInOwl:hasSynonym', 'synonymous name', MATCH_FULL)
                 ]
             },
@@ -158,6 +167,7 @@ class TestEntityFinder(unittest.TestCase):
             {
                 'searchstr': 'testing labels',
                 'matches': [
+                    (PRE + 'OBITO_0001', 'rdfs:label', 'imported test class 1', MATCH_SUBPHRASE),
                     (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels', MATCH_FULL),
                     (PRE + 'TOEF_0013', 'rdfs:label', 'test label', MATCH_FULL)
                 ]
@@ -165,6 +175,7 @@ class TestEntityFinder(unittest.TestCase):
             {
                 'searchstr': 'test label',
                 'matches': [
+                    (PRE + 'OBITO_0001', 'rdfs:label', 'imported test class 1', MATCH_SUBPHRASE),
                     (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels', MATCH_FULL),
                     (PRE + 'TOEF_0013', 'rdfs:label', 'test label', MATCH_FULL)
                 ]
@@ -172,6 +183,7 @@ class TestEntityFinder(unittest.TestCase):
             {
                 'searchstr': 'tests labeling',
                 'matches': [
+                    (PRE + 'OBITO_0001', 'rdfs:label', 'imported test class 1', MATCH_SUBPHRASE),
                     (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels', MATCH_FULL),
                     (PRE + 'TOEF_0013', 'rdfs:label', 'test label', MATCH_FULL)
                 ]
@@ -188,6 +200,7 @@ class TestEntityFinder(unittest.TestCase):
             {
                 'searchstr': 'test\'s "labels"',
                 'matches': [
+                    (PRE + 'OBITO_0001', 'rdfs:label', 'imported test class 1', MATCH_SUBPHRASE),
                     (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels', MATCH_FULL),
                     (PRE + 'TOEF_0013', 'rdfs:label', 'test label', MATCH_FULL)
                 ]
@@ -196,7 +209,9 @@ class TestEntityFinder(unittest.TestCase):
             {
                 'searchstr': 'imported test class 1',
                 'matches': [
-                    (PRE + 'OBITO_0001', 'rdfs:label', 'imported test class 1', MATCH_FULL)
+                    (PRE + 'OBITO_0001', 'rdfs:label', 'imported test class 1', MATCH_FULL),
+                    (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels', MATCH_SUBPHRASE),
+                    (PRE + 'TOEF_0013', 'rdfs:label', 'test label', MATCH_SUBPHRASE)
                 ]
             },
             # A search term with no matches that does not correspond with an
@@ -227,11 +242,12 @@ class TestEntityFinder(unittest.TestCase):
             results = self.ef.findEntities(testpair['searchstr'])
 
             # Convert all of the results _OntologyEntity objects to IRI
-            # strings and sort by IRI.
+            # strings and sort by IRI, then by matching label/synonym text.
             results = [
                 (str(result[0].getIRI()), result[1], result[2], result[3])
                     for result in results
             ]
+            results.sort(key=operator.itemgetter(2))
             results.sort(key=operator.itemgetter(0))
 
             self.assertEqual(testpair['matches'], results)

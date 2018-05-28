@@ -80,6 +80,10 @@ STOPWORDS = set([
     'doesnt', 'hadnt', 'hasnt', 'havent', 'isnt', 'ma', 'mightnt', 'mustnt',
     'neednt', 'shant', 'shouldnt', 'wasnt', 'werent', 'wont', 'wouldnt'
 ])
+STEMMED_STOPWORDS = set()
+stemmer = PorterStemmer()
+for stopword in STOPWORDS:
+    STEMMED_STOPWORDS.add(stemmer.stem(stopword))
 
 
 class EntityFinder:
@@ -181,7 +185,7 @@ class EntityFinder:
                 # Check if the current phrase is only stopwords.
                 sw_cnt = 0
                 for pword in phrasewords:
-                    if pword in STOPWORDS:
+                    if (pword in STOPWORDS) or (pword in STEMMED_STOPWORDS):
                         sw_cnt += 1
 
                 if sw_cnt < len(phrasewords):
@@ -279,16 +283,39 @@ class EntityFinder:
 
         searchstr = self._depunctuate(searchstr)
 
-        stemval = ' '.join(self._stemPhrase(searchstr))
+        stemwords = self._stemPhrase(searchstr)
+        stemval = ' '.join(stemwords)
+        subphrases = self._getSubPhrases(stemwords)
 
         res = []
+
+        # Search for the full search term, and keep track of matching tuples.
+        matches = set()
         if stemval in self.emap_full:
             for mtuple in self.emap_full[stemval]:
                 res.append(mtuple + (MATCH_FULL,))
+                matches.add(mtuple)
 
         if stemval in self.emap_partial:
             for mtuple in self.emap_partial[stemval]:
                 res.append(mtuple + (MATCH_SUBPHRASE,))
+                matches.add(mtuple)
+
+        # Search for subphrases of the search term.  Make sure we don't return
+        # entities we already found while searching for the full phrase or with
+        # other partial matches.
+        for subphrase in subphrases:
+            if subphrase in self.emap_full:
+                for mtuple in self.emap_full[subphrase]:
+                    if mtuple not in matches:
+                        res.append(mtuple + (MATCH_SUBPHRASE,))
+                        matches.add(mtuple)
+
+            if subphrase in self.emap_partial:
+                for mtuple in self.emap_partial[subphrase]:
+                    if mtuple not in matches:
+                        res.append(mtuple + (MATCH_SUBPHRASE,))
+                        matches.add(mtuple)
 
         return res
 
