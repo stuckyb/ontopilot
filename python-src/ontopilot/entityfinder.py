@@ -22,6 +22,9 @@
 
 # Python imports.
 from __future__ import unicode_literals
+import unicodedata
+import string
+import re
 from nltk.stem import PorterStemmer
 from ontopilot import logger
 
@@ -44,6 +47,14 @@ MATCH_FULL = 0
 # Sub-phrase matches; that is, the matching entity text is a sub-phrase of the
 # full term label or synonym.
 MATCH_SUBPHRASE = 1
+
+# Define the standard and typographic apostrophe characters.
+APOST_CHARS = ["'", unichr(8217)]
+
+# Add typographic double quotes and single quote to the set of punctuation
+# characters.
+punctchars = string.punctuation + unichr(8220) + unichr(8221) + unichr(8217)
+punct_re = re.compile('[' + punctchars + ']')
 
 
 class EntityFinder:
@@ -98,6 +109,21 @@ class EntityFinder:
 
         self.pstemmer = PorterStemmer()
 
+    def _depunctuate(self, text):
+        """
+        "De-punctuates" a sentence or phrase by removing all punctuation and
+        possessive forms.
+        """
+        # Remove possessive forms.
+        for apost_char in APOST_CHARS:
+            text = text.replace(apost_char + 's ', ' ')
+            text = text.replace(apost_char + ' ', ' ')
+    
+        # Remove remaining punctuation.
+        text = punct_re.sub('', text)
+            
+        return text
+
     def _stemPhrase(self, phrase):
         """
         Given a string of one or more space-separated words, returns a list of
@@ -140,6 +166,13 @@ class EntityFinder:
         propiri (string): An annotation property IRI.
         termstr (string): The term text to add.
         """
+        # Apply the unicode compatibility decomposition to the string.  This
+        # will, e.g., replace ligatures with their expanded equivalents and
+        # replace non-standard space characters with regular space characters.
+        termstr = unicodedata.normalize('NFKD', termstr)
+
+        termstr = self._depunctuate(termstr)
+
         words = self._stemPhrase(termstr)
 
         if len(words) > self.max_termsize:
@@ -200,6 +233,13 @@ class EntityFinder:
 
         searchstr: A string to match to entities.
         """
+        # Apply the unicode compatibility decomposition to the string.  This
+        # will, e.g., replace ligatures with their expanded equivalents and
+        # replace non-standard space characters with regular space characters.
+        searchstr = unicodedata.normalize('NFKD', searchstr)
+
+        searchstr = self._depunctuate(searchstr)
+
         stemval = ' '.join(self._stemPhrase(searchstr))
 
         res = []

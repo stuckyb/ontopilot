@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 # Copyright (C) 2018 Brian J. Stucky
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,6 +17,7 @@
 
 
 # Python imports.
+from __future__ import unicode_literals
 import unittest
 import operator
 from ontopilot.ontology import Ontology
@@ -32,6 +35,15 @@ class TestEntityFinder(unittest.TestCase):
     def setUp(self):
         self.ont = Ontology('test_data/ontology-entityfinder.owl')
         self.ef = EntityFinder()
+
+    def test_depunctuate(self):
+        self.assertEqual('fly', self.ef._depunctuate('fly'))
+        self.assertEqual('fly abdomen', self.ef._depunctuate("fly's abdomen"))
+        self.assertEqual('fly abdomen', self.ef._depunctuate("fly’s abdomen"))
+        self.assertEqual('flies abdomen', self.ef._depunctuate("flies' abdomen"))
+        self.assertEqual('flys', self.ef._depunctuate("fly's"))
+        self.assertEqual('flys', self.ef._depunctuate("fly’s"))
+        self.assertEqual('flies abdomen', self.ef._depunctuate("“flies” abdomen"))
 
     def test_stemPhrase(self):
         # Define the test values.  Each is a (test value, expected value) pair.
@@ -161,6 +173,14 @@ class TestEntityFinder(unittest.TestCase):
                 'matches': [
                     (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels', MATCH_SUBPHRASE),
                     (PRE + 'TOEF_0013', 'rdfs:label', 'test label', MATCH_SUBPHRASE)
+                ]
+            },
+            # Test a search string that only matches with de-punctuation.
+            {
+                'searchstr': 'test\'s "labels"',
+                'matches': [
+                    (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels', MATCH_FULL),
+                    (PRE + 'TOEF_0013', 'rdfs:label', 'test label', MATCH_FULL)
                 ]
             },
             # The single imported entity.
