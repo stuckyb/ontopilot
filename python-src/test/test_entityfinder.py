@@ -18,7 +18,7 @@
 import unittest
 import operator
 from ontopilot.ontology import Ontology
-from ontopilot.entityfinder import EntityFinder
+from ontopilot.entityfinder import MATCH_FULL, MATCH_SUBPHRASE, EntityFinder
 from testfixtures import LogCapture
 
 # Java imports.
@@ -36,16 +36,38 @@ class TestEntityFinder(unittest.TestCase):
     def test_stemPhrase(self):
         # Define the test values.  Each is a (test value, expected value) pair.
         testvals = [
-            ('', ''),
-            ('  ', ''),
-            ('  phrase  ', 'phrase'),
-            ('  phrases  ', 'phrase'),
-            ('phrases', 'phrase'),
-            ('testing phrases', 'test phrase'),
+            ('', []),
+            ('  ', []),
+            ('  phrase  ', ['phrase']),
+            ('  phrases  ', ['phrase']),
+            ('phrases', ['phrase']),
+            ('testing phrases', ['test', 'phrase']),
         ]
 
         for testval in testvals:
             self.assertEqual(testval[1], self.ef._stemPhrase(testval[0]))
+
+    def test_getSubPhrases(self):
+        # Define the test values.  Each is a (test value, expected value) pair.
+        testvals = [
+            ([], []),
+            (['word'], []),
+            (['two', 'words'], ['two', 'words']),
+            (
+                ['one', 'more', 'word'],
+                ['one', 'one more', 'more', 'more word', 'word']
+            ),
+            (
+                ['four', 'words', 'in', 'total'],
+                [
+                    'four', 'four words', 'four words in', 'words', 'words in',
+                    'words in total', 'in', 'in total', 'total'
+                ]
+            )
+        ]
+
+        for testval in testvals:
+            self.assertEqual(testval[1], self.ef._getSubPhrases(testval[0]))
 
     def test_findEntities(self):
         # Define all test search strings and results.
@@ -54,56 +76,59 @@ class TestEntityFinder(unittest.TestCase):
             {
                 'searchstr': 'has object',
                 'matches': [
-                    (PRE + 'TOEF_0001', 'rdfs:label', 'has object')
+                    (PRE + 'TOEF_0001', 'rdfs:label', 'has object', MATCH_FULL)
                 ]
             },
             {
                 'searchstr': 'has datum',
                 'matches': [
-                    (PRE + 'TOEF_0020', 'rdfs:label', 'has datum')
+                    (PRE + 'TOEF_0020', 'rdfs:label', 'has datum', MATCH_FULL)
                 ]
             },
             {
                 'searchstr': 'has annotation',
                 'matches': [
-                    (PRE + 'TOEF_0030', 'rdfs:label', 'has annotation')
+                    (PRE + 'TOEF_0030', 'rdfs:label', 'has annotation', MATCH_FULL)
                 ]
             },
             {
                 'searchstr': 'something else',
                 'matches': [
-                    (PRE + 'TOEF_0011', 'rdfs:label', 'something else')
+                    (PRE + 'TOEF_0011', 'rdfs:label', 'something else', MATCH_FULL)
                 ]
             },
             {
                 'searchstr': 'an individual',
                 'matches': [
-                    (PRE + 'TOEF_8000', 'rdfs:label', 'an individual')
+                    (PRE + 'TOEF_8000', 'rdfs:label', 'an individual', MATCH_FULL)
                 ]
             },
             # TOEF_0010 has synonyms specified in various ways.
+            # The search string 'something' should also generate a partial
+            # match with TOEF_0011
             {
                 'searchstr': 'something',
                 'matches': [
-                    (PRE + 'TOEF_0010', 'rdfs:label', 'something')
+                    (PRE + 'TOEF_0010', 'rdfs:label', 'something', MATCH_FULL),
+                    (PRE + 'TOEF_0011', 'rdfs:label', 'something else', MATCH_SUBPHRASE),
                 ]
             },
             {
                 'searchstr': 'alternative name',
                 'matches': [
-                    (PRE + 'TOEF_0010', 'rdfs:label', 'alternative name')
+                    (PRE + 'TOEF_0010', 'rdfs:label', 'alternative name', MATCH_FULL)
                 ]
             },
             {
                 'searchstr': 'another name',
                 'matches': [
-                    (PRE + 'TOEF_0010', 'skos:altLabel', 'another name')
+                    (PRE + 'TOEF_0010', 'skos:altLabel', 'another name', MATCH_FULL)
                 ]
             },
             {
                 'searchstr': 'synonymous name',
                 'matches': [
-                    (PRE + 'TOEF_0010', 'oboInOwl:hasSynonym', 'synonymous name')
+                    (PRE + 'TOEF_0010', 'oboInOwl:hasSynonym', 'synonymous name', MATCH_FULL)
                 ]
             },
             # TOEF_0012 and TOEF_0013 have labels that resolve to the same
@@ -112,29 +137,37 @@ class TestEntityFinder(unittest.TestCase):
             {
                 'searchstr': 'testing labels',
                 'matches': [
-                    (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels'),
-                    (PRE + 'TOEF_0013', 'rdfs:label', 'test label')
+                    (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels', MATCH_FULL),
+                    (PRE + 'TOEF_0013', 'rdfs:label', 'test label', MATCH_FULL)
                 ]
             },
             {
                 'searchstr': 'test label',
                 'matches': [
-                    (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels'),
-                    (PRE + 'TOEF_0013', 'rdfs:label', 'test label')
+                    (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels', MATCH_FULL),
+                    (PRE + 'TOEF_0013', 'rdfs:label', 'test label', MATCH_FULL)
                 ]
             },
             {
                 'searchstr': 'tests labeling',
                 'matches': [
-                    (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels'),
-                    (PRE + 'TOEF_0013', 'rdfs:label', 'test label')
+                    (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels', MATCH_FULL),
+                    (PRE + 'TOEF_0013', 'rdfs:label', 'test label', MATCH_FULL)
+                ]
+            },
+            # Test a search string that only generates sub-phrase matches.
+            {
+                'searchstr': 'labels',
+                'matches': [
+                    (PRE + 'TOEF_0012', 'rdfs:label', 'testing labels', MATCH_SUBPHRASE),
+                    (PRE + 'TOEF_0013', 'rdfs:label', 'test label', MATCH_SUBPHRASE)
                 ]
             },
             # The single imported entity.
             {
                 'searchstr': 'imported test class 1',
                 'matches': [
-                    (PRE + 'OBITO_0001', 'rdfs:label', 'imported test class 1')
+                    (PRE + 'OBITO_0001', 'rdfs:label', 'imported test class 1', MATCH_FULL)
                 ]
             },
             # A search term with no matches that does not correspond with an
@@ -158,6 +191,8 @@ class TestEntityFinder(unittest.TestCase):
 
         self.ef.addOntologyEntities(self.ont)
 
+        self.assertEqual(4, self.ef.max_termsize)
+
         # Check all search strings.
         for testpair in testpairs:
             results = self.ef.findEntities(testpair['searchstr'])
@@ -165,7 +200,8 @@ class TestEntityFinder(unittest.TestCase):
             # Convert all of the results _OntologyEntity objects to IRI
             # strings and sort by IRI.
             results = [
-                (str(result[0].getIRI()), result[1], result[2]) for result in results
+                (str(result[0].getIRI()), result[1], result[2], result[3])
+                    for result in results
             ]
             results.sort(key=operator.itemgetter(0))
 
