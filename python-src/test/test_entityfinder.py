@@ -66,14 +66,23 @@ class TestEntityFinder(unittest.TestCase):
             (['word'], []),
             (['two', 'words'], ['two', 'words']),
             (
-                ['one', 'more', 'word'],
-                ['one', 'one more', 'more', 'more word', 'word']
+                ['one', 'extra', 'word'],
+                ['one', 'one extra', 'extra', 'extra word', 'word']
             ),
             (
-                ['four', 'words', 'in', 'total'],
+                ['four', 'word', 'total', 'phrase'],
                 [
-                    'four', 'four words', 'four words in', 'words', 'words in',
-                    'words in total', 'in', 'in total', 'total'
+                    'four', 'four word', 'four word total', 'word',
+                    'word total', 'word total phrase', 'total', 'total phrase',
+                    'phrase'
+                ]
+            ),
+            # Make sure that stop word-only phrases are not returned.
+            (
+                ['this', 'has', 'four', 'words'],
+                [
+                    'this has four', 'has four', 'has four words', 'four',
+                    'four words', 'words'
                 ]
             )
         ]

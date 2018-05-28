@@ -56,6 +56,31 @@ APOST_CHARS = ["'", unichr(8217)]
 punctchars = string.punctuation + unichr(8220) + unichr(8221) + unichr(8217)
 punct_re = re.compile('[' + punctchars + ']')
 
+# Define the stop words that should not be considered phrases by themselves.
+# This is taken from nltk version 3.3 and is copied here directly to streamline
+# the code.  The list is almost as in NLTK, except contractions have the
+# letters after the apostrophe added back on.  E.g., the stop word 'doesn' in
+# NLTK is listed here as 'doesnt'.
+STOPWORDS = set([
+    'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your',
+    'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she',
+    'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them', 'their',
+    'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that',
+    'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an',
+    'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of',
+    'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into',
+    'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from',
+    'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again',
+    'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how',
+    'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some',
+    'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too',
+    'very', 's', 't', 'can', 'will', 'just', 'dont', 'should', 'now', 'd',
+    'll', 'm', 'o', 're', 've', 'y', 'aint', 'arent', 'couldnt', 'didnt',
+    'doesnt', 'hadnt', 'hasnt', 'havent', 'isnt', 'ma', 'mightnt', 'mustnt',
+    'neednt', 'shant', 'shouldnt', 'wasnt', 'werent', 'wont', 'wouldnt'
+])
+
 
 class EntityFinder:
     """
@@ -140,7 +165,8 @@ class EntityFinder:
         """
         Given a list of words (strings) in a sentence (in sentence order),
         returns a list of all possible sub-phrases in the sentence (that is,
-        not including the full sentence).
+        not including the full sentence).  Does not include phrases that
+        consist solely of stop words.
         """
         maxlen = len(words) - 1
 
@@ -151,7 +177,16 @@ class EntityFinder:
             curlen = 1
             while (curword + curlen) <= len(words) and curlen <= maxlen:
                 phrasewords = words[curword:(curword + curlen)]
-                phrases.append(' '.join(phrasewords))
+
+                # Check if the current phrase is only stopwords.
+                sw_cnt = 0
+                for pword in phrasewords:
+                    if pword in STOPWORDS:
+                        sw_cnt += 1
+
+                if sw_cnt < len(phrasewords):
+                    phrases.append(' '.join(phrasewords))
+
                 curlen += 1
 
             curword += 1
@@ -166,14 +201,16 @@ class EntityFinder:
         propiri (string): An annotation property IRI.
         termstr (string): The term text to add.
         """
+        lowered = termstr.lower()
+
         # Apply the unicode compatibility decomposition to the string.  This
         # will, e.g., replace ligatures with their expanded equivalents and
         # replace non-standard space characters with regular space characters.
-        termstr = unicodedata.normalize('NFKD', termstr)
+        termstr = unicodedata.normalize('NFKD', lowered)
 
-        termstr = self._depunctuate(termstr)
+        termstr = self._depunctuate(lowered)
 
-        words = self._stemPhrase(termstr)
+        words = self._stemPhrase(lowered)
 
         if len(words) > self.max_termsize:
             self.max_termsize = len(words)
@@ -233,6 +270,8 @@ class EntityFinder:
 
         searchstr: A string to match to entities.
         """
+        searchstr = searchstr.lower()
+
         # Apply the unicode compatibility decomposition to the string.  This
         # will, e.g., replace ligatures with their expanded equivalents and
         # replace non-standard space characters with regular space characters.
