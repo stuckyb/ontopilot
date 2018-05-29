@@ -80,10 +80,32 @@ STOPWORDS = set([
     'doesnt', 'hadnt', 'hasnt', 'havent', 'isnt', 'ma', 'mightnt', 'mustnt',
     'neednt', 'shant', 'shouldnt', 'wasnt', 'werent', 'wont', 'wouldnt'
 ])
-STEMMED_STOPWORDS = set()
-stemmer = PorterStemmer()
-for stopword in STOPWORDS:
-    STEMMED_STOPWORDS.add(stemmer.stem(stopword))
+# The same set of stop words after stemming each stop word using NLTK's Porter
+# stemmer.  For execution efficiency, the set is provided as a literal rather
+# than generated dynamically by instantiating a PorterStemmer.
+STEMMED_STOPWORDS = set([
+    'hi', 'been', 'shouldnt', 'hasnt', 'about', 'your', 'when', 'doesnt',
+    'these', 'veri', 'her', 'if', 'between', 'you', 'they', 'in', 'myself',
+    'mustnt', 'havent', 'is', 'them', 'it', 'then', 'am', 'an', 'each',
+    'himself', 'itself', 'as', 'befor', 'at', 're', 'didnt', 'doe', 'isnt',
+    'other', 'be', 'against', 'wouldnt', 'our', 'out', 'into', 'how',
+    'couldnt', 'same', 'are', 'too', 'by', 'have', 'whom', 'where', 'after',
+    'so', 'ourselv', 'a', 'd', 'onc', 'more', 'themselv', 'i', 'yourselv', 'm',
+    'off', 'o', 'the', 'such', 's', 't', 'thi', 'hadnt', 'y', 'to', 'under',
+    'did', 'but', 'through', 'll', 'own', 'had', 'do', 'while', 'down', 'him',
+    'mightnt', 'that', 'ma', 'arent', 'than', 'me', 'should', 'few',
+    'yourself', 'from', 'up', 'those', 'which', 'all', 'below', 'onli', 'wont',
+    'dure', 'my', 'both', 've', 'neednt', 'most', 'she', 'were', 'whi',
+    'herself', 'dont', 'who', 'here', 'some', 'no', 'aint', 'becaus', 'for',
+    'their', 'wa', 'we', 'nor', 'can', 'not', 'werent', 'wasnt', 'and', 'of',
+    'now', 'just', 'ani', 'on', 'over', 'or', 'abov', 'will', 'again', 'with',
+    'what', 'there', 'shant', 'ha', 'until', 'further', 'he'
+])
+#STEMMED_STOPWORDS = set()
+#stemmer = PorterStemmer()
+#for stopword in STOPWORDS:
+#    STEMMED_STOPWORDS.add(stemmer.stem(stopword))
+#print STEMMED_STOPWORDS
 
 
 class EntityFinder:
