@@ -59,7 +59,8 @@ buildtm.addBuildTarget(FindEntitiesBuildTarget, task='fe')
 
 # Define the command-line arguments.
 argp = ArgumentParser(
-    prog='ontopilot', description='Manages an OWL ontology project.'
+    prog='ontopilot',
+    description='Software for ontology development and deployment.'
 )
 argp.add_argument(
     '-c', '--config_file', type=str, required=False, default='',
